@@ -200,7 +200,7 @@ def generate_image_imagen_test(prompt: str, ratio: str):
         try:
             key = os.getenv("IMAGEN3_API_SECRET")
             client = genai.Client(api_key=key)
-
+            print(ratio)
             # Prompt 전달 및 이미지 생성
             response = client.models.generate_images(
                 model='imagen-3.0-generate-002',
@@ -419,3 +419,28 @@ def generate_test_generate_music(lyrics, style, title):
     task_id = response['data']['taskId']
     
     return task_id
+
+
+def generate_test_generate_story(story_role, input_image):
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    { "type": "text", "text": story_role },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": input_image,
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    seed_image_vision = completion.choices[0].message.content
+    return seed_image_vision

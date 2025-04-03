@@ -8,7 +8,7 @@ from app.schemas.ads import (
     AdsDeleteRequest, AdsContentNewRequest, AuthCallbackRequest,
     AdsTestRequest, AdsSuggestChannelRequest, AdsImageTestFront, AdsUploadVideoInsta,
     AdsDrawingModelTest, AdsTemplateRequest, KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage,
-    MusicGet
+    MusicGet, Story
 )
 from fastapi import Request, Body
 from PIL import Image, ImageOps
@@ -63,7 +63,8 @@ from app.service.ads_generate_test import (
     generate_test_generate_video as service_generate_test_generate_video,
     generate_test_generate_bg as service_generate_test_generate_bg,
     generate_test_generate_music as service_generate_test_generate_music,
-    generate_test_generate_lyrics as service_generate_test_generate_lyrics
+    generate_test_generate_lyrics as service_generate_test_generate_lyrics,
+    generate_test_generate_story as service_generate_test_generate_story,
 )
 from app.service.ads_image_treat import (
     trat_image_turn as service_trat_image_turn
@@ -1818,3 +1819,45 @@ async def check_music(request: MusicGet):
     else:
         # 데이터가 없는 경우 에러 처리
         raise HTTPException(status_code=404, detail="Music not found or generation is still in progress.")
+    
+
+
+
+
+# 이미지 스토리 생성
+@router.post("/test/generate/story")
+async def generate_test_generate_story(request: Story):
+    try:
+        # 스토리 생성
+        story = service_generate_test_generate_story(request.story_role, request.example_image)
+        
+        if not story:
+            raise HTTPException(status_code=500, detail="Failed to generate story")
+
+        return {"story": story}
+    
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@router.post("/test/generate/story/image")  
+def generate_test_generate_story_image(request: AdsContentNewRequest):
+    try:
+        ratio = "9:16"
+        data = service_generate_image_imagen_test(
+            request.prompt,
+            ratio
+        )
+        return data
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)

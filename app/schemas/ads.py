@@ -262,3 +262,8 @@ class KaKaoTempGet(BaseModel):
 # 음악 생성 데이터 불러오기
 class MusicGet(BaseModel):
     taskId: str
+
+
+class Story(BaseModel):
+    story_role: str
+    example_image: str
