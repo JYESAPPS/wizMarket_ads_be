@@ -267,3 +267,9 @@ class MusicGet(BaseModel):
 class Story(BaseModel):
     story_role: str
     example_image: str
+
+
+class BusinessInfo(BaseModel):
+    b_no: str
+    start_dt : str
+    p_nm  : str

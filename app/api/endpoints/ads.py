@@ -8,7 +8,7 @@ from app.schemas.ads import (
     AdsDeleteRequest, AdsContentNewRequest, AuthCallbackRequest,
     AdsTestRequest, AdsSuggestChannelRequest, AdsImageTestFront, AdsUploadVideoInsta,
     AdsDrawingModelTest, AdsTemplateRequest, KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage,
-    MusicGet, Story
+    MusicGet, Story, BusinessInfo
 )
 from fastapi import Request, Body
 from PIL import Image, ImageOps
@@ -16,6 +16,7 @@ import logging
 import base64
 import io
 from typing import List
+import requests
 from google_auth_oauthlib.flow import Flow
 from app.service.ads import (
     select_ads_init_info as service_select_ads_init_info,
@@ -1844,6 +1845,7 @@ async def generate_test_generate_story(request: Story):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
 
+# 생성된 스토리로 유사 이미지 생성
 @router.post("/test/generate/story/image")  
 def generate_test_generate_story_image(request: AdsContentNewRequest):
     try:
@@ -1854,6 +1856,85 @@ def generate_test_generate_story_image(request: AdsContentNewRequest):
         )
         return data
 
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+# 사업자 상태 조회
+@router.post("/test/confirm/store")
+def generate_test_confirm_store(request: AdsDeleteRequest):
+    try:
+        if not request.ads_id:
+            raise HTTPException(status_code=400, detail="사업자등록번호를 입력해주세요.")
+        
+        ads_id = str(request.ads_id)
+
+        SERVICE_KEY = os.getenv("CONFIRM_KEY")
+        url = f"https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey={SERVICE_KEY}"
+        
+        payload = {"b_no": [ads_id]}
+
+        headers = {"Content-Type": "application/json"}
+
+        response = requests.post(url, json=payload, headers=headers)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="외부 API 요청 실패")
+
+        data = response.json()
+
+        return data
+    
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+# 사업자 진위확인
+@router.post("/test/confirm/true/store")
+def generate_test_confirm_store(request: BusinessInfo):
+    try:
+        if not request.b_no:
+            raise HTTPException(status_code=400, detail="사업자등록번호를 입력해주세요.")
+        
+        SERVICE_KEY = os.getenv("CONFIRM_KEY")
+        url = f"https://api.odcloud.kr/api/nts-businessman/v1/validate?serviceKey={SERVICE_KEY}"
+        
+        payload = {
+            "businesses": [
+                {
+                    "b_no": request.b_no,
+                    "start_dt": request.start_dt,
+                    "p_nm": request.p_nm,
+                    "p_nm2": "",
+                    "b_nm": "",
+                    "corp_no": "",
+                    "b_sector": "",
+                    "b_type": "",
+                    "b_adr": ""
+                }
+            ]
+        }
+        print(payload)
+        headers = {"Content-Type": "application/json"}
+
+        response = requests.post(url, json=payload, headers=headers)
+        print(response)
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="외부 API 요청 실패")
+
+        data = response.json()
+
+        return data
+    
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex
