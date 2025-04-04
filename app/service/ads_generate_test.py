@@ -15,7 +15,12 @@ from fastapi.responses import StreamingResponse
 from google import genai
 from google.genai import types
 import json
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 import http.client
+import smtplib
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -444,3 +449,26 @@ def generate_test_generate_story(story_role, input_image):
 
     seed_image_vision = completion.choices[0].message.content
     return seed_image_vision
+
+def send_mail(mail, word):
+    try:
+        mail_from = os.getenv("MAIL_FROM")
+        mail_to = mail
+        mail_pw = os.getenv("MAIL_PW")
+
+        msg = MIMEMultipart()
+        msg['From'] = mail_from
+        msg['To'] = mail_to
+        msg['Subject'] = "인증 메일입니다."
+        msg.attach(MIMEText(f"인증 코드: {word}", 'plain'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(mail_from, mail_pw)
+            server.sendmail(mail_from, mail_to, msg.as_string())
+
+        return True  # 성공
+
+    except Exception as e:
+        print(f"이메일 전송 중 오류 발생: {e}")
+        return False  # 실패

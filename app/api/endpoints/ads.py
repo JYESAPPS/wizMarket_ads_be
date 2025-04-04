@@ -8,7 +8,7 @@ from app.schemas.ads import (
     AdsDeleteRequest, AdsContentNewRequest, AuthCallbackRequest,
     AdsTestRequest, AdsSuggestChannelRequest, AdsImageTestFront, AdsUploadVideoInsta,
     AdsDrawingModelTest, AdsTemplateRequest, KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage,
-    MusicGet, Story, BusinessInfo
+    MusicGet, Story, 
 )
 from fastapi import Request, Body
 from PIL import Image, ImageOps
@@ -66,6 +66,7 @@ from app.service.ads_generate_test import (
     generate_test_generate_music as service_generate_test_generate_music,
     generate_test_generate_lyrics as service_generate_test_generate_lyrics,
     generate_test_generate_story as service_generate_test_generate_story,
+    send_mail as service_send_mail,
 )
 from app.service.ads_image_treat import (
     trat_image_turn as service_trat_image_turn
@@ -85,6 +86,8 @@ import uuid
 import json
 from io import BytesIO
 from rembg import remove
+import random
+import string
 
 
 router = APIRouter()
@@ -1581,7 +1584,7 @@ def generate_claude_content(request: AdsContentNewRequest):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
-
+# 이미지 테스트 - 스테이블 디퓨전
 @router.post("/generate/image/stable")
 def generate_image_stable(request: AdsContentNewRequest):
     try:
@@ -1600,6 +1603,7 @@ def generate_image_stable(request: AdsContentNewRequest):
         print(f"Exception 발생: {error_msg}")  # 추가 디버깅 출력
         raise HTTPException(status_code=500, detail=error_msg)
     
+# 이미지 테스트 - 달리
 @router.post("/generate/image/dalle")
 def generate_image_dalle(request: AdsDrawingModelTest):
     try:
@@ -1619,7 +1623,7 @@ def generate_image_dalle(request: AdsDrawingModelTest):
         print(f"Exception 발생: {error_msg}")  # 추가 디버깅 출력
         raise HTTPException(status_code=500, detail=error_msg)
     
-
+# 이미지 테스트 - 미드저니
 @router.post("/generate/image/mid/test")
 def generate_image_mid(request: AdsDrawingModelTest):
     try:
@@ -1640,6 +1644,7 @@ def generate_image_mid(request: AdsDrawingModelTest):
         raise HTTPException(status_code=500, detail=error_msg)
     
 
+# 이미지 테스트 - 이메진3
 @router.post("/generate/image/imagen")
 def generate_image_imagen_test(request: AdsDrawingModelTest):
     try:
@@ -1660,9 +1665,7 @@ def generate_image_imagen_test(request: AdsDrawingModelTest):
         raise HTTPException(status_code=500, detail=error_msg)
     
 
-
-
-
+# 배경 제거 테스트 - API
 @router.post("/remove/background")
 def generate_image_remove_bg(
     image: UploadFile = File(...)
@@ -1679,6 +1682,7 @@ def generate_image_remove_bg(
         raise HTTPException(status_code=500, detail=error_msg)
     
 
+# 배경 제거 테스트 - 파이썬 모듈
 @router.post("/remove/background/free")
 async def generate_image_remove_bg_free(
     image: UploadFile = File(...)
@@ -1695,7 +1699,6 @@ async def generate_image_remove_bg_free(
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
-
 
 # 영상 생성
 @router.post("/test/generate/video")
@@ -1749,7 +1752,7 @@ def generate_test_generate_bg(request : AdsContentRequest):
 
 
 
-##### 음악 생성 로직
+##### 음악 생성 로직 #####
 
 
 # 1. 가사 생성
@@ -1897,48 +1900,55 @@ def generate_test_confirm_store(request: AdsDeleteRequest):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
-
-# 사업자 진위확인
-@router.post("/test/confirm/true/store")
-def generate_test_confirm_store(request: BusinessInfo):
+# 인증 메일 발송
+@router.post("/test/send/mail")
+def generate_test_send_mail(request: AdsContentNewRequest):
     try:
-        if not request.b_no:
-            raise HTTPException(status_code=400, detail="사업자등록번호를 입력해주세요.")
-        
-        SERVICE_KEY = os.getenv("CONFIRM_KEY")
-        url = f"https://api.odcloud.kr/api/nts-businessman/v1/validate?serviceKey={SERVICE_KEY}"
-        
-        payload = {
-            "businesses": [
-                {
-                    "b_no": request.b_no,
-                    "start_dt": request.start_dt,
-                    "p_nm": request.p_nm,
-                    "p_nm2": "",
-                    "b_nm": "",
-                    "corp_no": "",
-                    "b_sector": "",
-                    "b_type": "",
-                    "b_adr": ""
-                }
-            ]
-        }
-        print(payload)
-        headers = {"Content-Type": "application/json"}
+        # 고유한 인증 코드 생성
+        length = 6  # 인증 코드 길이
+        characters = string.ascii_letters + string.digits  # 대소문자 + 숫자 조합
+        word = ''.join(random.choices(characters, k=length))
 
-        response = requests.post(url, json=payload, headers=headers)
-        print(response)
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="외부 API 요청 실패")
+        # 메일 발송
+        mail = str(request.prompt)
+        success = service_send_mail(mail, word)
 
-        data = response.json()
+        if len(word) != 6:
+            data = "인증 코드 길이가 6이 아닙니다."
+        elif not mail:
+            data = "메일 주소가 없습니다."
+        elif not success:
+            data = "메일 발송에 실패했습니다."  # 추가!
+        else:
+            redis_client.setex(f"verify:{mail}", 300, word)
+            data = "성공적으로 메일이 발송 되었습니다."
 
-        return data
+        return {"message": data}
     
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex
+    
     except Exception as e:
         error_msg = f"Unexpected error while processing request: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+    
+
+@router.post("/test/confirm/mail")
+def generate_test_confirm_mail(request: AdsDrawingModelTest):
+    try:
+        mail = request.prompt
+        word = request.ratio
+        stored_data = redis_client.get(f"verify:{mail}")
+
+        if not stored_data:
+            return {"success": False, "message": "인증 시간이 만료되었거나 존재하지 않는 메일입니다."}
+        elif stored_data != word:
+            return {"success": False, "message": "인증 코드가 일치하지 않습니다."}
+        else:
+            redis_client.delete(f"verify:{mail}")
+            return {"success": True, "message": "인증 코드가 일치합니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
