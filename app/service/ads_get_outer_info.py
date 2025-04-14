@@ -20,7 +20,8 @@ from collections import OrderedDict
 def get_insta_info(user, post):
     # 글로벌 드라이버 사용
     options = Options()
-    options.add_argument("--start-fullscreen")
+    options.add_argument("--headless")  
+    # options.add_argument("--start-fullscreen")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu") 
@@ -58,9 +59,6 @@ def get_insta_info(user, post):
             # span 안의 텍스트 출력 (좋아요, 댓글 순서로 있다고 가정)
             likes = spans[0].text if len(spans) > 0 else None
             comments = spans[1].text if len(spans) > 1 else None
-
-            print("❤️ 좋아요 수:", likes)
-            print("💬 댓글 수:", comments)
         
         except Exception as e:
             print("댓글 수를 찾는 중 에러 발생:", e)
@@ -137,7 +135,8 @@ def get_insta_reel_info(user, post):
 def get_naver_info(user, post):
     # 글로벌 드라이버 사용
     options = Options()
-    options.add_argument("--start-fullscreen")
+    options.add_argument("--headless")  
+    # options.add_argument("--start-fullscreen")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu") 
