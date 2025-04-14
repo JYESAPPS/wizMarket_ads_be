@@ -69,6 +69,10 @@ def get_insta_info(user, post):
 
     except Exception as e:
         print(f"검색 에러 : {e}")
+        return None, None
+
+    finally:
+        driver.quit()
 
 
 def get_insta_reel_info(user, post):
@@ -123,6 +127,10 @@ def get_insta_reel_info(user, post):
 
     except Exception as e:
         print(f"검색 에러 : {e}")
+        return None, None
+
+    finally:
+        driver.quit()
 
 
 
@@ -163,8 +171,6 @@ def get_naver_info(user, post):
                 p.text for p in paragraphs if p.text.strip().isdigit()
             )
 
-            print("공감 수:", like)
-
         except Exception as e:
             print("공감 수를 찾는 중 에러 발생:", e)
 
@@ -174,9 +180,7 @@ def get_naver_info(user, post):
             comment_container = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, "commentCount"))
             )
-
-            print("댓글 수 :\n", comment_container.text)
-            comment = comment_container
+            comment = comment_container.text
         except Exception as e:
             print("댓글 수를 찾는 중 에러 발생:", e)
 
@@ -185,6 +189,10 @@ def get_naver_info(user, post):
 
     except Exception as e:
         print(f"검색 에러 : {e}")
+        return None, None
+
+    finally:
+        driver.quit()
     
 
 
