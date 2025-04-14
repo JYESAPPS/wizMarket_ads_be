@@ -72,10 +72,10 @@ def get_insta_info(user, post):
     finally:
         driver.quit()
 
-
-def get_insta_reel_info(user, post):
+def get_reel_info(user, post):
     # 글로벌 드라이버 사용
     options = Options()
+    # options.add_argument("--headless")  
     options.add_argument("--start-fullscreen")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -97,6 +97,20 @@ def get_insta_reel_info(user, post):
         try:
             post_element = driver.find_element(By.CSS_SELECTOR, f'a[href="/{user}/reel/{post}/"]')
 
+            # a 태그 안의 모든 span 요소 가져오기
+            span_elements = post_element.find_elements(By.TAG_NAME, 'span')
+
+            # 텍스트가 비어 있지 않은 것만 추출
+            non_empty_texts = [span.text.strip() for span in span_elements if span.text.strip() != ""]
+
+            # 중복 제거
+            unique_texts = list(set(non_empty_texts))
+
+            # 결과가 있다면 첫 번째만 할당
+            view_count = unique_texts[0] if unique_texts else None
+
+            print("📊 View Count:", view_count)
+
             # 마우스를 해당 게시물 위로 이동
             actions.move_to_element(post_element).perform()
             time.sleep(3)  # 3초 대기 (호버 효과 보기 위해)
@@ -115,13 +129,12 @@ def get_insta_reel_info(user, post):
             likes = spans[0].text if len(spans) > 0 else None
             comments = spans[1].text if len(spans) > 1 else None
 
-            print("❤️ 좋아요 수:", likes)
-            print("💬 댓글 수:", comments)
+            print(spans.text)
         
         except Exception as e:
             print("댓글 수를 찾는 중 에러 발생:", e)
 
-        return likes, comments
+
 
     except Exception as e:
         print(f"검색 에러 : {e}")
@@ -129,8 +142,6 @@ def get_insta_reel_info(user, post):
 
     finally:
         driver.quit()
-
-
 
 def get_naver_info(user, post):
     # 글로벌 드라이버 사용
@@ -195,8 +206,9 @@ def get_naver_info(user, post):
     
 
 
+
 if __name__=="__main__":
     user= "xxxibgdrgn"
-    post = "DGmlIjkvV9g"
+    post = "DGFXMt4vDpw"
     # get_naver_info(user, post)
-    get_insta_info(user, post)
+    get_reel_info(user, post)

@@ -74,6 +74,7 @@ from app.service.ads_image_treat import (
 
 from app.service.ads_get_outer_info import (
     get_insta_info as service_get_insta_info,
+    get_reel_info as service_get_reel_info,
     get_naver_info as service_get_naver_info
 )
 
@@ -1961,6 +1962,25 @@ def generate_test_confirm_mail(request: AdsDrawingModelTest):
 # 인스타 정보 가져오기
 @router.post("/test/get/insta")
 def generate_test_get_insta(request: AdsDrawingModelTest):
+    try:
+        user = request.prompt
+        post = request.ratio
+        
+        # 인스타그램 정보 가져오기
+        like_count, comment_count = service_get_insta_info(user, post)
+
+        return {
+            "like_count": like_count,
+            "comment_count": comment_count
+        }
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+
+# 릴스 정보
+@router.post("/test/get/reel")
+def generate_test_get_reel(request: AdsDrawingModelTest):
     try:
         user = request.prompt
         post = request.ratio
