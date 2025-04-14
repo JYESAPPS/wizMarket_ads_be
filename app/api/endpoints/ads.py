@@ -203,19 +203,19 @@ def select_suggest_channel(request: AdsSuggestChannelRequest):
 # 업로드 된 이미지 처리
 @router.post("/generate/exist/image")
 def generate_image_with_text(
-    store_name: str = Form(...),
-    road_name: str = Form(...),
-    tag: str = Form(...),
-    weather: str = Form(...),
-    temp: float = Form(...),
-    male_base: str = Form(...),
-    female_base: str = Form(...),
-    gpt_role: str = Form(...),
-    detail_content: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-    image: UploadFile = File(...)
-):
+        store_name: str = Form(...),
+        road_name: str = Form(...),
+        tag: str = Form(...),
+        weather: str = Form(...),
+        temp: float = Form(...),
+        male_base: str = Form(...),
+        female_base: str = Form(...),
+        gpt_role: str = Form(...),
+        detail_content: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+        image: UploadFile = File(...)
+    ):
     images_list = []
     try:
         # 문구 생성
@@ -285,19 +285,19 @@ def generate_image_with_text(
 # 업로드 된 이미지 처리 + 배경 제거
 @router.post("/generate/exist/image/remove/background")
 def generate_image_with_text_remove_background(
-    store_name: str = Form(...),
-    road_name: str = Form(...),
-    tag: str = Form(...),
-    weather: str = Form(...),
-    temp: float = Form(...),
-    male_base: str = Form(...),
-    female_base: str = Form(...),
-    gpt_role: str = Form(...),
-    detail_content: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-    image: UploadFile = File(...)
-):
+        store_name: str = Form(...),
+        road_name: str = Form(...),
+        tag: str = Form(...),
+        weather: str = Form(...),
+        temp: float = Form(...),
+        male_base: str = Form(...),
+        female_base: str = Form(...),
+        gpt_role: str = Form(...),
+        detail_content: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+        image: UploadFile = File(...)
+    ):
     images_list = []
     try:
         # 문구 생성
@@ -887,18 +887,18 @@ def generate_template(request: AdsTemplateSeedImage):
 # ver2 파일 업로드
 @router.post("/generate/exist/image/template2")
 def generate_image_with_text_template2(
-    store_name: str = Form(...),
-    road_name: str = Form(...),
-    tag: str = Form(...),
-    weather: str = Form(...),
-    temp: float = Form(...),
-    male_base: str = Form(...),
-    female_base: str = Form(...),
-    gpt_role: str = Form(...),
-    detail_content: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-):
+        store_name: str = Form(...),
+        road_name: str = Form(...),
+        tag: str = Form(...),
+        weather: str = Form(...),
+        temp: float = Form(...),
+        male_base: str = Form(...),
+        female_base: str = Form(...),
+        gpt_role: str = Form(...),
+        detail_content: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+    ):
 
     try:
         # 문구 생성
@@ -1039,15 +1039,15 @@ def generate_image(request: AdsImageRequest):
 # ADS 텍스트, 이미지 합성
 @router.post("/combine/image/text")
 def combine_ads(
-    store_name: str = Form(...),
-    road_name: str = Form(...),
-    content: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-    image_width: int = Form(...),
-    image_height: int = Form(...),
-    image: UploadFile = File(...)
-):
+        store_name: str = Form(...),
+        road_name: str = Form(...),
+        content: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+        image_width: int = Form(...),
+        image_height: int = Form(...),
+        image: UploadFile = File(...)
+    ):
     try:
         pil_image = Image.open(image.file)
     except Exception as e:
@@ -1076,14 +1076,14 @@ def combine_ads(
 # ADS DB에 저장
 @router.post("/insert")
 def insert_ads(
-    store_business_number: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-    detail_title: Optional[str] = Form(None),  # 선택적 필드
-    content: str = Form(...),
-    image: UploadFile = File(None),
-    final_image: UploadFile = File(None)  # 단일 이미지 파일
-):
+        store_business_number: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+        detail_title: Optional[str] = Form(None),  # 선택적 필드
+        content: str = Form(...),
+        image: UploadFile = File(None),
+        final_image: UploadFile = File(None)  # 단일 이미지 파일
+    ):
     # 이미지 파일 처리
     image_url = None
     if image:
@@ -1171,14 +1171,14 @@ def delete_status(request: AdsDeleteRequest):
 # ADS DB에 수정
 @router.post("/update")
 def update_ads(
-    store_business_number: str = Form(...),
-    use_option: str = Form(...),
-    title: str = Form(...),
-    detail_title: Optional[str] = Form(None),  # 선택적 필드
-    content: str = Form(...),
-    image: UploadFile = File(None),
-    final_image: UploadFile = File(None)  # 단일 이미지 파일
-):
+        store_business_number: str = Form(...),
+        use_option: str = Form(...),
+        title: str = Form(...),
+        detail_title: Optional[str] = Form(None),  # 선택적 필드
+        content: str = Form(...),
+        image: UploadFile = File(None),
+        final_image: UploadFile = File(None)  # 단일 이미지 파일
+    ):
     
     # 이미지 파일 처리
     image_url = None
@@ -1260,13 +1260,13 @@ def update_ads(
 # 업로드
 @router.post("/upload")
 async def upload_ads(
-    use_option: str = Form(...), 
-    content: str = Form(...), 
-    store_name: str = Form(...), 
-    tag: str = Form(...), 
-    insta_copyright: str = Form(None),
-    upload_images: List[UploadFile] = File(...),
-):
+        use_option: str = Form(...), 
+        content: str = Form(...), 
+        store_name: str = Form(...), 
+        tag: str = Form(...), 
+        insta_copyright: str = Form(None),
+        upload_images: List[UploadFile] = File(...),
+    ):
     """
     광고 업로드 엔드포인트
     """
@@ -1394,12 +1394,12 @@ def youtube_auth_callback(request: AuthCallbackRequest):
 # 유튜브 업로드 영상
 @router.post("/upload/youtube")
 async def upload_youtube_ads(
-    content: str = Form(...), 
-    store_name: str = Form(...), 
-    tag: str = Form(...), 
-    file_path: str = Form(None),
-    access_token: str = Form(None),
-):
+        content: str = Form(...), 
+        store_name: str = Form(...), 
+        tag: str = Form(...), 
+        file_path: str = Form(None),
+        access_token: str = Form(None),
+    ):
     try:
         response = service_upload_youtube_ads(content, store_name, tag, file_path, access_token)
         return {"youtube_response": response}
@@ -1413,9 +1413,9 @@ async def upload_youtube_ads(
 # Ads 영상 만들기
 @router.post("/generate/video")
 def generate_video(
-    title: str = Form(...),
-    final_image: UploadFile = File(None)  # 단일 이미지 파일
-):
+        title: str = Form(...),
+        final_image: UploadFile = File(None)  # 단일 이미지 파일
+    ):
     
     # 파이널 이미지 파일 처리
     if final_image:
@@ -1448,17 +1448,17 @@ def generate_video(
 # 업로드 된 이미지로 영상 만들기
 @router.post("/generate/video/image")
 def generate_video_with_text(
-    store_name: str = Form(...),
-    road_name: str = Form(...),
-    tag: str = Form(...),
-    weather: str = Form(...),
-    temp: float = Form(...),
-    male_base: str = Form(...),
-    female_base: str = Form(...),
-    gpt_role: str = Form(...),
-    detail_content: str = Form(...),
-    image: UploadFile = File(...)
-):
+        store_name: str = Form(...),
+        road_name: str = Form(...),
+        tag: str = Form(...),
+        weather: str = Form(...),
+        temp: float = Form(...),
+        male_base: str = Form(...),
+        female_base: str = Form(...),
+        gpt_role: str = Form(...),
+        detail_content: str = Form(...),
+        image: UploadFile = File(...)
+    ):
 
     try:
         # 문구 생성
@@ -1966,34 +1966,18 @@ def generate_test_get_insta(request: AdsDrawingModelTest):
         post = request.ratio
         
         # 인스타그램 정보 가져오기
-        img_urls, like_count, formatted_time = service_get_insta_info(user, post)
-
-        # 혹시 문자열 리스트라면 실제 리스트로 파싱
-        if isinstance(img_urls, str):
-            import ast
-            img_urls = ast.literal_eval(img_urls)
-
-        img_base64_list = []
-        for img_url in img_urls:
-            try:
-                img_data = requests.get(img_url).content
-                img_base64 = base64.b64encode(img_data).decode('utf-8')
-                img_base64_list.append(img_base64)
-            except Exception as img_err:
-                logger.error(f"이미지 다운로드 실패: {img_url}, 에러: {str(img_err)}")
+        like_count, comment_count = service_get_insta_info(user, post)
 
         return {
-            "img_url": img_base64_list,  # 리스트로 반환
             "like_count": like_count,
-            "formatted_time": formatted_time
+            "comment_count": comment_count
         }
 
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
-
     
-
+  
 # 네이버 정보 가져오기
 @router.post("/test/get/naver")
 def generate_test_get_naver(request: AdsDrawingModelTest):
@@ -2002,12 +1986,10 @@ def generate_test_get_naver(request: AdsDrawingModelTest):
         post = request.ratio
         
         # 인스타그램 정보 가져오기
-        title, content, like, comment = service_get_naver_info(user, post)
+        like, comment = service_get_naver_info(user, post)
 
         # JSON 형태로 반환
         return {
-            "title": title,  # 리스트!
-            "content": content,
             "like": like,
             "comment": comment
         }
