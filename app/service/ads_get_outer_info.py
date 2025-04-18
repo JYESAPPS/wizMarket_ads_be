@@ -126,8 +126,8 @@ def get_reel_info(user, post):
             spans = hover_info_div.find_elements(By.XPATH, './/span/span')
 
             # span 안의 텍스트 출력 (좋아요, 댓글 순서로 있다고 가정)
-            likes = spans[0].text if len(spans) > 0 else None
-            comments = spans[1].text if len(spans) > 1 else None
+            # likes = spans[0].text if len(spans) > 0 else None
+            # comments = spans[1].text if len(spans) > 1 else None
 
             print(spans.text)
         
@@ -209,6 +209,6 @@ def get_naver_info(user, post):
 
 if __name__=="__main__":
     user= "xxxibgdrgn"
-    post = "DGFXMt4vDpw"
+    post = "DIBhQi0vU"
     # get_naver_info(user, post)
     get_reel_info(user, post)

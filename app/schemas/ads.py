@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List,Tuple
 from datetime import datetime 
 from fastapi import UploadFile, File
+from datetime import date
 
 
 class AdsList(BaseModel):
@@ -59,6 +60,10 @@ class AdsInitInfo(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+
+
 
 # 등록 모달 창 열 때 기본 정보 MAX 값으로 내보내기
 class AdsInitInfoOutPut(BaseModel):

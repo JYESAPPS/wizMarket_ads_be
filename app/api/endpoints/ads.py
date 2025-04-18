@@ -77,6 +77,9 @@ from app.service.ads_get_outer_info import (
     get_reel_info as service_get_reel_info,
     get_naver_info as service_get_naver_info
 )
+from app.service.ads_notice import (
+    get_notice as service_get_notice
+)
 
 
 import redis
@@ -2018,3 +2021,6 @@ def generate_test_get_naver(request: AdsDrawingModelTest):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
+
+
+
