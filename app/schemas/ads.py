@@ -197,6 +197,13 @@ class AdsGenerateContentOutPut(BaseModel):
 # 이미지 모델 테스트
 class AdsDrawingModelTest(BaseModel):
     prompt : str
+    version: str
+    ratio : str
+
+
+# 이미지 모델 테스트
+class MidTest(BaseModel):
+    prompt : str
     ratio : str
 
 

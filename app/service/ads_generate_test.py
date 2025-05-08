@@ -57,40 +57,70 @@ def generate_image_stable(prompt: str,):
 
 
 # 달리 이미지 생성
-def generate_image_dalle(prompt: str, ratio: str):
+def generate_image_dalle(prompt: str, version: str, ratio: str):
     try:
-        size_mapping = {
-            "1:1": "1024x1024",
-            "9:16": "1024x1792",
-            "16:9": "1792x1024"
-        }
+        # 버전별 매핑
+        if version == "dalle":
+            size_mapping = {
+                "1:1": "1024x1024",
+                "9:16": "1024x1792",
+                "16:9": "1792x1024"
+            }
+            model_name = "dall-e-3"
+            quality = "hd"
+            n = 1  # 구버전은 1장만 생성
+        elif version == "new":
+            size_mapping = {
+                "1:1": "1024x1024",
+                "2:3": "1024x1536",
+                "3:2": "1536x1024"
+            }
+            model_name = "gpt-image-1"
+            quality = "high"
+            n = 4  # 신버전은 4장 생성
+        else:
+            return {"error": "Invalid version"}
+
         size = size_mapping.get(ratio, "1024x1024")
-        # Prompt 전달 및 이미지 생성
+
+        # 이미지 생성
         response = client.images.generate(
-            model="dall-e-3",
+            model=model_name,
             prompt=prompt,
             size=size,
-            quality="hd", 
-            n=1
+            quality=quality,
+            n=n
         )
-        image_url = response.data[0].url
-        # print(image_url)
-        # 이미지 다운로드
-        image_response = requests.get(image_url)
-        image_response.raise_for_status()
-        # 이미지 열기
-        image = Image.open(io.BytesIO(image_response.content))
 
-        # 이미지를 Base64로 인코딩
-        buffer = BytesIO()
-        image.save(buffer, format="PNG")
-        buffer.seek(0)
-        base64_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        images = []  # 리스트 초기화
 
-        return {"image": f"data:image/png;base64,{base64_image}"}
+        if version == "dalle":
+            # DALL-E-3: URL 다운로드 -> base64 변환
+            for data in response.data:
+                image_url = data.url
+                image_response = requests.get(image_url)
+                image_response.raise_for_status()
+
+                image = Image.open(io.BytesIO(image_response.content))
+                buffer = BytesIO()
+                image.save(buffer, format="PNG")
+                buffer.seek(0)
+                base64_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+                images.append(f"data:image/png;base64,{base64_image}")
+
+        else:
+            # GPT-IMAGE-1: 바로 base64 데이터
+            for data in response.data:
+                image_base64 = data.b64_json
+                images.append(f"data:image/png;base64,{image_base64}")
         
+        return {"images": images}
+
     except Exception as e:
         return {"error": f"이미지 생성 중 오류 발생: {e}"}
+
+
     
 
 # 미드저니 이미지 생성
@@ -124,7 +154,7 @@ def generate_image_mid_test(prompt: str, ratio: str):
 
         # Step 1: Job creation
         response = requests.post(apiUrl, headers=headers, json=body)
-        print(response)
+
         response.raise_for_status()  # HTTP 오류 발생 시 예외 발생
         job_id = response.json().get("jobid")
         if not job_id:

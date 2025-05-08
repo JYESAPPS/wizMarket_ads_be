@@ -5,7 +5,7 @@ from app.schemas.ads import (
     AdsGenerateContentOutPut, AdsContentRequest,
     AdsDeleteRequest, AdsContentNewRequest,
     AdsDrawingModelTest,  
-    MusicGet, Story, 
+    MusicGet, Story, MidTest
 )
 from app.service.ads_generate import (
     generate_new_content as service_generate_new_content,
@@ -145,6 +145,7 @@ def generate_image_dalle(request: AdsDrawingModelTest):
         # 서비스 레이어 호출: 요청의 데이터 필드를 unpack
         data = service_generate_image_dalle(
             request.prompt,
+            request.version,
             request.ratio
         )
         return data
@@ -160,7 +161,7 @@ def generate_image_dalle(request: AdsDrawingModelTest):
     
 # 이미지 테스트 - 미드저니
 @router.post("/generate/image/mid/test")
-def generate_image_mid(request: AdsDrawingModelTest):
+def generate_image_mid(request: MidTest):
     try:
         data = service_generate_image_mid_test(
             request.prompt,
@@ -585,7 +586,7 @@ async def generate_test_change_person(
         
         if not image_url:
             raise HTTPException(status_code=500, detail="Failed to generate img")
-        print(image_url)
+
         return JSONResponse(content={"image_url": image_url})
     
     except HTTPException as http_ex:
