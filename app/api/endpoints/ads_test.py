@@ -182,7 +182,7 @@ def generate_image_mid(request: MidTest):
 
 # 이미지 테스트 - 이메진3
 @router.post("/generate/image/imagen")
-def generate_image_imagen_test(request: AdsDrawingModelTest):
+def generate_image_imagen_test(request: MidTest):
     try:
         data = service_generate_image_imagen_test(
             request.prompt,
