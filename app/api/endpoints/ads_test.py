@@ -88,8 +88,10 @@ def generate_new_content(request: AdsContentNewRequest):
 @router.post("/generate/test/old/content", response_model=AdsGenerateContentOutPut)
 def generate_old_content(request: AdsContentNewRequest):
     try:
+        print(request.role, request.prompt)
         # 서비스 레이어 호출: 요청의 데이터 필드를 unpack
         content = service_generate_old_content(
+            request.role,
             request.prompt
         )
         return {'content': content}

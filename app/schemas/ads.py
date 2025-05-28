@@ -187,7 +187,10 @@ class AdsTemplateSeedImage(BaseModel):
 
 # 테스트 문구 생성
 class AdsContentNewRequest(BaseModel):
+    role : str
     prompt : str
+
+
 
 
 class AdsGenerateContentOutPut(BaseModel):

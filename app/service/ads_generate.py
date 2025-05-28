@@ -64,20 +64,23 @@ def generate_new_content(
 
 
 # 구 문구 생성
-def generate_old_content(
-    prompt
-):
-    # gpt 영역
-    content = prompt
+def generate_old_content(role, prompt):
     client = OpenAI(api_key=os.getenv("GPT_KEY"))
+
+    messages = []
+
+    if role:  # 역할이 있으면 system 역할 메시지를 먼저 추가
+        messages.append({"role": "system", "content": role})
+    
+    messages.append({"role": "user", "content": prompt})
+
     completion = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "user", "content": content},
-        ],
+        messages=messages,
     )
     report = completion.choices[0].message.content
     return report
+
 
 # 클로드 문구 생성
 def generate_claude_content(
