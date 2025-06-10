@@ -3,7 +3,7 @@ from fastapi import (
 )
 from app.schemas.ads import (
     AdsInitInfoOutPut,AdsGenerateContentOutPut, AdsContentRequest,
-    AdsImageRequest, AdsDeleteRequest,
+    AdsImageRequest, AdsDeleteRequest, AdsInitInfoOutPutWithImages,
     AuthCallbackRequest,
     AdsTestRequest, AdsSuggestChannelRequest, AdsUploadVideoInsta,
     AdsTemplateRequest, KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage,
@@ -21,6 +21,7 @@ from app.service.ads import (
     insert_ads as service_insert_ads,
     delete_status as service_delete_status,
     update_ads as service_update_ads,
+    random_design_style as service_random_design_style
 )
 from app.service.ads_generate import (
     generate_content as service_generate_content,
@@ -86,15 +87,17 @@ redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=T
 
 
 # 매장 리스트에서 모달창 띄우기
-@router.post("/select/init/info", response_model=AdsInitInfoOutPut)
-def select_ads_init_info(store_business_number: str, request: Request):
+@router.post("/select/init/info", response_model=AdsInitInfoOutPutWithImages)
+def select_ads_init_info(store_business_number: str):
     # 쿼리 매개변수로 전달된 store_business_number 값 수신
     try:
-        # 요청 정보 출력
-        # logger.info(f"Request received from {request.client.host}:{request.client.port}")
-        # logger.info(f"Request headers: {request.headers}")
-        # logger.info(f"Request path: {request.url.path}")
-        return service_select_ads_init_info(store_business_number)
+        init_data = service_select_ads_init_info(store_business_number)
+        random_image_list = service_random_design_style(init_data)
+        return AdsInitInfoOutPutWithImages(
+            **init_data.dict(),
+            image_list=random_image_list
+        )
+
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex

@@ -61,7 +61,8 @@ class AdsInitInfo(BaseModel):
     class Config:
         from_attributes = True
 
-
+class RandomImage(BaseModel):
+    path: str
 
 
 
@@ -86,6 +87,10 @@ class AdsInitInfoOutPut(BaseModel):
     temp: Optional[float] = None
 
 
+
+
+
+
 # 날씨 조회
 class WeatherInfo(BaseModel):
     id: int
@@ -103,6 +108,28 @@ class LocalStoreInfoWeaterInfoOutput(BaseModel):
     class Config:
         from_attributes = True
 
+
+
+
+class AdsInitInfoOutPutWithImages(BaseModel):
+    store_business_number: str
+    store_name: str
+    road_name: str
+    city_name: str
+    district_name: str
+    sub_district_name: str
+    latitude: float
+    longitude: float
+    detail_category_name: str
+    loc_info_average_sales_k: float
+    commercial_district_max_sales_day: tuple | None
+    commercial_district_max_sales_time: tuple | None
+    commercial_district_max_sales_m_age: tuple | None
+    commercial_district_max_sales_f_age: tuple | None
+    id: int
+    main: str
+    temp: float
+    image_list: List[RandomImage]  # ✅ 여기에 추가
 
 # 문구 생성
 class AdsContentRequest(BaseModel):

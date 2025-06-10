@@ -3,12 +3,11 @@ from app.db.connect import (
 )
 from dotenv import load_dotenv
 import pymysql
-import os
 from fastapi import HTTPException
 import logging
-from app.schemas.ads import AdsList, AdsInitInfo, AdsSpecificInitInfo, AdsSpecificInitImage, AdsSpecificInitStoreName
-from typing import Optional, List
-from pydantic import BaseModel, Field, ValidationError
+from app.schemas.ads import AdsInitInfo, RandomImage
+import random
+
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -121,6 +120,52 @@ def select_ads_init_info(store_business_number: str) -> AdsInitInfo:
         if connection:
             connection.close()
 
+
+def random_image_list(selected_ids):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    result = []
+
+    try:
+        if connection.open:
+            for design_id in selected_ids:
+                select_query = """
+                    SELECT PATH
+                    FROM IMAGE
+                    WHERE DESIGN_ID = %s
+                """
+                cursor.execute(select_query, (design_id,))
+                rows = cursor.fetchall()
+
+                if not rows:
+                    logger.warning(f"design_id {design_id}에 해당하는 이미지가 없습니다.")
+                    continue  # 없으면 건너뛰기
+
+                random_path = random.choice(rows)["PATH"]
+
+                # Pydantic 모델로 매핑
+                result.append(RandomImage(path=random_path))
+
+            if not result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="선택된 디자인에 해당하는 이미지가 하나도 없습니다."
+                )
+            return result
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected Error in random_image_list: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 # 글만 먼저 저장 처리
 def insert_ads(store_business_number: str, use_option: str, title: str, detail_title: str, content: str):

@@ -29,11 +29,6 @@ from app.service.ads_generate_test import (
     send_mail as service_send_mail,
 )
 
-from app.service.ads_get_outer_info import (
-    get_insta_info as service_get_insta_info,
-    get_reel_info as service_get_reel_info,
-    get_naver_info as service_get_naver_info
-)
 
 from app.service.ads_image_treat import (
     generate_test_edit_image as service_generate_test_edit_image,
@@ -487,66 +482,6 @@ def generate_test_confirm_mail(request: AdsDrawingModelTest):
         else:
             redis_client.delete(f"verify:{mail}")
             return {"success": True, "message": "인증 코드가 일치합니다."}
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-
-# 인스타 정보 가져오기
-@router.post("/test/get/insta")
-def generate_test_get_insta(request: AdsDrawingModelTest):
-    try:
-        user = request.prompt
-        post = request.ratio
-        
-        # 인스타그램 정보 가져오기
-        like_count, comment_count = service_get_insta_info(user, post)
-
-        return {
-            "like_count": like_count,
-            "comment_count": comment_count
-        }
-
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-
-# 릴스 정보
-@router.post("/test/get/reel")
-def generate_test_get_reel(request: AdsDrawingModelTest):
-    try:
-        user = request.prompt
-        post = request.ratio
-        
-        # 인스타그램 정보 가져오기
-        like_count, comment_count = service_get_insta_info(user, post)
-
-        return {
-            "like_count": like_count,
-            "comment_count": comment_count
-        }
-
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-    
-  
-# 네이버 정보 가져오기
-@router.post("/test/get/naver")
-def generate_test_get_naver(request: AdsDrawingModelTest):
-    try:
-        user = request.prompt
-        post = request.ratio
-        
-        # 인스타그램 정보 가져오기
-        like, comment = service_get_naver_info(user, post)
-
-        # JSON 형태로 반환
-        return {
-            "like": like,
-            "comment": comment
-        }
-
-
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}

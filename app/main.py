@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
-from app.api.endpoints import ads, ads_test, ads_notice, ads_user, ads_login
+from app.api.endpoints import ads, ads_test, ads_notice, ads_user, ads_login, ads_app
 from app.api.endpoints import webhook
 
 app = FastAPI()
@@ -26,7 +26,7 @@ app.add_middleware(
 print(os.getenv("ALLOWED_ORIGINS", ""))
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
+app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")
 
 @app.get("/")
 async def read_root():
@@ -39,6 +39,7 @@ app.include_router(ads_test.router, prefix="/ads")
 app.include_router(ads_notice.router, prefix="/ads")
 app.include_router(ads_login.router, prefix="/ads")
 app.include_router(ads_user.router, prefix="/ads")
+app.include_router(ads_app.router, prefix="/ads")
 app.include_router(webhook.router, prefix="/ad")
 
 if __name__ == "__main__":
