@@ -20,10 +20,10 @@ class AutoApp(BaseModel):
     store_name: str
     detail_category_name: str
 
-    commercial_district_max_sales_day: Optional[List[Union[str, float]]] = None
-    commercial_district_max_sales_f_age: Optional[List[Union[str, float]]] = None
-    commercial_district_max_sales_m_age: Optional[List[Union[str, float]]] = None
-    commercial_district_max_sales_time: Optional[List[Union[str, float]]] = None
+    commercial_district_max_sales_day: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_f_age: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_m_age: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_time: Optional[List[Optional[Union[str, float]]]] = None
     loc_info_average_sales_k:Optional[int]
     
     main: str
