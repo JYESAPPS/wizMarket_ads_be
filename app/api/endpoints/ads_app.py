@@ -89,7 +89,7 @@ def generate_template(request: AutoApp):
                 copyright_prompt = f'''
                     {request.store_name} 업체의 {channel} 위한 문구.
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
-                    주요 고객층: {male_text}, {female_text} 15자 이내로 작성해주세요
+                    주요 고객층: {male_text}, {female_text}을 바탕으로 15자 이내로 작성해주세요
                 '''
 
             copyright = service_generate_content(
@@ -97,6 +97,7 @@ def generate_template(request: AutoApp):
                 copyright_role,
                 detail_content
             )
+            print(copyright)
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
