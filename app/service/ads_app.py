@@ -32,12 +32,17 @@ client = OpenAI(api_key=api_key)
 
 # 남녀 비중 풀어서
 def parse_age_gender_info(age_info):
-    # 예: "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_M_50S"
+    # 값이 None이거나 리스트 구조가 이상하거나 요소가 None일 경우
+    if not age_info or len(age_info) != 2 or not all(age_info):
+        return ""
+    
     column, percentage = age_info
+
     gender = "남자" if "_M_" in column else "여자"
     age_raw = column.split("_")[-1]  # 예: '50S'
     age = age_raw.replace("S", "대")  # '50대'
     return f"{gender} {age} ({percentage}%)"
+
 
 # 옵션 값들 자동 선택
 def generate_option(request):
