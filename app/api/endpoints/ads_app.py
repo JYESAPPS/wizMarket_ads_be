@@ -162,7 +162,7 @@ def generate_template(request: AutoApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_m": male_text, "core_f": female_text,
             "main": request.main, "detail_category_name" : request.detail_category_name,
-            "store_name": request.store_name, "road_name": request.road_name
+            "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number
         })
 
     except HTTPException as http_ex:
