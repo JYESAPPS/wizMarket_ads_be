@@ -63,31 +63,27 @@ def generate_template(request: AutoApp):
             # print(request.example_image)
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
-            print(title)
             if title == 3 or "3":
                 copyright_role : f'''
-                    다음과 같은 내용을 바탕으로 온라인 광고 콘텐츠를 제작하려고 합니다. 
-                    잘 어울리는 광고 문구를 생성해주세요.
-                    - 제목 : 15자 내외 간결하고 호기심을 유발할 수 있는 제목 
-                    - 내용 : 30자 내외 간결하고 함축적인 내용
+                    you are professional writer.
+                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                    - 내용 : 20자 내외 간결하고 함축적인 내용
                     - 특수기호, 이모티콘은 제외할 것
                 '''
 
                 copyright_prompt = f'''
-                    {request.store_name} 업체의 {channel} 위한 광고 컨텐츠를 제작하려고 합니다.
+                    {request.store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
                     주요 고객층: {male_text}, {female_text} 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
                 copyright_role : f'''
-                    다음과 같은 내용을 바탕으로 온라인 광고 콘텐츠를 제작하려고 합니다. 
-                    잘 어울리는 광고 문구를 생성해주세요.
-                    - 15자 내외 간결하고 호기심을 유발할 수 있는 제목
-                    - 특수기호, 이모티콘은 제외할 것
+                    you are professional writer.
+                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
                 '''
 
                 copyright_prompt = f'''
-                    {request.store_name} 업체의 {channel} 위한 문구.
+                    {request.store_name} 업체를 위한 문구.
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
                     주요 고객층: {male_text}, {female_text}을 바탕으로 15자 이내로 작성해주세요
                 '''
@@ -97,7 +93,7 @@ def generate_template(request: AutoApp):
                 copyright_role,
                 detail_content
             )
-            print(copyright)
+
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
