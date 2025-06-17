@@ -20,7 +20,8 @@ import subprocess
 from PIL import Image
 from io import BytesIO
 from app.crud.ads_app import (
-    select_random_image as crud_select_random_image
+    select_random_image as crud_select_random_image,
+    get_style_image as crud_get_style_image
 )
 
 logger = logging.getLogger(__name__)
@@ -32,15 +33,21 @@ client = OpenAI(api_key=api_key)
 
 # 남녀 비중 풀어서
 def parse_age_gender_info(age_info):
-    # 값이 None이거나 리스트 구조가 이상하거나 요소가 None일 경우
     if not age_info or len(age_info) != 2 or not all(age_info):
         return ""
     
     column, percentage = age_info
 
     gender = "남자" if "_M_" in column else "여자"
-    age_raw = column.split("_")[-1]  # 예: '50S'
-    age = age_raw.replace("S", "대")  # '50대'
+
+    # 나이 추출 로직
+    age_part = column.split("_")[-2:]  # 예: ['60', 'OVER']
+    if age_part == ['60', 'OVER']:
+        age = "60대"
+    else:
+        age_raw = age_part[-1]  # '50S'
+        age = age_raw.replace("S", "대")
+
     return f"{gender} {age} ({percentage}%)"
 
 
@@ -165,3 +172,12 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
 
     except Exception as e:
         return {"error": f"이미지 생성 중 오류 발생: {e}"}
+    
+# 모든 이미지 리스트 가져오기
+def get_style_image():
+    image_list = crud_get_style_image()
+    return image_list
+
+# 주어진 값들로 자동 선택 - 재생성
+def generate_option_regen(request):
+    pass

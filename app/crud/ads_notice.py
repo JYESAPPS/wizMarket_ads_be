@@ -77,6 +77,7 @@ def create_notice(notice_title: str, notice_content: str):
 
 def get_notice_read(user_id):
     try:
+        user_id = int(user_id)
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             # 안 읽은 공지사항 목록 가져오기 (읽음 기록 없는 공지)

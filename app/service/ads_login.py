@@ -3,6 +3,6 @@ from app.crud.ads_login import (
 )
 
 
-def ads_login(user_id, password):
-    user = crud_ads_login(user_id, password)
-    return user is not None  # 로그인 성공 여부
+def ads_login(email, temp_pw):
+    user = crud_ads_login(email, temp_pw)
+    return user 

@@ -31,7 +31,34 @@ class AutoApp(BaseModel):
     
     id: int
     image_list: List[ImageItem]
-    
+
+
+class AutoAppRegen(BaseModel):
+    store_business_number: str
+    store_name: str
+    detail_category_name: str
+    road_name: str
+
+    style:str
+    channel : str
+    age : Optional[str]
+    prompt : str
+    title : str
+
+    main: str
+    temp: float
+
+
+class ManualGenCopy(BaseModel):
+    category: str
+    age: str
+    channel: str
+    subChannel: Optional[str]
+    theme: str
+    store_name : str
+    main: str
+    temp: float
+    road_name : str
     
     
     
