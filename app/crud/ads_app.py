@@ -99,7 +99,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, gender, birth_year FROM USER_INFO WHERE design_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, gender, birth_year FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
@@ -115,13 +115,13 @@ def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT age, style, title, channel, image_path FROM user_record WHERE design_id = %s", (user_id,))
-            row = cursor.fetchone()
+            cursor.execute("SELECT age, style, title, channel, image_path FROM user_record WHERE user_id = %s", (user_id,))
+            rows = cursor.fetchall()
 
-        if not row:
+        if not rows:
             return None
 
-        return row  # ✅ 딕셔너리 접근
+        return rows  # ✅ 딕셔너리 접근
 
     except Exception as e:
         print(f"회원 기록 정보 오류: {e}")

@@ -106,5 +106,5 @@ class ManualApp(BaseModel):
 
     
 class UserInfo(BaseModel):
-    userId : int
+    userId : str
 

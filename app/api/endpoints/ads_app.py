@@ -610,5 +610,19 @@ def generate_template_manual(request : ManualApp):
 
 @router.post("/get/user/info")
 def get_user_info(request : UserInfo):
-    user_id = request.user_id
-    info, record = service_get_user_info(user_id)
+    try:
+        user_id = int(request.userId)
+        info, record = service_get_user_info(user_id)
+
+        return JSONResponse(content={
+            "info": info,
+            "record": record
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
