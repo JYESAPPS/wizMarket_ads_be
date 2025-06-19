@@ -49,6 +49,19 @@ class AutoAppRegen(BaseModel):
     temp: float
 
 
+class AutoAppSave(BaseModel):
+    age: str
+    alert_check: bool
+    channel : str
+    repeat : str
+    style : str
+    title : str
+    upload_time : Optional[str]
+    user_id : int
+    date_range: List[str] 
+    image: str
+
+
 class ManualGenCopy(BaseModel):
     category: str
     age: str
@@ -60,9 +73,38 @@ class ManualGenCopy(BaseModel):
     temp: float
     road_name : str
     
+
+class ManualImageListAIReco(BaseModel):
+    category: Optional[str]
+    age: str
+    channel: str
+    subChannel: Optional[str]
+    customText: Optional[str]
+    customMenu: Optional[str]
+    theme: str
+    store_name : str
+    road_name : str
+    detail_category_name : str
+
+
+class ManualApp(BaseModel):
+    store_business_number: str
+    prompt : str
+    main: str
+    temp: float
+    style : int
+    category: Optional[str]
+    age: str
+    channel: str
+    subChannel: Optional[str]
+    customText: Optional[str]
+    customMenu: Optional[str]
+    theme: str
+    store_name : str
+    road_name : str
+    detail_category_name : str
+
     
-    
-    
-    
-    
+class UserInfo(BaseModel):
+    userId : int
 

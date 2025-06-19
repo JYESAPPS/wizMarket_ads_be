@@ -21,8 +21,18 @@ from PIL import Image
 from io import BytesIO
 from app.crud.ads_app import (
     select_random_image as crud_select_random_image,
-    get_style_image as crud_get_style_image
+    get_style_image as crud_get_style_image,
+    insert_upload_record as crud_insert_upload_record,
+    get_user_info as crud_get_user_info,
+    get_user_record as crud_get_user_record
+
 )
+import base64
+import os
+from datetime import datetime
+
+
+
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -30,6 +40,9 @@ load_dotenv()
 # OpenAI API 키 설정
 api_key = os.getenv("GPT_KEY")
 client = OpenAI(api_key=api_key)
+
+today = datetime.now()
+formattedToday = today.strftime('%Y-%m-%d')
 
 # 남녀 비중 풀어서
 def parse_age_gender_info(age_info):
@@ -53,8 +66,7 @@ def parse_age_gender_info(age_info):
 
 # 옵션 값들 자동 선택
 def generate_option(request):
-    today = datetime.now()
-    formattedToday = today.strftime('%Y-%m-%d')
+    
 
     male_text = parse_age_gender_info(request.commercial_district_max_sales_m_age)
     female_text = parse_age_gender_info(request.commercial_district_max_sales_f_age)
@@ -139,7 +151,8 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
         return {"error": f"seed 프롬프트 변경 중 오류 발생: {e}"}
     try:
         channel = int(channel) 
-        if channel in [1, 3]:
+
+        if channel in [1, 2]:
             size = "9:16"
             resize_size = (1024, 1792)
         else :
@@ -154,11 +167,10 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
             prompt=tag_image_prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1,
-                aspect_ratio=size,  # 비율 유지
+                aspect_ratio="1:1",  # 비율 유지
                 output_mime_type='image/jpeg'
             )
         )
-
         # 이미지 열기 및 최종 리사이징
         img_parts = []
         for generated_image in response.generated_images:
@@ -178,6 +190,117 @@ def get_style_image():
     image_list = crud_get_style_image()
     return image_list
 
-# 주어진 값들로 자동 선택 - 재생성
-def generate_option_regen(request):
-    pass
+# AI 생성 자동 - 저장
+def insert_upload_record(request):
+    user_id = request.user_id
+    age = request.age
+    alert_check = request.alert_check
+    data_range = request.date_range
+    repeat = request.repeat
+    style = request.style
+    title = request.title
+    channel = request.channel
+    upload_time = request.upload_time
+
+    image_path = save_base64_image(request.image, request.user_id, request.channel)
+
+    success = crud_insert_upload_record(
+        user_id,
+        age,
+        alert_check,
+        data_range,
+        repeat,
+        style,
+        title,
+        channel,
+        upload_time,
+        image_path
+    )
+    return success
+
+# 이미지 파일 저장 및 경로 설정
+def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app/uploads/image/user"):
+    from datetime import datetime
+    import os, base64
+
+    # 채널 매핑
+    channel_map = {
+        "1": "kakao",
+        "2": "story",
+        "3": "feed"
+    }
+    channel_name = channel_map.get(channel_code, "unknown")
+
+    # 저장 디렉토리 생성
+    user_folder = f"user_{user_id}"
+    full_dir = os.path.join(save_dir, user_folder)
+    os.makedirs(full_dir, exist_ok=True)
+
+    # 파일명 생성
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"{user_id}_{channel_name}_{timestamp}.png"
+    file_path = os.path.join(full_dir, filename)
+
+    # base64 디코딩 후 저장
+    if "," in base64_str:
+        base64_str = base64_str.split(",")[1]
+
+    with open(file_path, "wb") as f:
+        f.write(base64.b64decode(base64_str))
+
+    # 리턴용 URL 생성 (로컬 저장 경로 → URL 경로 변환)
+    relative_path = file_path.replace("app/", "")  # ex) uploads/image/user/user_1/xxx.png
+    url_path = f"http://221.151.48.225:58002/{relative_path.replace(os.sep, '/')}"
+    
+    return url_path
+
+
+# AI 생성 수동 - 이미지 리스트와 추천 값 가져오기
+def get_style_image_ai_reco(request):
+
+    menu = request.category
+
+    if request.category == '' : 
+        menu = request.customMenu
+
+    gpt_role = f''' 
+        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+        디자인 스타일을 선택 후 숫자로만 답해주세요.
+        ex) 1, 2, 4
+    '''
+    copyright_prompt = f'''
+        1) [기본 정보]  
+        - 매장명: {request.store_name}  
+        - 업종: {menu} 
+        - 주소: {request.road_name}
+        - 주요 고객층: {request.age}
+        - 일시: {formattedToday}
+        - 홍보 주제 : {request.theme}
+        - 업로드 채널 : {request.channel} + {request.subChannel}
+
+        [디자인 스타일]  
+        ※ 고객층에 적합한 하나의 카테고리 선택 
+        - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5. AI모델 6. 예술 
+    '''
+    # gpt 영역
+    gpt_content = gpt_role
+    content = copyright_prompt
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    report = completion.choices[0].message.content
+
+    return report
+
+
+
+def get_user_info(user_id):
+    info = crud_get_user_info(user_id)
+    record = crud_get_user_record(user_id)
+
+    return info, record
