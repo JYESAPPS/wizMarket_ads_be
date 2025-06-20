@@ -24,7 +24,8 @@ from app.crud.ads_app import (
     get_style_image as crud_get_style_image,
     insert_upload_record as crud_insert_upload_record,
     get_user_info as crud_get_user_info,
-    get_user_record as crud_get_user_record
+    get_user_record as crud_get_user_record,
+    get_user_record_this_month as crud_get_user_record_this_month
 
 )
 import base64
@@ -304,3 +305,12 @@ def get_user_info(user_id):
     record = crud_get_user_record(user_id)
 
     return info, record
+
+def get_user_reco(user_id):
+    record = crud_get_user_record_this_month(user_id)
+
+    return record
+
+def get_user_profile(user_id):
+    profile_image = crud_get_user_info(user_id)
+    return profile_image

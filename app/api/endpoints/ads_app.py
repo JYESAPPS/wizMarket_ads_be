@@ -26,7 +26,9 @@ from app.service.ads_app import (
     get_style_image as service_get_style_image,
     insert_upload_record as service_insert_upload_record,
     get_style_image_ai_reco as sercvice_get_style_image_ai_reco,
-    get_user_info as service_get_user_info
+    get_user_info as service_get_user_info,
+    get_user_reco as service_get_user_reco,
+    get_user_profile as service_get_user_profile
 )
 
 router = APIRouter()
@@ -607,7 +609,7 @@ def generate_template_manual(request : ManualApp):
 
 
 
-
+# 유저 정보 + 기록 가져오기
 @router.post("/get/user/info")
 def get_user_info(request : UserInfo):
     try:
@@ -617,6 +619,47 @@ def get_user_info(request : UserInfo):
         return JSONResponse(content={
             "info": info,
             "record": record
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+# 유저 이번달 기록 가져오기
+@router.post("/get/user/reco")
+def get_user_reco(request : UserInfo):
+    try:
+        user_id = int(request.userId)
+        record = service_get_user_reco(user_id)
+
+        return JSONResponse(content={
+            "record": record
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+
+# 유저 이미지 프로필 가져오기
+@router.post("/get/user/profile")
+def get_user_info(request : UserInfo):
+    try:
+        user_id = int(request.userId)
+        profile_image = service_get_user_profile(user_id)
+
+        return JSONResponse(content={
+            "profile_image": profile_image
         })
 
     except HTTPException as http_ex:

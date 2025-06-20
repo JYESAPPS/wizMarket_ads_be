@@ -187,37 +187,38 @@ def translate_weather_id_to_main(weather_id: int) -> str:
 
 
 def random_design_style(init_info):
-    gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 3개 알려주세요."
-    formattedToday = datetime.today().strftime("%Y-%m-%d")
+    # gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 3개 알려주세요."
+    # formattedToday = datetime.today().strftime("%Y-%m-%d")
     
-    content = f"""[매장 정보]  
-    - 매장명: {init_info.store_name}  
-    - 업종: {init_info.detail_category_name} 
-    - 주소: {init_info.road_name}
-    - 일시: {formattedToday}
-    - 날씨: {init_info.main}, {init_info.temp}
+    # content = f"""[매장 정보]  
+    # - 매장명: {init_info.store_name}  
+    # - 업종: {init_info.detail_category_name} 
+    # - 주소: {init_info.road_name}
+    # - 일시: {formattedToday}
+    # - 날씨: {init_info.main}, {init_info.temp}
 
-    [디자인 스타일]  
-    - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5.AI모델 6. 예술 
-    """
+    # [디자인 스타일]  
+    # - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5.AI모델 6. 예술 
+    # """
 
-    client = OpenAI(api_key=os.getenv("GPT_KEY"))
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": gpt_content},
-            {"role": "user", "content": content},
-        ],
-    )
-    report = completion.choices[0].message.content
+    # client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    # completion = client.chat.completions.create(
+    #     model="gpt-4o",
+    #     messages=[
+    #         {"role": "system", "content": gpt_content},
+    #         {"role": "user", "content": content},
+    #     ],
+    # )
+    # report = completion.choices[0].message.content
 
-    # 숫자만 추출 (정규식)
-    numbers = re.findall(r"\b[1-6]\b", report)
-    selected = list(map(int, numbers))
+    # # 숫자만 추출 (정규식)
+    # numbers = re.findall(r"\b[1-6]\b", report)
+    # selected = list(map(int, numbers))
 
     # 비어 있으면 디폴트
-    if not selected:
-        selected = [1, 2, 5]
+    # if not selected:
+    #     
+    selected = [1, 2, 5]
 
     random_image_list = crud_random_image_list(selected)
     return random_image_list
