@@ -101,7 +101,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, gender, birth_year FROM USER_INFO WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, gender, birth_year, profile_image FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
@@ -176,3 +176,29 @@ def get_user_profile(user_id):
         print(f"회원 정보 오류: {e}")
         return None
 
+
+# 유저 정보 수정
+def update_user_info(user_id, request):
+    nickname = request.nickname
+    birth_year = request.birth_year
+    gender = request.gender
+    phone = request.phone
+
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER_INFO
+                SET nickname = %s,
+                    birth_year = %s,
+                    gender = %s,
+                    phone = %s
+                WHERE user_id = %s
+            """
+            cursor.execute(sql, (nickname, birth_year, gender, phone, user_id))
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
+
+    except Exception as e:
+        print(f"회원 정보 업데이트 오류: {e}")
+        return False

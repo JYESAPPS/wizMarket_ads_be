@@ -4,7 +4,7 @@ from fastapi import (
 from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
-    UserInfo
+    UserInfo, UserInfoUpdate
 )
 from fastapi import Request, Body
 from fastapi.responses import JSONResponse
@@ -28,7 +28,8 @@ from app.service.ads_app import (
     get_style_image_ai_reco as sercvice_get_style_image_ai_reco,
     get_user_info as service_get_user_info,
     get_user_reco as service_get_user_reco,
-    get_user_profile as service_get_user_profile
+    get_user_profile as service_get_user_profile,
+    update_user_info as service_update_user_info
 )
 
 router = APIRouter()
@@ -657,9 +658,29 @@ def get_user_info(request : UserInfo):
     try:
         user_id = int(request.userId)
         profile_image = service_get_user_profile(user_id)
-
         return JSONResponse(content={
             "profile_image": profile_image
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+
+# 유저 정보 업데이트
+@router.post("/update/user/info")
+def update_user_info(request : UserInfoUpdate):
+    try:
+        user_id = int(request.user_id)
+        success = service_update_user_info(user_id, request)
+
+        return JSONResponse(content={
+            "success": success
         })
 
     except HTTPException as http_ex:

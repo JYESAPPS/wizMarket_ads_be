@@ -1,23 +1,14 @@
 from datetime import datetime
 import logging
-import io
 import os
 from dotenv import load_dotenv
-import requests
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from io import BytesIO
-import base64
-import re
-import time
 from runwayml import RunwayML
-import anthropic
 from moviepy import *
-import uuid
 from google import genai
 from google.genai import types
-import subprocess
-from PIL import Image
 from io import BytesIO
 from app.crud.ads_app import (
     select_random_image as crud_select_random_image,
@@ -25,13 +16,13 @@ from app.crud.ads_app import (
     insert_upload_record as crud_insert_upload_record,
     get_user_info as crud_get_user_info,
     get_user_record as crud_get_user_record,
-    get_user_record_this_month as crud_get_user_record_this_month
-
+    get_user_record_this_month as crud_get_user_record_this_month,
+    get_user_profile as crud_get_user_profile,
+    update_user_info as crud_update_user_info
 )
 import base64
-import os
 from datetime import datetime
-
+from io import BytesIO
 
 
 
@@ -299,18 +290,52 @@ def get_style_image_ai_reco(request):
     return report
 
 
-
+# 마이페이지용 유저 기본 정보 가져오기
 def get_user_info(user_id):
     info = crud_get_user_info(user_id)
     record = crud_get_user_record(user_id)
 
     return info, record
 
+# 달력용 이번달 포스팅 기록 가져오기
 def get_user_reco(user_id):
     record = crud_get_user_record_this_month(user_id)
 
     return record
 
+# 메인 페이지용 프로필 이미지 가져오기
 def get_user_profile(user_id):
-    profile_image = crud_get_user_info(user_id)
+    profile_image = crud_get_user_profile(user_id)
     return profile_image
+
+def update_user_info(user_id, request):
+    try:
+        profile_base64 = request.profile_image  # ✅ base64 문자열 (data:image/png;base64,...)
+
+        # 경로 설정
+        folder_path = f"app/image/user/user_{user_id}"
+        image_path = os.path.join(folder_path, f"{user_id}_profile.png")
+
+        # 폴더 없으면 생성
+        os.makedirs(folder_path, exist_ok=True)
+
+        # 기존 이미지 삭제
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+        # base64 데이터 전처리 및 저장
+        if profile_base64.startswith("data:image"):
+            header, encoded = profile_base64.split(",", 1)
+            image_data = base64.b64decode(encoded)
+
+            # 이미지 저장
+            with open(image_path, "wb") as f:
+                f.write(image_data)
+
+        # 사용자 정보 DB 업데이트
+        success = crud_update_user_info(user_id, request)
+        return success
+
+    except Exception as e:
+        logger.error(f"사용자 정보 업데이트 오류: {e}")
+        return False
