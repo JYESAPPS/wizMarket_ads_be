@@ -115,3 +115,8 @@ class UserInfoUpdate(BaseModel):
     nickname: str
     phone: str
     profile_image: str
+
+
+class UserRecentRecord(BaseModel):
+    user_id : str
+    type : str

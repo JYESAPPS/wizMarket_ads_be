@@ -18,13 +18,14 @@ from app.crud.ads_app import (
     get_user_record as crud_get_user_record,
     get_user_record_this_month as crud_get_user_record_this_month,
     get_user_profile as crud_get_user_profile,
-    update_user_info as crud_update_user_info
+    update_user_info as crud_update_user_info,
+    get_user_recent_reco as crud_get_user_recent_reco
 )
 import base64
 from datetime import datetime
 from io import BytesIO
-
-
+import traceback
+import io
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -308,34 +309,39 @@ def get_user_profile(user_id):
     profile_image = crud_get_user_profile(user_id)
     return profile_image
 
+# 유저 정보 업데이트
 def update_user_info(user_id, request):
     try:
-        profile_base64 = request.profile_image  # ✅ base64 문자열 (data:image/png;base64,...)
+        profile_base64 = request.profile_image
 
-        # 경로 설정
-        folder_path = f"app/image/user/user_{user_id}"
+        # 이미지 저장 경로 설정
+        folder_path = f"app/uploads/image/user/user_{user_id}/profile"
         image_path = os.path.join(folder_path, f"{user_id}_profile.png")
 
-        # 폴더 없으면 생성
+        # 폴더 생성
         os.makedirs(folder_path, exist_ok=True)
 
         # 기존 이미지 삭제
         if os.path.exists(image_path):
             os.remove(image_path)
 
-        # base64 데이터 전처리 및 저장
-        if profile_base64.startswith("data:image"):
+        # base64 이미지 처리
+        if profile_base64 and profile_base64.startswith("data:image"):
             header, encoded = profile_base64.split(",", 1)
+            encoded = encoded.replace(" ", "+")
             image_data = base64.b64decode(encoded)
 
-            # 이미지 저장
             with open(image_path, "wb") as f:
                 f.write(image_data)
 
-        # 사용자 정보 DB 업데이트
+        # ✅ 사용자 정보 DB 업데이트
         success = crud_update_user_info(user_id, request)
         return success
 
-    except Exception as e:
-        logger.error(f"사용자 정보 업데이트 오류: {e}")
+    except Exception:
         return False
+
+# 유저 최근 포스팅 기록 가져오기 3개
+def get_user_recent_reco(request):
+    reco_list = crud_get_user_recent_reco(request)
+    return reco_list

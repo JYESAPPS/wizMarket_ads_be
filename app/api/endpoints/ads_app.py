@@ -4,7 +4,7 @@ from fastapi import (
 from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
-    UserInfo, UserInfoUpdate
+    UserInfo, UserInfoUpdate, UserRecentRecord
 )
 from fastapi import Request, Body
 from fastapi.responses import JSONResponse
@@ -29,7 +29,8 @@ from app.service.ads_app import (
     get_user_info as service_get_user_info,
     get_user_reco as service_get_user_reco,
     get_user_profile as service_get_user_profile,
-    update_user_info as service_update_user_info
+    update_user_info as service_update_user_info,
+    get_user_recent_reco as service_get_user_recent_reco
 )
 
 router = APIRouter()
@@ -690,3 +691,30 @@ def update_user_info(request : UserInfoUpdate):
         error_msg = f"Unexpected error while processing request: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+    
+
+# 유저 최근 포스팅 기록 3개 가져오기
+@router.post("/get/user/recent/record/auto")
+def get_user_recent_record(request: UserRecentRecord):
+    try:
+        reco_list = service_get_user_recent_reco(request)
+
+        if not reco_list:
+            return JSONResponse(content={
+                "message": "No recent records found."
+            }, status_code=status.HTTP_404_NOT_FOUND)
+
+
+        return JSONResponse(content={
+            "reco_list": reco_list
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+

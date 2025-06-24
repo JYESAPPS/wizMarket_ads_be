@@ -117,7 +117,7 @@ def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT start_date, end_date, age, style, title, channel, image_path FROM user_record WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path FROM user_record WHERE user_id = %s", (user_id,))
             rows = cursor.fetchall()
 
         if not rows:
@@ -202,3 +202,32 @@ def update_user_info(user_id, request):
     except Exception as e:
         print(f"회원 정보 업데이트 오류: {e}")
         return False
+
+
+# 최근 3개 정보 가져오기
+def get_user_recent_reco(request):
+    user_id = int(request.user_id)
+    upload_type = request.type
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT start_date, end_date, age, style, title, channel, image_path, repeat_time, upload_time, alert_check
+                FROM user_record
+                WHERE user_id = %s 
+                  AND upload_type = %s
+                  AND end_date >= CURDATE()  -- 오늘 포함 이후만
+                ORDER BY start_date DESC
+                LIMIT 3
+            """, (user_id, upload_type))
+            rows = cursor.fetchall()
+
+        if not rows:
+            return None
+
+        return rows
+
+    except Exception as e:
+        print(f"회원 기록 정보 오류: {e}")
+        return None
+
