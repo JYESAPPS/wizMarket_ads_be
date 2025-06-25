@@ -32,6 +32,7 @@ from app.service.ads_app import (
     update_user_info as service_update_user_info,
     get_user_recent_reco as service_get_user_recent_reco,
     update_user_reco as service_update_user_reco,
+    get_manual_ai_reco as service_get_manual_ai_reco
 )
 
 router = APIRouter()
@@ -739,4 +740,31 @@ def update_user_reco(request : UserRecoUpdate):
         raise HTTPException(status_code=500, detail=error_msg)
     
 
+# AI 생성 수동 카메라 - AI 추천 받기
+@router.post("/manual/camera/ai/reco")
+def get_manual_ai_reco(request: AutoApp):
+    try:
+        try:
+            options = service_get_manual_ai_reco(
+                request
+            )
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+        print(options)
+        raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
+        parts = raw.split("-")  # ["3", "1", "4"]
+        title, channel, style = parts
 
+        female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
+        print(title)
+        return JSONResponse(content={
+            "title": title, "channel":channel, "style": style, "core_f": female_text,
+        })
+    
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)

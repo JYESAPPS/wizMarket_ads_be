@@ -354,3 +354,52 @@ def get_user_recent_reco(request):
 def update_user_reco(user_id, request):
     success = crud_update_user_reco(user_id, request)
     return success
+
+# AI 생성 수동 카메라 - AI 추천 받기
+def get_manual_ai_reco(request):
+    male_text = parse_age_gender_info(request.commercial_district_max_sales_m_age)
+    female_text = parse_age_gender_info(request.commercial_district_max_sales_f_age)
+
+    gpt_role = f''' 
+        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+        홍보 주제, 채널, 디자인 스타일을 선택 후 숫자로만 답해주세요.
+        대답은 숫자 조합으로만 해주세요
+        ex) 1, 2, 4
+    '''
+    copyright_prompt = f'''
+        1) [기본 정보]  
+        - 매장명: {request.store_name}  
+        - 업종: {request.detail_category_name} 
+        - 주소: {request.road_name}
+        - 주요 고객층: {male_text}, {female_text}
+        - 일시: {formattedToday}
+
+        [홍보 주제]  
+        ※ 아래 중 하나를 조건에 따라 선택. 
+        - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+        1. 매장 홍보 2. 상품 소개 3. 이벤트 
+
+        [채널]  
+        ※ 고객층에 적합한 채널 1개 선택 
+        1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 
+
+        [디자인 스타일]  
+        ※ 고객층에 적합한 하나의 카테고리 선택 
+        - 1. 사진 원본 2. 배경만 제거 3. 배경 AI변경
+
+    '''
+    # print(copyright_prompt)
+
+    # gpt 영역
+    gpt_content = gpt_role
+    content = copyright_prompt
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    report = completion.choices[0].message.content
+    return report
