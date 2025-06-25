@@ -19,7 +19,8 @@ from app.crud.ads_app import (
     get_user_record_this_month as crud_get_user_record_this_month,
     get_user_profile as crud_get_user_profile,
     update_user_info as crud_update_user_info,
-    get_user_recent_reco as crud_get_user_recent_reco
+    get_user_recent_reco as crud_get_user_recent_reco,
+    update_user_reco as crud_update_user_reco,
 )
 import base64
 from datetime import datetime
@@ -194,6 +195,7 @@ def insert_upload_record(request):
     title = request.title
     channel = request.channel
     upload_time = request.upload_time
+    upload_type = request.type
 
     image_path = save_base64_image(request.image, request.user_id, request.channel)
 
@@ -207,7 +209,8 @@ def insert_upload_record(request):
         title,
         channel,
         upload_time,
-        image_path
+        image_path,
+        upload_type
     )
     return success
 
@@ -345,3 +348,9 @@ def update_user_info(user_id, request):
 def get_user_recent_reco(request):
     reco_list = crud_get_user_recent_reco(request)
     return reco_list
+
+
+# 유저 기록 게시물 1개 업데이트
+def update_user_reco(user_id, request):
+    success = crud_update_user_reco(user_id, request)
+    return success

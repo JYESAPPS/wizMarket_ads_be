@@ -60,6 +60,7 @@ class AutoAppSave(BaseModel):
     user_id : int
     date_range: List[str] 
     image: str
+    type: str
 
 
 class ManualGenCopy(BaseModel):
@@ -120,3 +121,15 @@ class UserInfoUpdate(BaseModel):
 class UserRecentRecord(BaseModel):
     user_id : str
     type : str
+
+class UserRecoUpdate(BaseModel):
+    user_id: str
+    age: str
+    alert_check: bool
+    channel: str
+    start_date: str
+    end_date: str
+    repeat_time: str
+    style: str
+    title: str
+    user_record_id: int

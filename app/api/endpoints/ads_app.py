@@ -2,9 +2,9 @@ from fastapi import (
     APIRouter, UploadFile, File, Form, HTTPException, status
 )
 from app.schemas.ads_app import (
-    AutoApp, AutoAppRegen, AutoAppSave,
+    AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
-    UserInfo, UserInfoUpdate, UserRecentRecord
+    UserInfo, UserInfoUpdate, UserRecentRecord, 
 )
 from fastapi import Request, Body
 from fastapi.responses import JSONResponse
@@ -30,7 +30,8 @@ from app.service.ads_app import (
     get_user_reco as service_get_user_reco,
     get_user_profile as service_get_user_profile,
     update_user_info as service_update_user_info,
-    get_user_recent_reco as service_get_user_recent_reco
+    get_user_recent_reco as service_get_user_recent_reco,
+    update_user_reco as service_update_user_reco,
 )
 
 router = APIRouter()
@@ -64,8 +65,9 @@ def generate_template(request: AutoApp):
             # print(request.example_image)
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+
             if title == 3 or "3":
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
                     - 내용 : 20자 내외 간결하고 함축적인 내용
@@ -78,7 +80,7 @@ def generate_template(request: AutoApp):
                     주요 고객층: {male_text}, {female_text} 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     10자 내외 간결하고 호기심을 유발할 수 있는 문구
                 '''
@@ -88,7 +90,6 @@ def generate_template(request: AutoApp):
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
                     주요 고객층: {male_text}, {female_text}을 바탕으로 15자 이내로 작성해주세요
                 '''
-
             copyright = service_generate_content(
                 copyright_prompt,
                 copyright_role,
@@ -220,7 +221,7 @@ def generate_template_regen(request: AutoAppRegen):
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
             if channel == 3 or "3":
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
                     - 내용 : 20자 내외 간결하고 함축적인 내용
@@ -233,7 +234,7 @@ def generate_template_regen(request: AutoAppRegen):
                     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     10자 내외 간결하고 호기심을 유발할 수 있는 문구
                 '''
@@ -492,7 +493,7 @@ def generate_template_manual(request : ManualApp):
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
             if channel_text == 3 or "3":
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
                     - 내용 : 20자 내외 간결하고 함축적인 내용
@@ -505,7 +506,7 @@ def generate_template_manual(request : ManualApp):
                     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
-                copyright_role : f'''
+                copyright_role = f'''
                     you are professional writer.
                     10자 내외 간결하고 호기심을 유발할 수 있는 문구
                 '''
@@ -717,4 +718,25 @@ def get_user_recent_record(request: UserRecentRecord):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
+
+# 유저 기록 게시물 1개 업데이트
+@router.post("/auto/update/user/reco")
+def update_user_reco(request : UserRecoUpdate):
+    try:
+        user_id = int(request.user_id)
+        success = service_update_user_reco(user_id, request)
+
+        return JSONResponse(content={
+            "success": success
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
 

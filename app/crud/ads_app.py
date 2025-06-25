@@ -51,7 +51,8 @@ def insert_upload_record(
     title,
     channel,
     upload_time,
-    image_path
+    image_path,
+    upload_type
 ):
     if not upload_time:
         upload_time = "00:00"
@@ -68,8 +69,8 @@ def insert_upload_record(
     try:
         insert_query = """
         INSERT INTO user_record (
-            user_id, age, alert_check, start_date, end_date, repeat_time, style, title, channel, upload_time, image_path
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            user_id, age, alert_check, start_date, end_date, repeat_time, style, title, channel, upload_time, image_path, upload_type
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(
             insert_query,
@@ -84,7 +85,8 @@ def insert_upload_record(
                 title,
                 channel,
                 upload_time,
-                image_path
+                image_path,
+                upload_type
             )
         )
         commit(connection)
@@ -212,7 +214,7 @@ def get_user_recent_reco(request):
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("""
-                SELECT start_date, end_date, age, style, title, channel, image_path, repeat_time, upload_time, alert_check
+                SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, repeat_time, upload_time, alert_check
                 FROM user_record
                 WHERE user_id = %s 
                   AND upload_type = %s
@@ -230,4 +232,64 @@ def get_user_recent_reco(request):
     except Exception as e:
         print(f"회원 기록 정보 오류: {e}")
         return None
+
+# 유저 기록 게시물 1개 업데이트
+def update_user_reco(user_id, request):
+    age_mapping = {
+        "10대": 10,
+        "20대": 20,
+        "30대": 30,
+        "40대": 40,
+        "50대": 50,
+        "60대 이상": 60,
+    }
+    age = age_mapping.get(request.age, 0)
+    alert_check = 1 if request.alert_check else 0  # ✅ 변환
+    style = int(request.style)
+    start_date = request.start_date
+    end_date = request.end_date
+    repeat_time = request.repeat_time
+    user_record_id = request.user_record_id
+
+    if request.title == "이벤트":
+        title = "3"
+    elif request.title == "매장 홍보":
+        title = "1"
+    elif request.title == "상품소개":
+        title = "2"
+    else:
+        title = "0"
+
+    if request.channel == "카카오톡":
+        channel = 1
+    elif request.channel == "인스타 스토리":
+        channel = 2
+    elif request.channel == "인스타그램":
+        channel = 3
+    else:
+        channel = 0
+
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER_RECORD
+                SET age = %s,
+                    alert_check = %s,
+                    channel = %s,
+                    style = %s,
+                    start_date = %s,
+                    end_date = %s,
+                    repeat_time = %s,
+                    title = %s
+                WHERE user_id = %s
+                AND user_record_id = %s
+            """
+            cursor.execute(sql, (age, alert_check, channel, style, start_date, end_date, repeat_time, title, user_id, user_record_id))
+        connection.commit()
+        return True
+
+    except Exception as e:
+        print(f"회원 기록 정보 업데이트 오류: {e}")
+        return False
 
