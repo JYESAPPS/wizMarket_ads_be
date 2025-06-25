@@ -6,6 +6,7 @@ from app.schemas.ads_app import (
     ManualGenCopy, ManualImageListAIReco, ManualApp,
     UserInfo, UserInfoUpdate, UserRecentRecord, 
 )
+import io
 from fastapi import Request, Body
 from fastapi.responses import JSONResponse
 from pathlib import Path
@@ -13,6 +14,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from io import BytesIO
 import base64
+from PIL import Image
 import logging
 import re
 from app.service.ads_generate import (
@@ -32,7 +34,9 @@ from app.service.ads_app import (
     update_user_info as service_update_user_info,
     get_user_recent_reco as service_get_user_recent_reco,
     update_user_reco as service_update_user_reco,
-    get_manual_ai_reco as service_get_manual_ai_reco
+    get_manual_ai_reco as service_get_manual_ai_reco,
+    generate_template_manual_camera as service_generate_template_manual_camera,
+    generate_image_remove_bg as service_generate_image_remove_bg
 )
 
 router = APIRouter()
@@ -493,7 +497,7 @@ def generate_template_manual(request : ManualApp):
 
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
-            if channel_text == 3 or "3":
+            if theme == "이벤트":
                 copyright_role = f'''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
@@ -743,6 +747,7 @@ def update_user_reco(request : UserRecoUpdate):
 # AI 생성 수동 카메라 - AI 추천 받기
 @router.post("/manual/camera/ai/reco")
 def get_manual_ai_reco(request: AutoApp):
+
     try:
         try:
             options = service_get_manual_ai_reco(
@@ -750,17 +755,111 @@ def get_manual_ai_reco(request: AutoApp):
             )
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
-        print(options)
+
         raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
         parts = raw.split("-")  # ["3", "1", "4"]
         title, channel, style = parts
 
         female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-        print(title)
+
         return JSONResponse(content={
             "title": title, "channel":channel, "style": style, "core_f": female_text,
         })
     
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+# AI 생성 수동 카메라 - 선택 한 값들로 이미지 처리
+@router.post("/manual/app/camera")
+async def generate_template_manual_camera(
+    image: UploadFile = File(...),
+    channel: str = Form(...),
+    title: str = Form(...),
+    age: str = Form(...),
+    style: str = Form(...),
+    category: str = Form(...),
+    store_name: str = Form(...),
+    road_name: str = Form(...),
+    main: str = Form(...),
+    temp: float = Form(...),
+):
+    try:
+        # 문구 생성
+        try:
+            detail_content = ""
+            copyright_role = ""
+            copyright_prompt = ""
+
+            today = datetime.now()
+            formattedToday = today.strftime('%Y-%m-%d')
+            if title == "이벤트" : 
+                copyright_role = f'''
+                    you are professional writer.
+                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                    - 내용 : 20자 내외 간결하고 함축적인 내용
+                    - 특수기호, 이모티콘은 제외할 것
+                '''
+
+                copyright_prompt = f'''
+                    {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
+                    {category}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {age} 
+                    을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
+                '''
+            else:
+                copyright_role = f'''
+                    you are professional writer.
+                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                '''
+
+                copyright_prompt = f'''
+                    {store_name} 업체를 위한 문구.
+                    {category}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {age}
+                    을 바탕으로 15자 이내로 작성해주세요
+                '''
+
+            copyright = service_generate_content(
+                copyright_prompt,
+                copyright_role,
+                detail_content
+            )
+
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+
+
+        # 이미지 처리
+        input_image = Image.open(BytesIO(await image.read()))
+
+        # 예를 들어 스타일에 따라 여러 이미지 리턴하는 로직이 있다고 가정
+        if style == "배경만 제거":
+            origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+        else:
+            origin_images = [input_image]  # 하나만 리스트로 감쌈
+
+        # base64 리스트 변환
+        output_images = []
+        for img in origin_images:
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            output_images.append(img_base64)
+        
+
+            
+        return JSONResponse(content={
+                "copyright": copyright, "origin_image": output_images,
+                "title": title, "channel":channel, "style": style, "core_f": age,
+                "main": main, "temp" : temp, "detail_category_name" : category,
+                "store_name": store_name, "road_name": road_name, 
+            })
+
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex

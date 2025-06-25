@@ -27,6 +27,8 @@ from datetime import datetime
 from io import BytesIO
 import traceback
 import io
+from fastapi.responses import StreamingResponse
+from rembg import remove
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -403,3 +405,18 @@ def get_manual_ai_reco(request):
     )
     report = completion.choices[0].message.content
     return report
+
+
+
+def generate_template_manual_camera():
+    pass
+
+
+# 이미지 배경 제거
+def generate_image_remove_bg(image):
+
+    output_image = remove(image)
+
+    return [output_image]
+
+# 이미지 배경 변경
