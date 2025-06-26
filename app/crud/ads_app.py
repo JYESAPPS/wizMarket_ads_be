@@ -220,7 +220,6 @@ def get_user_recent_reco(request):
                   AND upload_type = %s
                   AND end_date >= CURDATE()  -- 오늘 포함 이후만
                 ORDER BY start_date DESC
-                LIMIT 3
             """, (user_id, upload_type))
             rows = cursor.fetchall()
 
@@ -235,61 +234,53 @@ def get_user_recent_reco(request):
 
 # 유저 기록 게시물 1개 업데이트
 def update_user_reco(user_id, request):
-    age_mapping = {
-        "10대": 10,
-        "20대": 20,
-        "30대": 30,
-        "40대": 40,
-        "50대": 50,
-        "60대 이상": 60,
-    }
-    age = age_mapping.get(request.age, 0)
+    
     alert_check = 1 if request.alert_check else 0  # ✅ 변환
-    style = int(request.style)
     start_date = request.start_date
     end_date = request.end_date
     repeat_time = request.repeat_time
     user_record_id = request.user_record_id
-
-    if request.title == "이벤트":
-        title = "3"
-    elif request.title == "매장 홍보":
-        title = "1"
-    elif request.title == "상품소개":
-        title = "2"
-    else:
-        title = "0"
-
-    if request.channel == "카카오톡":
-        channel = 1
-    elif request.channel == "인스타 스토리":
-        channel = 2
-    elif request.channel == "인스타그램":
-        channel = 3
-    else:
-        channel = 0
 
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
                 UPDATE USER_RECORD
-                SET age = %s,
-                    alert_check = %s,
-                    channel = %s,
-                    style = %s,
+                SET alert_check = %s,
                     start_date = %s,
                     end_date = %s,
-                    repeat_time = %s,
-                    title = %s
+                    repeat_time = %s
                 WHERE user_id = %s
                 AND user_record_id = %s
             """
-            cursor.execute(sql, (age, alert_check, channel, style, start_date, end_date, repeat_time, title, user_id, user_record_id))
+            cursor.execute(sql, (alert_check, start_date, end_date, repeat_time, user_id, user_record_id))
         connection.commit()
         return True
 
     except Exception as e:
         print(f"회원 기록 정보 업데이트 오류: {e}")
+        return False
+    
+
+# 유저 기록 게시물 1개 삭제 처리
+def delete_user_reco(user_id, request):
+    
+    user_record_id = request.user_record_id
+
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER_RECORD
+                SET upload_check = 0
+                WHERE user_id = %s
+                AND user_record_id = %s
+            """
+            cursor.execute(sql, (user_id, user_record_id))
+        connection.commit()
+        return True
+
+    except Exception as e:
+        print(f"회원 기록 정보 삭제 오류: {e}")
         return False
 

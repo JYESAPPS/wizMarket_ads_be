@@ -124,12 +124,12 @@ class UserRecentRecord(BaseModel):
 
 class UserRecoUpdate(BaseModel):
     user_id: str
-    age: str
     alert_check: bool
-    channel: str
     start_date: str
     end_date: str
     repeat_time: str
-    style: str
-    title: str
+    user_record_id: int
+
+class UserRecoDelete(BaseModel):
+    user_id: str
     user_record_id: int

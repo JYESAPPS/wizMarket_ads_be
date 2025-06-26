@@ -21,6 +21,7 @@ from app.crud.ads_app import (
     update_user_info as crud_update_user_info,
     get_user_recent_reco as crud_get_user_recent_reco,
     update_user_reco as crud_update_user_reco,
+    delete_user_reco as crud_delete_user_reco
 )
 import base64
 from datetime import datetime
@@ -163,7 +164,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
             prompt=tag_image_prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1,
-                aspect_ratio="1:1",  # 비율 유지
+                aspect_ratio=size,  # 비율 유지
                 output_mime_type='image/jpeg'
             )
         )
@@ -356,6 +357,12 @@ def get_user_recent_reco(request):
 def update_user_reco(user_id, request):
     success = crud_update_user_reco(user_id, request)
     return success
+
+# 유저 기록 게시물 1개 삭제 처리
+def delete_user_reco(user_id, request):
+    success = crud_delete_user_reco(user_id, request)
+    return success
+
 
 # AI 생성 수동 카메라 - AI 추천 받기
 def get_manual_ai_reco(request):

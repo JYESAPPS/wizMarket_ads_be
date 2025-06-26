@@ -4,7 +4,7 @@ from fastapi import (
 from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
-    UserInfo, UserInfoUpdate, UserRecentRecord, 
+    UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete
 )
 import io
 from fastapi import Request, Body
@@ -34,6 +34,7 @@ from app.service.ads_app import (
     update_user_info as service_update_user_info,
     get_user_recent_reco as service_get_user_recent_reco,
     update_user_reco as service_update_user_reco,
+    delete_user_reco as service_delete_user_reco,
     get_manual_ai_reco as service_get_manual_ai_reco,
     generate_template_manual_camera as service_generate_template_manual_camera,
     generate_image_remove_bg as service_generate_image_remove_bg
@@ -222,10 +223,9 @@ def generate_template_regen(request: AutoAppRegen):
         try:
             copyright_role = ""
             copyright_prompt = ""
-
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
-            if channel == 3 or "3":
+            if title == 3 or "3":
                 copyright_role = f'''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
@@ -743,6 +743,28 @@ def update_user_reco(request : UserRecoUpdate):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
+
+# 유저 기록 게시물 1개 삭제
+@router.post("/auto/delete/user/reco")
+def delete_user_reco(request : UserRecoDelete):
+    try:
+        user_id = int(request.user_id)
+        success = service_delete_user_reco(user_id, request)
+
+        return JSONResponse(content={
+            "success": success
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+
+
 
 # AI 생성 수동 카메라 - AI 추천 받기
 @router.post("/manual/camera/ai/reco")
