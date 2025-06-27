@@ -119,7 +119,7 @@ def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path FROM user_record WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path FROM user_record WHERE user_id = %s and upload_check = 1", (user_id,))
             rows = cursor.fetchall()
 
         if not rows:
@@ -206,7 +206,7 @@ def update_user_info(user_id, request):
         return False
 
 
-# 최근 3개 정보 가져오기
+# 자동 업로드 포스팅 정보 가져오기
 def get_user_recent_reco(request):
     user_id = int(request.user_id)
     upload_type = request.type
@@ -217,8 +217,9 @@ def get_user_recent_reco(request):
                 SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, repeat_time, upload_time, alert_check
                 FROM user_record
                 WHERE user_id = %s 
-                  AND upload_type = %s
-                  AND end_date >= CURDATE()  -- 오늘 포함 이후만
+                    AND upload_type = %s
+                    AND upload_check = 1
+                    AND end_date >= CURDATE()  -- 오늘 포함 이후만
                 ORDER BY start_date DESC
             """, (user_id, upload_type))
             rows = cursor.fetchall()
