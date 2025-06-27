@@ -30,6 +30,10 @@ import traceback
 import io
 from fastapi.responses import StreamingResponse
 from rembg import remove
+import requests
+import json
+import random
+
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -427,3 +431,30 @@ def generate_image_remove_bg(image):
     return [output_image]
 
 # 이미지 배경 변경
+def generate_bg(image_url):
+    api_url = "https://api.developer.pixelcut.ai/v1/generate-background"
+
+    payload_data = {
+        "image_url": image_url,
+        "image_transform": {
+            "scale": 1,
+            "x_center": 0.5,
+            "y_center": 0.5
+        }
+    }
+    prompt_options = ["marble", "wood", "industrial", "linen", "brick", "counter"]
+    # selected_prompt = random.choice(prompt_options)
+    selected_prompt = "brick"
+    payload_data["scene"] = selected_prompt
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-API-KEY': os.getenv("PIXEL_API_KEY")  # 환경 변수에서 API 키 가져오기
+    }
+
+    result =  requests.post(api_url, headers=headers, data=json.dumps(payload_data)).json().get("result_url")
+    response = requests.get(result)
+    response.raise_for_status()
+    img = Image.open(BytesIO(response.content))
+    return [img]

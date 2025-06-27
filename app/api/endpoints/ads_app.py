@@ -37,7 +37,8 @@ from app.service.ads_app import (
     delete_user_reco as service_delete_user_reco,
     get_manual_ai_reco as service_get_manual_ai_reco,
     generate_template_manual_camera as service_generate_template_manual_camera,
-    generate_image_remove_bg as service_generate_image_remove_bg
+    generate_image_remove_bg as service_generate_image_remove_bg,
+    generate_bg as service_generate_bg
 )
 
 router = APIRouter()
@@ -800,7 +801,8 @@ def get_manual_ai_reco(request: AutoApp):
 # AI 생성 수동 카메라 - 선택 한 값들로 이미지 처리
 @router.post("/manual/app/camera")
 async def generate_template_manual_camera(
-    image: UploadFile = File(...),
+    image: UploadFile = File(None),
+    image_url : str = File(None),
     channel: str = Form(...),
     title: str = Form(...),
     age: str = Form(...),
@@ -856,13 +858,17 @@ async def generate_template_manual_camera(
 
 
         # 이미지 처리
-        input_image = Image.open(BytesIO(await image.read()))
+        if image : 
+            input_image = Image.open(BytesIO(await image.read()))
 
-        # 예를 들어 스타일에 따라 여러 이미지 리턴하는 로직이 있다고 가정
-        if style == "배경만 제거":
-            origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
-        else:
-            origin_images = [input_image]  # 하나만 리스트로 감쌈
+            # 예를 들어 스타일에 따라 여러 이미지 리턴하는 로직이 있다고 가정
+            if style == "배경만 제거":
+                origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+            else:
+                origin_images = [input_image]  # 하나만 리스트로 감쌈
+        
+        else :
+            origin_images = service_generate_bg(image_url)
 
         # base64 리스트 변환
         output_images = []
@@ -872,14 +878,47 @@ async def generate_template_manual_camera(
             buffer.seek(0)
             img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
             output_images.append(img_base64)
-        
 
-            
+        # 인스타 문구 처리
+        insta_copyright = ''
+        detail_content = ''
+        if channel == "인스타그램":
+            try:
+                today = datetime.now()
+                formattedToday = today.strftime('%Y-%m-%d')
+
+                copyright_prompt = f'''
+                    {store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    업종: {category}
+                    일시 : {formattedToday}
+                    오늘날씨 : {main}, {temp}℃
+                    주요 고객층: {age}
+
+                    주소: {road_name}
+                    
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
+                    '\n'으로 문단을 나눠 표현한다
+                '''
+
+                insta_role = f'''
+                    1. '{copyright}' 를 100~150자까지 인플루언서가 {category} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
+                    
+                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+                '''
+
+                insta_copyright = service_generate_content(
+                    copyright_prompt,
+                    insta_role,
+                    detail_content
+                )
+            except Exception as e:
+                print(f"Error occurred: {e}, 인스타 생성 오류")
+        
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
-                "store_name": store_name, "road_name": road_name, 
+                "store_name": store_name, "road_name": road_name, "insta_copyright" : insta_copyright,
             })
 
     except HTTPException as http_ex:
