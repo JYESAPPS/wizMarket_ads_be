@@ -39,7 +39,9 @@ from app.service.ads_app import (
     get_manual_ai_reco as service_get_manual_ai_reco,
     generate_template_manual_camera as service_generate_template_manual_camera,
     generate_image_remove_bg as service_generate_image_remove_bg,
-    generate_bg as service_generate_bg
+    generate_bg as service_generate_bg,
+    generate_option_without_gender as service_generate_option_without_gender,
+    get_manual_ai_reco_without_gender as service_get_manual_ai_reco_without_gender
 )
 
 router = APIRouter()
@@ -64,7 +66,7 @@ def generate_template(request: AutoApp):
 
         male_text = service_parse_age_gender_info(request.commercial_district_max_sales_m_age)
         female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-
+        print(female_text)
         detail_content = ""
         # 문구 생성
         try:
@@ -357,19 +359,30 @@ def insert_upload_record(request: AutoAppSave):
 # AI 생성 수동 - 초기 값 가져오기
 @router.post("/manual/ai/reco")
 def manual_ai_reco(request : AutoApp):
+    try : 
+        female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
+    except Exception as e:
+        print(f"Error occurred: {e}, 문구 생성 오류")
+
     try:
-        options = service_generate_option(
-            request
-        )
+        if female_text : 
+            options = service_generate_option(
+                request
+            )
+        else : 
+            options = service_generate_option_without_gender(
+                request
+            )
     except Exception as e:
         print(f"Error occurred: {e}, 문구 생성 오류")
 
     raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
     parts = raw.split("-")  # ["3", "1", "4"]
 
-    title, channel, _ = parts
-
-    female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
+    if female_text : 
+        title, channel, _= parts
+    else : 
+        title, channel, female_text, _ = parts
 
     return JSONResponse(content={
         "title" : title, 
@@ -605,7 +618,7 @@ def generate_template_manual(request : ManualApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": female_text,
             "main": main, "temp" : temp, "detail_category_name" : menu,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt
         })
 
     except HTTPException as http_ex:
@@ -773,19 +786,33 @@ def delete_user_reco(request : UserRecoDelete):
 def get_manual_ai_reco(request: AutoApp):
 
     try:
+        try :
+            female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+
+
         try:
-            options = service_get_manual_ai_reco(
-                request
-            )
+            if female_text :
+                options = service_get_manual_ai_reco(
+                    request
+                )
+            else :
+                options = service_get_manual_ai_reco_without_gender(
+                    request
+                )
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
         raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
         parts = raw.split("-")  # ["3", "1", "4"]
-        title, channel, style = parts
 
-        female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-
+        if female_text:
+            title, channel, style = parts
+        else :
+            title, channel, female_text, style = parts
+        
+        print(female_text)
         return JSONResponse(content={
             "title": title, "channel":channel, "style": style, "core_f": female_text,
         })

@@ -65,7 +65,7 @@ def parse_age_gender_info(age_info):
     return f"{gender} {age} ({percentage}%)"
 
 
-# 옵션 값들 자동 선택
+# 옵션 값들 자동 선택 - 성별 값 있음
 def generate_option(request):
     
 
@@ -117,6 +117,59 @@ def generate_option(request):
     return report
 
 
+# 옵션 값들 자동 선택 - 성별 값 없음
+def generate_option_without_gender(request):
+    
+
+    gpt_role = f''' 
+        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+        홍보 주제, 채널, 연령대, 디자인 스타일을 하나씩 만 선택 후 숫자로만 답해주세요.
+        대답은 숫자 조합으로만 해주세요
+        ex) 1, 2, 4, 4
+    '''
+    copyright_prompt = f'''
+        1) [기본 정보]  
+        - 매장명: {request.store_name}  
+        - 업종: {request.detail_category_name} 
+        - 주소: {request.road_name}
+        - 일시: {formattedToday}
+
+        [홍보 주제]  
+        ※ 아래 중 하나를 조건에 따라 선택. 
+        - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+        1. 매장 홍보 2. 상품 소개 3. 이벤트 
+
+        [연령대]
+        1. 10대 2. 20대 3. 30대 4. 40대 5. 50대 6. 60대 이상
+
+        [채널]  
+        ※ 고객층에 적합한 채널 1개 선택 
+        1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 
+
+        [디자인 스타일]  
+        ※ 고객층에 적합한 하나의 카테고리 선택 
+        - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5. AI모델 6. 예술 
+        
+    '''
+    # print(copyright_prompt)
+
+    # gpt 영역
+    gpt_content = gpt_role
+    content = copyright_prompt
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    report = completion.choices[0].message.content
+    return report
+
+
+
+
 # 선택 된 스타일 값에서 랜덤 이미지 뽑기
 def select_random_image(style):
     seed_prompt=crud_select_random_image(style)
@@ -132,7 +185,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
 
         gpt_content = f"""
             프롬프트 스타일 : {seed_prompt}
-            주어진 프롬프트 스타일은 유지하며 {detail_category_name}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
+            주어진 프롬프트 스타일은 유지하며 {copyright}와 {detail_category_name}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
         """    
         # print(f"시드 프롬프트 : {seed_image_prompt}")
 
@@ -416,6 +469,57 @@ def get_manual_ai_reco(request):
     )
     report = completion.choices[0].message.content
     return report
+
+
+# AI 생성 수동 카메라 - AI 추천 받기 - 성별 값 없음
+def get_manual_ai_reco_without_gender(request):
+    gpt_role = f''' 
+        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+        홍보 주제, 채널, 연령대, 디자인 스타일을 하나씩 만 선택 후 숫자로만 답해주세요.
+        대답은 숫자 조합으로만 해주세요
+        ex) 1, 2, 4, 4
+    '''
+    copyright_prompt = f'''
+        1) [기본 정보]  
+        - 매장명: {request.store_name}  
+        - 업종: {request.detail_category_name} 
+        - 주소: {request.road_name}
+        - 일시: {formattedToday}
+
+        [홍보 주제]  
+        ※ 아래 중 하나를 조건에 따라 선택. 
+        - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+        1. 매장 홍보 2. 상품 소개 3. 이벤트 
+
+        [채널]  
+        ※ 고객층에 적합한 채널 1개 선택 
+        1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 
+
+        [연령대]
+        1. 10대 2. 20대 3. 30대 4. 40대 5. 50대 6. 60대 이상
+
+        [디자인 스타일]  
+        ※ 고객층에 적합한 하나의 카테고리 선택 
+        - 1. 사진 원본 2. 배경만 제거 3. 배경 AI변경
+
+    '''
+    # print(copyright_prompt)
+
+    # gpt 영역
+    gpt_content = gpt_role
+    content = copyright_prompt
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    report = completion.choices[0].message.content
+    return report
+
+
 
 
 
