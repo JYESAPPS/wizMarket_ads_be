@@ -8,6 +8,7 @@ from app.schemas.ads_app import (
 )
 import io
 from fastapi import Request, Body
+from PIL import ImageOps
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from dotenv import load_dotenv
@@ -860,6 +861,7 @@ async def generate_template_manual_camera(
         # 이미지 처리
         if image : 
             input_image = Image.open(BytesIO(await image.read()))
+            input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
             # 예를 들어 스타일에 따라 여러 이미지 리턴하는 로직이 있다고 가정
             if style == "배경만 제거":
