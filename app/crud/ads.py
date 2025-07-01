@@ -127,7 +127,7 @@ def get_category_id(name):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id FROM USER WHERE user_id = %s", (name,))
+            cursor.execute("SELECT id FROM detail_category WHERE name = %s", (name,))
             id = cursor.fetchone()
 
         return id

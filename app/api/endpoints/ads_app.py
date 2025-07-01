@@ -4,7 +4,8 @@ from fastapi import (
 from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
-    UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete
+    UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete,
+    ImageList
 )
 import io
 from fastapi import Request, Body
@@ -66,7 +67,7 @@ def generate_template(request: AutoApp):
 
         male_text = service_parse_age_gender_info(request.commercial_district_max_sales_m_age)
         female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-        print(female_text)
+ 
         detail_content = ""
         # 문구 생성
         try:
@@ -188,8 +189,8 @@ def generate_template(request: AutoApp):
 
 # 스타일별 이미지 값 가져오기
 @router.post("/auto/style/image")
-def get_style_image():
-    image_list = service_get_style_image()
+def get_style_image(request : ImageList):
+    image_list = service_get_style_image(request)
 
     return JSONResponse(content={
         "image_list":image_list
@@ -461,7 +462,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
 # AI 생성 수동 - 이미지 리스트와 추천 스타일 가져오기
 @router.post("/manual/style/image")
 def get_style_image_ai_reco(request: ManualImageListAIReco):
-    image_list = service_get_style_image()
+    image_list = service_get_style_image(request)
     raw_ai_style = sercvice_get_style_image_ai_reco(request)
 
     # 숫자만 추출

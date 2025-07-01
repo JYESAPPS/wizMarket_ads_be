@@ -23,6 +23,9 @@ from app.crud.ads_app import (
     update_user_reco as crud_update_user_reco,
     delete_user_reco as crud_delete_user_reco
 )
+from app.crud.ads import (
+    get_category_id as crud_get_category_id
+)
 import base64
 from datetime import datetime
 from io import BytesIO
@@ -240,8 +243,9 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
         return {"error": f"이미지 생성 중 오류 발생: {e}"}
     
 # 모든 이미지 리스트 가져오기
-def get_style_image():
-    image_list = crud_get_style_image()
+def get_style_image(request):
+    id = crud_get_category_id(request.detail_category_name)
+    image_list = crud_get_style_image(id)
     return image_list
 
 # AI 생성 자동 - 저장

@@ -11,7 +11,7 @@ def select_random_image(style):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT PROMPT FROM IMAGE WHERE design_id = %s", (style,))
+            cursor.execute("SELECT PROMPT FROM thumbnail WHERE design_id = %s", (style,))
             rows = cursor.fetchall()
 
         if not rows:
@@ -24,21 +24,43 @@ def select_random_image(style):
         return None
     
 # 모든 이미지 리스트 가져오기
-def get_style_image():
+def get_style_image(category_id: int):
     try:
         connection = get_re_db_connection()
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT DESIGN_ID, PROMPT, PATH FROM IMAGE")
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            # 1차 시도: 주어진 category_id로 조회
+            cursor.execute("""
+                SELECT 
+                    t.design_id, 
+                    t.prompt, 
+                    tp.image_path AS path
+                FROM thumbnail t
+                JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
+                WHERE t.category_id = %s
+            """, (category_id,))
             rows = cursor.fetchall()
 
-        if not rows:
-            return None
+            # 2차 시도: 기본 category_id (249) fallback
+            if not rows:
+                print(f"[WARN] category_id={category_id}에 해당하는 데이터 없음. 기본 category_id=249로 fallback.")
+                cursor.execute("""
+                    SELECT 
+                        t.design_id, 
+                        t.prompt, 
+                        tp.image_path AS path
+                    FROM thumbnail t
+                    JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
+                    WHERE t.category_id = 249
+                """)
+                rows = cursor.fetchall()
 
-        return rows
+        return rows if rows else None
 
     except Exception as e:
-        print(f"랜덤 이미지 선택 오류: {e}")
+        print(f"썸네일 이미지 조회 오류: {e}")
         return None
+
+
     
 
 def insert_upload_record(

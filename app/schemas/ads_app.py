@@ -133,3 +133,6 @@ class UserRecoUpdate(BaseModel):
 class UserRecoDelete(BaseModel):
     user_id: str
     user_record_id: int
+
+class ImageList(BaseModel):
+    detail_category_name: str
