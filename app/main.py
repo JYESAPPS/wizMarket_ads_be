@@ -23,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print(os.getenv("ALLOWED_ORIGINS", ""))
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")

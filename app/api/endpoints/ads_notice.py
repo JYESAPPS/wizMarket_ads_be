@@ -50,11 +50,9 @@ def create_notice(request: AdsNoticeCreateRequest):
 def get_notice_read(user_id: str):
     try:
         data = service_get_notice_read(user_id)
-        # print(data)
         return data
 
     except Exception as e:
-        print(f"공지 읽음 여부 조회 오류: {e}")
         return {"success": False, "message": "조회 중 오류 발생"}
     
 
