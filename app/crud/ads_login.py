@@ -18,14 +18,16 @@ def ads_login(email: str, temp_pw: str):
 
 def get_category():
     try:
-        connection = get_db_connection()
+        connection = get_re_db_connection()
         with connection.cursor() as cursor:
-            sql = "SELECT detail_category_name FROM business_area_category"
+            sql = "SELECT id, name FROM detail_category"
             cursor.execute(sql)
             rows = cursor.fetchall()
 
-        return [row[0] for row in rows] if rows else None
+        # ✅ id와 name 모두 포함하여 리턴
+        return [{"id": row[0], "name": row[1]} for row in rows] if rows else []
 
     except Exception as e:
         print(f"목록 조회 오류: {e}")
-        return None
+        return []
+

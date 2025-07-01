@@ -5,7 +5,8 @@ from app.crud.ads import (
     delete_status as crud_delete_status,
     update_ads as crud_update_ads,
     update_ads_image as crud_update_ads_image,
-    random_image_list as crud_random_image_list
+    random_image_list as crud_random_image_list,
+    get_category_id as crud_get_category_id
 )
 from app.schemas.ads import(
     AdsInitInfoOutPut, AdsInitInfo, WeatherInfo
@@ -185,7 +186,7 @@ def translate_weather_id_to_main(weather_id: int) -> str:
         return "알 수 없음"  # Unknown case
 
 
-
+# 카테고리 별 랜덤 이미지 가져오기
 def random_design_style(init_info):
     gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 3개 알려주세요."
     formattedToday = datetime.today().strftime("%Y-%m-%d")
@@ -219,7 +220,8 @@ def random_design_style(init_info):
     if not selected:
         selected = [1, 2, 5]
 
-    random_image_list = crud_random_image_list(selected)
+    category_id = crud_get_category_id(init_info.detail_category_name)
+    random_image_list = crud_random_image_list(selected, category_id)
     return random_image_list
 
 

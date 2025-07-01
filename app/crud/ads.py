@@ -7,7 +7,7 @@ from fastapi import HTTPException
 import logging
 from app.schemas.ads import AdsInitInfo, RandomImage
 import random
-
+from typing import List
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -121,7 +121,22 @@ def select_ads_init_info(store_business_number: str) -> AdsInitInfo:
             connection.close()
 
 
-def random_image_list(selected_ids):
+
+# 카테고리 name 값으로 id 값 조회
+def get_category_id(name):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM USER WHERE user_id = %s", (name,))
+            id = cursor.fetchone()
+
+        return id
+    except Exception as e:
+        print(f"중복 검사 오류: {e}")
+        return {"available": False}
+
+
+def random_image_list(selected_ids: List[int], category_id: int):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
@@ -131,36 +146,42 @@ def random_image_list(selected_ids):
     try:
         if connection.open:
             for design_id in selected_ids:
+                # 1차 시도: 지정된 category_id 기준
                 select_query = """
-                    SELECT PATH
-                    FROM IMAGE
-                    WHERE DESIGN_ID = %s
+                    SELECT tp.image_path
+                    FROM thumbnail t
+                    JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
+                    WHERE t.category_id = %s AND t.design_id = %s
                 """
-                cursor.execute(select_query, (design_id,))
+                cursor.execute(select_query, (category_id, design_id))
                 rows = cursor.fetchall()
 
+                # 2차 시도: 기본 category_id (249) 기준 fallback
                 if not rows:
-                    logger.warning(f"design_id {design_id}에 해당하는 이미지가 없습니다.")
-                    continue  # 없으면 건너뛰기
+                    logger.warning(f"카테고리 {category_id}, 디자인 {design_id}에 해당하는 이미지 없음. 기본 카테고리(249)로 재시도.")
+                    cursor.execute(select_query, (249, design_id))
+                    rows = cursor.fetchall()
 
-                random_path = random.choice(rows)["PATH"]
+                if not rows:
+                    logger.warning(f"디자인 {design_id}에 대한 이미지가 기본 카테고리에도 없음. 스킵.")
+                    continue
 
-                # Pydantic 모델로 매핑
+                random_path = random.choice(rows)["image_path"]
                 result.append(RandomImage(path=random_path))
 
             if not result:
                 raise HTTPException(
                     status_code=404,
-                    detail="선택된 디자인에 해당하는 이미지가 하나도 없습니다."
+                    detail="해당 카테고리 및 디자인에 대한 이미지가 존재하지 않습니다."
                 )
             return result
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
-        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
     except Exception as e:
-        logger.error(f"Unexpected Error in random_image_list: {e}")
-        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
     finally:
         if cursor:
             cursor.close()
