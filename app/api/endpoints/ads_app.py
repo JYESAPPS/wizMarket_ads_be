@@ -175,7 +175,7 @@ def generate_template(request: AutoApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_m": male_text, "core_f": female_text,
             "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
-            "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number
+            "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
 
     except HTTPException as http_ex:
@@ -618,7 +618,7 @@ def generate_template_manual(request : ManualApp):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": female_text,
-            "main": main, "temp" : temp, "detail_category_name" : menu,
+            "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
             "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt
         })
 
