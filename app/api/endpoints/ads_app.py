@@ -812,7 +812,7 @@ def get_manual_ai_reco(request: AutoApp):
             title, channel, style = parts
         else :
             title, channel, female_text, style = parts
-        print(title, channel, female_text, style)
+        # print(title, channel, female_text, style)
         return JSONResponse(content={
             "title": title, "channel":channel, "style": style, "core_f": female_text,
         })
