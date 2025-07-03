@@ -63,6 +63,8 @@ class AdsInitInfo(BaseModel):
 
 class RandomImage(BaseModel):
     path: str
+    prompt: str
+    design_id : int
 
 
 

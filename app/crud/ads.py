@@ -148,7 +148,7 @@ def random_image_list(selected_ids: List[int], category_id: int):
             for design_id in selected_ids:
                 # 1차 시도: 지정된 category_id 기준
                 select_query = """
-                    SELECT tp.image_path
+                    SELECT tp.image_path, t.design_id, t.prompt
                     FROM thumbnail t
                     JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
                     WHERE t.category_id = %s AND t.design_id = %s
@@ -166,8 +166,11 @@ def random_image_list(selected_ids: List[int], category_id: int):
                     logger.warning(f"디자인 {design_id}에 대한 이미지가 기본 카테고리에도 없음. 스킵.")
                     continue
 
-                random_path = random.choice(rows)["image_path"]
-                result.append(RandomImage(path=random_path))
+                random_row = random.choice(rows)
+                random_path = random_row["image_path"]
+                prompt = random_row["prompt"]
+                design_id = random_row["design_id"]
+                result.append(RandomImage(path=random_path, prompt=prompt, design_id = design_id))
 
             if not result:
                 raise HTTPException(

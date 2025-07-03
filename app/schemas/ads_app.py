@@ -8,6 +8,12 @@ from datetime import date
 class ImageItem(BaseModel):
     path: str
 
+
+
+
+
+
+
 class AutoApp(BaseModel):
     store_business_number: str
     city_name: str
@@ -31,6 +37,11 @@ class AutoApp(BaseModel):
     
     id: int
     image_list: List[ImageItem]
+
+
+class AutoAppMain(AutoApp):
+    prompt: str
+    designId: int
 
 
 class AutoAppRegen(BaseModel):
