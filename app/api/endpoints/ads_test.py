@@ -32,7 +32,8 @@ from app.service.ads_generate_test import (
 
 from app.service.ads_image_treat import (
     generate_test_edit_image as service_generate_test_edit_image,
-    generate_test_change_person as service_generate_test_change_person
+    generate_test_change_person as service_generate_test_change_person,
+    compare_face as service_compare_face
 )
 
 from fastapi.responses import StreamingResponse
@@ -534,3 +535,25 @@ async def generate_test_change_person(
         raise HTTPException(status_code=500, detail=error_msg)
 
 
+# 생성된 얼굴 비교해보기
+# 폼데이터로 받기 때문에 기존의 스키마 작성 방법과는 다른 형식으로 데이터를 받아야함
+# 서버 끄고 1_fastAPI_init.txt 참조해서 가상환경 활성화 후 업그레이드화 모듈 설치 후 서버 재시작
+@router.post("/test/face")
+async def compare_face(
+    image: UploadFile = File(...),  # 이미지 파일
+    prompt: str = Form(...)         # 텍스트 프롬프트
+):
+    # 예시: 이미지 이름과 프롬프트 출력
+    print(f"파일 이름: {image.filename}")
+    print(f"프롬프트: {prompt}")
+
+    # 생성된 이미지 '리스트' 와 각각의 유사도 리턴
+    # 서비스 레이어에서 이미지 생성 후 비교하고 리스트로 묶어서 리턴
+    # 이미지는 아직 파일 객체임
+    image_list_with_compare = service_compare_face(image, prompt)
+
+
+    # 실제 처리 로직 (예: 얼굴 바꾸기 등)을 여기에 작성
+
+    # 예시 응답
+    return JSONResponse(content={"results": image_list_with_compare})

@@ -4,6 +4,8 @@ import tempfile
 from io import BytesIO
 import os
 from dotenv import load_dotenv
+from google import genai
+from google.genai import types
 
 # .env 파일 로드
 load_dotenv()
@@ -88,3 +90,39 @@ def generate_test_change_person(image, style):
         return None
     
 
+# 얼굴 비교해보기
+def compare_face(image, prompt):
+    # 1. prompt 로 이미지 4장 생성해보기
+    try:
+        key = os.getenv("IMAGEN3_API_SECRET")
+        client = genai.Client(api_key=key)
+
+        # Prompt 전달 및 이미지 생성
+        response = client.models.generate_images(
+            model='imagen-3.0-generate-002',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=4,
+                aspect_ratio="9:16",  # 비율 유지
+                output_mime_type='image/jpeg'
+            )
+        )
+        # 생성된 이미지 리스트 내에서 각각 기존 이미지와 코사인 유사도 비교
+        # 전달 받은 기존 이미지는 파일 객체임
+        # 이미지가 4장이므로 for 문 안에서 진행
+        # GPT 적극 활용!! 저도 잘 모르는 영역입니다...ㅠㅠ
+        # 필요 시 모듈 설치하고 pip show 모듈명으로 버전 확인 후 requirements.txt 에 작성하기
+        for generated_image in response.generated_images:
+            image = Image.open(BytesIO(generated_image.image.image_bytes))
+            # 생성 된 이미지 띄우기
+            image.show()
+
+
+
+
+        # 
+        # return image_list_with_compare
+
+
+    except Exception as e:
+        return {"error": f"이미지 생성 중 오류 발생: {e}"}
