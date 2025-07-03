@@ -1,11 +1,16 @@
 from PIL import Image, ExifTags
 import requests
 import tempfile
+import io 
 from io import BytesIO
 import os
+import base64
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+import torch
+from torchvision import transforms, models 
+from sklearn.metrics.pairwise import cosine_similarity
 
 # .env 파일 로드
 load_dotenv()
@@ -88,11 +93,33 @@ def generate_test_change_person(image, style):
     except Exception as e:
         print(f"Error during API call: {str(e)}")
         return None
-    
 
-# 얼굴 비교해보기
-def compare_face(image, prompt):
-    # 1. prompt 로 이미지 4장 생성해보기
+# 코사인 유사도 위해 이미지 벡터 추출 (ResNet-50 모델 사용)
+def extract_feature_vector(img: Image.Image):
+    # 전처리
+    preprocess = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    input_tensor = preprocess(img).unsqueeze(0)  # [1, 3, 224, 224]
+    model = models.resnet50(pretrained=True)
+    model.eval()
+    with torch.no_grad():
+        features = model(input_tensor)
+    return features.numpy()
+
+# 코사인 유사도 비교 함수
+def compute_cosine_similarity(vec1, vec2):
+    return cosine_similarity(vec1, vec2)[0][0]
+
+
+# 유사도 비교 엔드포인트
+async def compare_face(image, prompt):
+    # 1. Imagen3 API
     try:
         key = os.getenv("IMAGEN3_API_SECRET")
         client = genai.Client(api_key=key)
@@ -107,22 +134,39 @@ def compare_face(image, prompt):
                 output_mime_type='image/jpeg'
             )
         )
-        # 생성된 이미지 리스트 내에서 각각 기존 이미지와 코사인 유사도 비교
-        # 전달 받은 기존 이미지는 파일 객체임
-        # 이미지가 4장이므로 for 문 안에서 진행
-        # GPT 적극 활용!! 저도 잘 모르는 영역입니다...ㅠㅠ
-        # 필요 시 모듈 설치하고 pip show 모듈명으로 버전 확인 후 requirements.txt 에 작성하기
-        for generated_image in response.generated_images:
-            image = Image.open(BytesIO(generated_image.image.image_bytes))
-            # 생성 된 이미지 띄우기
-            image.show()
 
+        # 업로드된 이미지 벡터화
+        org_bytes = await image.read()  
+        org_img = Image.open(io.BytesIO(org_bytes)).convert("RGB")
+        org_vec = extract_feature_vector(org_img)
 
+        # 결과 리스트 초기화
+        cos_results = []
 
+        # 각 이미지 별 코사인 유사도
+        for gen_img in response.generated_images:
+            # Base64 인코딩     
+            new_image = Image.open(BytesIO(gen_img.image.image_bytes))
+            buffer = BytesIO()
+            new_image.save(buffer, format="PNG")
+            buffer.seek(0)
+            image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-        # 
-        # return image_list_with_compare
+            gen_img_pil = new_image.convert("RGB")
 
+            # 벡터 추출 및 유사도 계산
+            gen_vec = extract_feature_vector(gen_img_pil)
+            similarity = compute_cosine_similarity(org_vec, gen_vec)
+
+            cos_results.append({
+                "similarity": float(similarity),
+                "image_base64": image_base64,
+            })
+        
+        # 결과를 유사도 기준으로 정렬
+        cos_results = sorted(cos_results, key=lambda x: x["similarity"], reverse=True)
+        # print(f"유사도 결과: {cos_results}")
+        return cos_results
 
     except Exception as e:
         return {"error": f"이미지 생성 중 오류 발생: {e}"}
