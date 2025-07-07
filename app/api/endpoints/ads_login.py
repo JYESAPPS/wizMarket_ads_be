@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest
+    UserRegisterRequest, ImageListRequest
 )
 
 from app.service.ads_login import (
     ads_login as service_ads_login,
-    get_category as service_get_category
+    get_category as service_get_category,
+    get_image_list as service_get_image_list
 )
 
 
@@ -33,3 +34,10 @@ def get_category():
     else:
         return {"category_list": False}
     
+
+@router.post("/get/image/list")
+def get_image_list(request: ImageListRequest):
+    category_id = request.categoryId
+    result = service_get_image_list(category_id)
+
+    return {"image_list": result or []}
