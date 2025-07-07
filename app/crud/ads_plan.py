@@ -59,7 +59,7 @@ def insert_fee(ticket_name, ticket_price, ticket_type, billing_cycle, token_amou
 
     try:
         cursor = connection.cursor()
-        billing_cycle = billing_cycle if ticket_type == "subscription" else None
+        billing_cycle = None if ticket_type == "베이직" else billing_cycle
 
         insert_query = """
             INSERT INTO TICKET (TICKET_NAME, TICKET_PRICE, TICKET_TYPE, BILLING_CYCLE, TOKEN_AMOUNT)
@@ -71,6 +71,32 @@ def insert_fee(ticket_name, ticket_price, ticket_type, billing_cycle, token_amou
 
     except pymysql.MySQLError as e:
         rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+
+
+def delete_fee(ticket_id: int):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        delete_query = """
+            DELETE FROM TICKET
+            WHERE TICKET_ID = %s
+        """
+        cursor.execute(delete_query, (ticket_id,))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)
         print(f"Database error: {e}")
         raise
 
