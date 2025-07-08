@@ -55,6 +55,7 @@ class AutoAppRegen(BaseModel):
     age : Optional[str]
     prompt : str
     title : str
+    ad_text: Optional[str]
 
     main: str
     temp: float
@@ -72,6 +73,16 @@ class AutoAppSave(BaseModel):
     date_range: List[str] 
     image: str
     type: str
+
+
+
+class AutoGenCopy(BaseModel):
+    category: str
+    title: str
+    store_name : str
+    main: str
+    temp: float
+    road_name : str
 
 
 class ManualGenCopy(BaseModel):

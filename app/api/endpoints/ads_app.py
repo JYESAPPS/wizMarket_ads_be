@@ -3,7 +3,7 @@ from fastapi import (
 )
 from app.schemas.ads_app import (
     AutoAppMain,
-    AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate,
+    AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
     UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete,
     ImageList
@@ -398,7 +398,7 @@ def generate_template_regen(request: AutoAppRegen):
             channel_text = "인스타 피드"
 
 
-        detail_content = ""
+        detail_content = getattr(request, "ad_text", "") or ""
         # 문구 생성
         try:
             copyright_role = ""
@@ -501,7 +501,7 @@ def generate_template_regen(request: AutoAppRegen):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_f": female_text,
             "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt":prompt
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
         })
 
     except HTTPException as http_ex:
@@ -521,6 +521,60 @@ def insert_upload_record(request: AutoAppSave):
         return JSONResponse(content={
             "success": success
         })
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
+
+
+# AI 생성 자동 - 문구 생성하기
+@router.post("/auto/gen/copy")
+def generate_template_regen_auto(request: AutoGenCopy):
+    try:
+        category = request.category
+        store_name= request.store_name
+        main= request.main
+        temp = request.temp
+        road_name = request.road_name
+        title = request.title
+
+        detail_content = ""
+        copyright_role = f'''
+            you are a marketing expert
+        '''
+        # 문구 생성
+        try:
+            today = datetime.now()
+            formattedToday = today.strftime('%Y-%m-%d')
+            
+            copyright_prompt = f'''
+                {store_name} 업체를 위한 홍보 내용을 작성해주세요.
+                주소는 {road_name} 이고 홍보할 주제는 {title} 입니다.
+                {category} 업종이며 오늘은 {formattedToday}, {main}, {temp}℃ 입니다, 
+                다음을 바탕으로 100자 이내로 작성해주세요.
+                ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
+                ex2) 마라 칼국수 신메뉴! 얼얼하게 매운 맛!
+                ex3) 7월 대 오픈! 시원한 냉면 드시러 오세요~
+            '''
+
+            copyright = service_generate_content(
+                copyright_prompt,
+                copyright_role,
+                detail_content
+            )
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+
+
+        # 문구 반환
+        return JSONResponse(content={
+            "copyright": copyright
+        })
+
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex
@@ -665,7 +719,7 @@ def generate_template_manual(request : ManualApp):
         detail_category_name= request.detail_category_name
         prompt = request.prompt
         
-        female_text = f"여성 {age}대"
+        female_text = f"{age}대"
         channel_text = ""
 
         menu = request.category
@@ -680,7 +734,7 @@ def generate_template_manual(request : ManualApp):
         else:
             channel_text = "3"
 
-        detail_content = ""
+        detail_content = getattr(request, "customText", "") or ""
         # 문구 생성
         try:
             copyright_role = ""
@@ -794,7 +848,7 @@ def generate_template_manual(request : ManualApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": female_text,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
         })
 
     except HTTPException as http_ex:
