@@ -501,7 +501,7 @@ def generate_template_regen(request: AutoAppRegen):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_f": female_text,
             "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt":prompt
         })
 
     except HTTPException as http_ex:
