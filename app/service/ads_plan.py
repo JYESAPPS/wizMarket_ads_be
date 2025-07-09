@@ -18,7 +18,7 @@ def insert_fee(request):
     ticket_type = request.ticket_type  # ← 오타 수정
     billing_cycle = request.billing_cycle  # Optional[str]
     token_amount = request.token_amount
-    print(billing_cycle)
+    # print(billing_cycle)
     # 예: 유효성 체크
     if ticket_type == "subscription" and not billing_cycle:
         raise ValueError("구독 상품에는 billing_cycle이 필요합니다.")
