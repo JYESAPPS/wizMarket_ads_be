@@ -13,11 +13,11 @@ def ads_login(email: str, temp_pw: str):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
-            sql = "SELECT user_id FROM USER WHERE email = %s AND temp_pw = %s"
+            sql = "SELECT user_id, type, store_business_number FROM USER WHERE email = %s AND temp_pw = %s"
             cursor.execute(sql, (email, temp_pw))
             user = cursor.fetchone()
 
-        return user[0] if user else None
+        return user if user else None
 
     except Exception as e:
         print(f"로그인 조회 오류: {e}")

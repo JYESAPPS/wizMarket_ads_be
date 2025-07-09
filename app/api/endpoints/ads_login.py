@@ -15,13 +15,22 @@ router = APIRouter()
 
 # 로그인 API 엔드포인트
 @router.post("/login")
-def ads_login(request: UserRegisterRequest):
-    success = service_ads_login(request.email, request.temp_pw)
-
-    if success:
-        return {"success": True, "message": "로그인 성공", "user_id": success}
+def ads_login_route(request: UserRegisterRequest):
+    user = service_ads_login(request.email, request.temp_pw)
+    if user:
+        user_id, user_type, store_bn = user
+        return {
+            "success": True,
+            "message": "로그인 성공",
+            "user_id": user_id,
+            "type": user_type,
+            "store_business_number": store_bn
+        }
     else:
-        return {"success": False, "message": "아이디 또는 비밀번호가 올바르지 않습니다.", "user_id": 0}
+        return {
+            "success": False,
+            "message": "아이디 또는 비밀번호가 올바르지 않습니다."
+        }
     
 
 # 어드민 CMS 등록
