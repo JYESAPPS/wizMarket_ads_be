@@ -149,9 +149,25 @@ def insert_onetime(user_id, ticket_id, token_grant, token_onetime, grant_date):
         close_connection(connection)
 
 #사용자의 결제 내역 조회
-# def get_history(user_id):
-#     connection = get_re_db_connection()
-#     cursor = connection.cursor(pymysql.cursors.DictCursor)
+def get_history(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT t.TICKET_NAME, t.TICKET_PRICE, p.PAYMENT_DATE, p.EXPIRE_DATE
+                FROM ticket t 
+                JOIN ticket_payment p
+                ON t.TICKET_ID = p.TICKET_ID
+                WHERE p.USER_ID = %s
+                ORDER BY p.PAYMENT_DATE DESC
+            """, (user_id))
+            rows = cursor.fetchall()
+            return rows
 
-#     try:
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()
+    
         

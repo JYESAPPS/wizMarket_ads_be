@@ -4,6 +4,7 @@ from app.crud.ads_ticket import (
     get_token_amount as crud_get_token_amount,
     get_latest_token_onetime as crud_get_latest_token_onetime,
     insert_onetime as crud_insert_onetime,
+    get_history as crud_get_history
 )
 
 from datetime import datetime
@@ -49,6 +50,6 @@ def insert_token(request):
     # valid_until : 지급 일자+1달
 
 #결제 내역 조회
-# def get_history(user_id):
-#     data = crud_get_history(user_id)
-#     return data
+def get_history(user_id):
+    data = crud_get_history(user_id)
+    return data

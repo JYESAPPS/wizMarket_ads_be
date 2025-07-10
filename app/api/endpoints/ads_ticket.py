@@ -1,16 +1,21 @@
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from typing import List
+import logging
 from app.schemas.ads_ticket import (
     InsertPayRequest
 )
 
 from app.service.ads_ticket import (
     insert_payment as service_insert_payment,
-    insert_token as service_insert_token
+    insert_token as service_insert_token,
+    get_history as service_get_history
 )
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
 
 # 결제
 @router.post("/payment")
@@ -20,7 +25,6 @@ def insert_payment(request: List[InsertPayRequest]):
         for each in request:
             for _ in range(each.qty):
                 service_insert_payment(each)
-        pass
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -32,18 +36,27 @@ def insert_payment(request: List[InsertPayRequest]):
         for each in request:
             for _ in range(each.qty):
                 service_insert_token(each)
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
         )
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "message": "결제가 성공적으로 처리되었습니다.",
+            "count": sum(each.qty for each in request),
+        }
+    )
 
-#결제 목록
-# @router.get("/payment")
-# def get_history(user_id: int):
-#     try:
-#         data = service_get_history
-#         return data
-#     except Exception as e:
-#         return {"success": False, "message": "조회 중 오류 발생"}
+#결제 목록 호출
+@router.get("/list")
+def get_history(user_id: int):
+    try:
+        data = service_get_history(user_id)
+        return data
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "조회 중 오류 발생"}
