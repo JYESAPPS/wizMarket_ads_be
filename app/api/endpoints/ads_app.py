@@ -1113,20 +1113,22 @@ async def generate_template_manual_camera(
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
+        # 이미지 처리 우선순위: image_url > image
+        if image_url:
+            origin_images = service_generate_bg(image_url)
 
-        # 이미지 처리
-        if image : 
+        elif image:
             input_image = Image.open(BytesIO(await image.read()))
             input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
-            # 예를 들어 스타일에 따라 여러 이미지 리턴하는 로직이 있다고 가정
+            # 예: 스타일에 따라 분기
             if style == "배경만 제거":
                 origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
             else:
-                origin_images = [input_image]  # 하나만 리스트로 감쌈
-        
-        else :
-            origin_images = service_generate_bg(image_url)
+                origin_images = [input_image]
+        else:
+            raise HTTPException(status_code=400, detail="이미지 또는 이미지 URL이 제공되지 않았습니다.")
+
 
         # base64 리스트 변환
         output_images = []
