@@ -225,6 +225,117 @@ def random_design_style(init_info):
     return random_image_list
 
 
+# 나이 값 추천 or 꺼내기
+def select_ai_age(init_info):
+    age_tuple = init_info.commercial_district_max_sales_f_age
+    age_map = {
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_10S": "10대",
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_20S": "20대",
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_30S": "30대",
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_40S": "40대",
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_50S": "50대",
+        "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_60_OVER": "60대 이상",
+    }
+    if not age_tuple or age_tuple[0] is None:
+        gpt_content = f''' 
+            당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+            연령대를 선택 후 숫자 하나만 답해주세요.
+            
+            ex) 1
+        '''
+        formattedToday = datetime.today().strftime("%Y-%m-%d")
+        
+        content = f"""[매장 정보]  
+        - 매장명: {init_info.store_name}  
+        - 업종: {init_info.detail_category_name} 
+        - 주소: {init_info.road_name}
+        - 일시: {formattedToday}
+        - 날씨: {init_info.main}, {init_info.temp}
+
+        [연령대]
+        1. 10대 2. 20대 3. 30대 4. 40대 5. 50대 6. 60대 이상
+
+        """
+
+        client = OpenAI(api_key=os.getenv("GPT_KEY"))
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": gpt_content},
+                {"role": "user", "content": content},
+            ],
+        )
+        report = completion.choices[0].message.content.strip()
+        match = re.search(r"\d+", report)
+        number = match.group() if match else None
+
+        number_to_age = {
+            "1": "10대",
+            "2": "20대",
+            "3": "30대",
+            "4": "40대",
+            "5": "50대",
+            "6": "60대 이상",
+        }
+        return number_to_age.get(number, "기타")
+    
+    return age_map.get(age_tuple[0], "기타")
+
+
+# 초기 AI 추천 값 가져오기
+def select_ai_data(init_info):
+    gpt_content = f''' 
+        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
+        홍보 주제, 채널, 디자인 스타일을 선택 후 숫자로만 답해주세요.
+        대답은 숫자 조합으로만 해주세요
+        ex) 1, 2, 4
+    '''
+    formattedToday = datetime.today().strftime("%Y-%m-%d")
+    
+    content = f"""[매장 정보]  
+    - 매장명: {init_info.store_name}  
+    - 업종: {init_info.detail_category_name} 
+    - 주소: {init_info.road_name}
+    - 일시: {formattedToday}
+    - 날씨: {init_info.main}, {init_info.temp}
+
+    [홍보 주제]  
+        ※ 아래 중 하나를 조건에 따라 선택. 
+        - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+        1. 매장 홍보 2. 상품 소개 3. 이벤트 
+
+    [채널]  
+    ※ 고객층에 적합한 채널 1개 선택 
+    1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 
+
+    [디자인 스타일]  
+    ※ 고객층에 적합한 하나의 카테고리 선택 
+    - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5. AI모델 6. 예술 
+    """
+
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    report = completion.choices[0].message.content
+
+    # 숫자만 추출 (정규식)
+    numbers = re.findall(r"\b[1-6]\b", report)
+    selected = list(map(int, numbers))
+
+    # 비어 있으면 디폴트
+    if not selected:
+        selected = [1, 2, 5]
+
+    category_id = crud_get_category_id(init_info.detail_category_name)
+    random_image_list = crud_random_image_list(selected, category_id)
+    return random_image_list
+
+
 
 # DB 저장
 def insert_ads(store_business_number: str, use_option: str, title: str, detail_title: str, content: str, image_url: str, final_image_url: str):

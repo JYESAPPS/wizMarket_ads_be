@@ -21,7 +21,9 @@ from app.service.ads import (
     insert_ads as service_insert_ads,
     delete_status as service_delete_status,
     update_ads as service_update_ads,
-    random_design_style as service_random_design_style
+    random_design_style as service_random_design_style,
+    select_ai_age as service_select_ai_age,
+    select_ai_data as service_select_ai_data
 )
 from app.service.ads_generate import (
     generate_content as service_generate_content,
@@ -93,6 +95,8 @@ def select_ads_init_info(store_business_number: str):
     try:
         init_data = service_select_ads_init_info(store_business_number)
         random_image_list = service_random_design_style(init_data)
+        # ai_age = service_select_ai_age(init_data)
+        # ai_data = service_select_ai_data(init_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
             image_list=random_image_list
