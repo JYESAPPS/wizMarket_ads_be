@@ -94,6 +94,57 @@ def generate_test_change_person(image, style):
         print(f"Error during API call: {str(e)}")
         return None
 
+
+def extend_bg(image, prompt):
+    try:
+        # API 키 환경 변수로 가져오기
+        API_KEY = os.getenv("AILABTOOLS_CHANGE_API_KEY")
+
+        payload = {
+            'custom_prompt':prompt,
+            'steps': '30',
+            'strength': '0.8',
+            'scale': '7',
+            'seed': '0',
+            'top': '0.5',
+            'bottom': '0.5',
+            'left': '0.5',
+            'right': '0.5',
+            'max_height': '1920',
+            'max_width': '1920'
+        }
+
+
+
+        # 파일을 BytesIO로 읽어서 외부 API에 전달
+        image_contents = image.file.read()  # 이미지 파일 내용
+        response = requests.post(
+            "https://www.ailabapi.com/api/image/editing/ai-image-extender",
+            headers={'ailabapi-api-key': API_KEY},
+            files={'image': ('image.png', BytesIO(image_contents), 'application/octet-stream')},
+            data=payload
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            # base64가 아니라 URL 방식으로 응답이 올 경우
+            if "data" in result and "image_url" in result["data"]:
+                return result["data"]["image_url"]
+            elif "data" in result and "binary_data_base64" in result["data"]:
+                # 혹시 base64로 오면 URL로 변환해 저장소에 업로드하거나 에러로 처리
+                return "data:image/jpeg;base64," + result["data"]["binary_data_base64"][0]
+            else:
+                print("⚠️ 예상치 못한 응답 형식:", result)
+                return None
+        else:
+            print("❌ 요청 실패:", response.status_code)
+            print(response.text)
+            return None
+    except Exception as e:
+        print(f"❌ 에러 발생: {str(e)}")
+        return None
+
+
 # 코사인 유사도 위해 이미지 벡터 추출 (ResNet-50 모델 사용)
 def extract_feature_vector(img: Image.Image):
     # 전처리

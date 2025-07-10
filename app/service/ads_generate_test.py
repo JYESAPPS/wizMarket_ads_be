@@ -268,27 +268,7 @@ def generate_image_imagen_test(prompt: str, ratio: str):
     except Exception as e:
         return {"error": f"이미지 생성 중 오류 발생: {e}"}
 
-# 배경 제거1
-def generate_image_remove_bg(image):
-    try:
-        # Pixian API에 파일 직접 전송
-        response = requests.post(
-            'https://api.pixian.ai/api/v2/remove-background',
-            files={"image": (image.filename, image.file, image.content_type)},
-            data={
-                'test': 'true'  # TODO: Remove for production
-            },
-            auth=('pxjrefqwqgdapzl', 'on8deo8fidgmljosuae5h6nb8l39s5iiv043v9nke6rtdklhj4ea')
-        )
 
-        # 요청이 성공하면 Pixian에서 반환된 이미지 저장
-        if response.status_code == requests.codes.ok:
-            return StreamingResponse(io.BytesIO(response.content), media_type="image/png")
-        else:
-            return {"error": f"Pixian API 오류: {response.status_code} - {response.text}"}
-
-    except Exception as e:
-        return {"error": str(e)}
     
 # 배경 제거 2
 def generate_image_remove_bg_free(image):
@@ -456,49 +436,5 @@ def generate_test_generate_music(lyrics, style, title):
     return task_id
 
 
-def generate_test_generate_story(story_role, input_image):
-    client = OpenAI(api_key=os.getenv("GPT_KEY"))
 
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    { "type": "text", "text": story_role },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": input_image,
-                        },
-                    },
-                ],
-            }
-        ],
-    )
 
-    seed_image_vision = completion.choices[0].message.content
-    return seed_image_vision
-
-def send_mail(mail, word):
-    try:
-        mail_from = os.getenv("MAIL_FROM")
-        mail_to = mail
-        mail_pw = os.getenv("MAIL_PW")
-
-        msg = MIMEMultipart()
-        msg['From'] = mail_from
-        msg['To'] = mail_to
-        msg['Subject'] = "인증 메일입니다."
-        msg.attach(MIMEText(f"인증 코드: {word}", 'plain'))
-
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(mail_from, mail_pw)
-            server.sendmail(mail_from, mail_to, msg.as_string())
-
-        return True  # 성공
-
-    except Exception as e:
-        print(f"이메일 전송 중 오류 발생: {e}")
-        return False  # 실패

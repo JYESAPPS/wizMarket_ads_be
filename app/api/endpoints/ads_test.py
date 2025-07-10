@@ -19,23 +19,21 @@ from app.service.ads_generate_test import (
     generate_image_dalle as service_generate_image_dalle,
     generate_image_mid_test as service_generate_image_mid_test,
     generate_image_imagen_test as service_generate_image_imagen_test,
-    generate_image_remove_bg as service_generate_image_remove_bg,
     generate_image_remove_bg_free as service_generate_image_remove_bg_free,
     generate_test_generate_video as service_generate_test_generate_video,
     generate_test_generate_bg as service_generate_test_generate_bg,
     generate_test_generate_music as service_generate_test_generate_music,
     generate_test_generate_lyrics as service_generate_test_generate_lyrics,
-    generate_test_generate_story as service_generate_test_generate_story,
-    send_mail as service_send_mail,
 )
 
 
 from app.service.ads_image_treat import (
     generate_test_edit_image as service_generate_test_edit_image,
     generate_test_change_person as service_generate_test_change_person,
-    compare_face as service_compare_face
+    compare_face as service_compare_face,
+    extend_bg as service_extend_bg
 )
-
+from typing import Optional
 from fastapi.responses import StreamingResponse
 from fastapi import Request, Body
 from PIL import Image
@@ -198,23 +196,6 @@ def generate_image_imagen_test(request: MidTest):
         raise HTTPException(status_code=500, detail=error_msg)
     
 
-# 배경 제거 테스트 - API
-@router.post("/remove/background")
-def generate_image_remove_bg(
-    image: UploadFile = File(...)
-):
-    try:
-        new_image = service_generate_image_remove_bg(image)
-        return new_image
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-    
-
 # 배경 제거 테스트 - 파이썬 모듈
 @router.post("/remove/background/free")
 async def generate_image_remove_bg_free(
@@ -359,134 +340,6 @@ async def check_music(request: MusicGet):
     
 
 
-
-
-# 이미지 스토리 생성
-@router.post("/test/generate/story")
-async def generate_test_generate_story(request: Story):
-    try:
-        # 스토리 생성
-        story = service_generate_test_generate_story(request.story_role, request.example_image)
-        
-        if not story:
-            raise HTTPException(status_code=500, detail="Failed to generate story")
-
-        return {"story": story}
-    
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-
-# 생성된 스토리로 유사 이미지 생성
-@router.post("/test/generate/story/image")  
-def generate_test_generate_story_image(request: AdsContentNewRequest):
-    try:
-        ratio = "9:16"
-        data = service_generate_image_imagen_test(
-            request.prompt,
-            ratio
-        )
-        return data
-
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-
-# 사업자 상태 조회
-@router.post("/test/confirm/store")
-def generate_test_confirm_store(request: AdsDeleteRequest):
-    try:
-        if not request.ads_id:
-            raise HTTPException(status_code=400, detail="사업자등록번호를 입력해주세요.")
-        
-        ads_id = str(request.ads_id)
-
-        SERVICE_KEY = os.getenv("CONFIRM_KEY")
-        url = f"https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey={SERVICE_KEY}"
-        
-        payload = {"b_no": [ads_id]}
-
-        headers = {"Content-Type": "application/json"}
-
-        response = requests.post(url, json=payload, headers=headers)
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="외부 API 요청 실패")
-
-        data = response.json()
-
-        return data
-    
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-    
-# 인증 메일 발송
-@router.post("/test/send/mail")
-def generate_test_send_mail(request: AdsContentNewRequest):
-    try:
-        # 고유한 인증 코드 생성
-        length = 6  # 인증 코드 길이
-        characters = string.ascii_letters + string.digits  # 대소문자 + 숫자 조합
-        word = ''.join(random.choices(characters, k=length))
-
-        # 메일 발송
-        mail = str(request.prompt)
-        success = service_send_mail(mail, word)
-
-        if len(word) != 6:
-            data = "인증 코드 길이가 6이 아닙니다."
-        elif not mail:
-            data = "메일 주소가 없습니다."
-        elif not success:
-            data = "메일 발송에 실패했습니다."  # 추가!
-        else:
-            redis_client.setex(f"verify:{mail}", 300, word)
-            data = "성공적으로 메일이 발송 되었습니다."
-
-        return {"message": data}
-    
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-    
-# 인증 메일 확인
-@router.post("/test/confirm/mail")
-def generate_test_confirm_mail(request: AdsDrawingModelTest):
-    try:
-        mail = request.prompt
-        word = request.ratio
-        stored_data = redis_client.get(f"verify:{mail}")
-
-        if not stored_data:
-            return {"success": False, "message": "인증 시간이 만료되었거나 존재하지 않는 메일입니다."}
-        elif stored_data != word:
-            return {"success": False, "message": "인증 코드가 일치하지 않습니다."}
-        else:
-            redis_client.delete(f"verify:{mail}")
-            return {"success": True, "message": "인증 코드가 일치합니다."}
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-
-
 # 이미지 편집 테스트
 @router.post("/test/edit/image")
 async def generate_test_edit_image(
@@ -538,8 +391,34 @@ async def generate_test_change_person(
 # 생성된 얼굴 비교해보기
 @router.post("/test/face")
 async def compare_face(
+
     image: UploadFile = File(...),  # 이미지 파일
     prompt: str = Form(...)         # 텍스트 프롬프트
 ):
     data = await service_compare_face(image, prompt)
     return {"results": data}
+
+
+# 배경 확장 테스트
+@router.post("/test/extend/bg")
+async def extend_bg(
+    image: UploadFile = File(...),
+    prompt: Optional[str] = Form(None),
+):
+    try:
+        # 이미지 변환 처리
+        image_url = service_extend_bg(image, prompt)
+        
+        if not image_url:
+            raise HTTPException(status_code=500, detail="Failed to generate img")
+
+        return JSONResponse(content={"image_url": image_url})
+    
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
