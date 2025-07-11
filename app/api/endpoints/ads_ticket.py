@@ -9,7 +9,8 @@ from app.schemas.ads_ticket import (
 from app.service.ads_ticket import (
     insert_payment as service_insert_payment,
     insert_token as service_insert_token,
-    get_history as service_get_history
+    get_history as service_get_history,
+    get_token as service_get_token
 )
 
 
@@ -57,6 +58,16 @@ def get_history(user_id: int):
     try:
         data = service_get_history(user_id)
         return data
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "조회 중 오류 발생"}
+
+# 가진 단건+정기 토큰 호출
+@router.get("/token")
+def get_token(user_id: int):
+    try:
+        token = service_get_token(user_id)
+        return token
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "조회 중 오류 발생"}

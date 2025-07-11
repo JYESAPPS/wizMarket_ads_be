@@ -4,7 +4,8 @@ from app.crud.ads_ticket import (
     get_token_amount as crud_get_token_amount,
     get_latest_token_onetime as crud_get_latest_token_onetime,
     insert_onetime as crud_insert_onetime,
-    get_history as crud_get_history
+    get_history as crud_get_history,
+    get_latest_token_subscription as crud_get_latest_token_subscription
 )
 
 from datetime import datetime
@@ -37,7 +38,7 @@ def insert_token(request):
     #단건의 경우
     if request.type=="basic":
         grant_date = datetime.fromisoformat(request.payment_date.replace("Z", "+00:00")).date()
-        token_onetime = crud_get_latest_token_onetime(ticket_id) + token_amount
+        token_onetime = crud_get_latest_token_onetime(user_id) + token_amount
         #삽입
         crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
            
@@ -53,3 +54,14 @@ def insert_token(request):
 def get_history(user_id):
     data = crud_get_history(user_id)
     return data
+
+# 사용자의 단건&정기 토큰 반환
+def get_token(user_id):
+    onetime = crud_get_latest_token_onetime(user_id)
+    subscription = crud_get_latest_token_subscription(user_id)
+
+    return {
+        "onetime": onetime,
+        "subscription": subscription["sub"],
+        "valid_until": subscription["valid"]
+    }

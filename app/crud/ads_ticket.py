@@ -124,6 +124,37 @@ def get_latest_token_onetime(user_id: int):
         cursor.close()
         connection.close()
 
+# 사용자의 현재 정기 토큰+기한 호출
+def get_latest_token_subscription(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT TOKEN_SUBSCRIPTION, VALID_UNTIL
+                FROM ticket_token
+                WHERE USER_ID = %s
+                AND TOKEN_ONETIME IS NOT NULL
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id))
+            result = cursor.fetchone()
+
+        if result is None:
+            return {
+                "sub": 0,
+                "valid": None
+            }
+        return {
+            "sub": result[0],
+            "valid": result[1]
+        }
+            
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()     
+
 #사용자의 토큰 내역에 단건 삽입
 def insert_onetime(user_id, ticket_id, token_grant, token_onetime, grant_date):
     connection = get_re_db_connection()
