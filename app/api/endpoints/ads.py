@@ -56,7 +56,9 @@ from app.service.ads_generate_by_title import (
 from app.service.ads_image_treat import (
     treat_image_turn as service_treat_image_turn
 )
-
+from app.service.ads_app import (
+    get_style_image as service_get_style_image
+)
 
 
 
@@ -95,11 +97,14 @@ def select_ads_init_info(store_business_number: str):
     try:
         init_data = service_select_ads_init_info(store_business_number)
         random_image_list = service_random_design_style(init_data)
+        all_image_list = service_get_style_image(init_data)
+
         # ai_age = service_select_ai_age(init_data)
         # ai_data = service_select_ai_data(init_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
-            image_list=random_image_list
+            image_list=random_image_list,
+            all_image_list=all_image_list
         )
 
     except HTTPException as http_ex:

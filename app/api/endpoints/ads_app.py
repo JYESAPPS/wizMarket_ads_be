@@ -610,14 +610,15 @@ def manual_ai_reco(request : AutoApp):
     parts = raw.split("-")  # ["3", "1", "4"]
 
     if female_text : 
-        title, channel, _= parts
+        title, channel, style= parts
     else : 
-        title, channel, female_text, _ = parts
+        title, channel, female_text, style = parts
 
     return JSONResponse(content={
         "title" : title, 
         "channel" : channel, 
-        "female_text" : female_text
+        "female_text" : female_text,
+        "style": style
     })
 
 # AI 생성 수동 - 문구 생성하기
@@ -691,7 +692,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
 # AI 생성 수동 - 이미지 리스트와 추천 스타일 가져오기
 @router.post("/manual/style/image")
 def get_style_image_ai_reco(request: ManualImageListAIReco):
-    image_list = service_get_style_image(request)
+    # image_list = service_get_style_image(request)
     raw_ai_style = sercvice_get_style_image_ai_reco(request)
 
     # 숫자만 추출
@@ -699,7 +700,7 @@ def get_style_image_ai_reco(request: ManualImageListAIReco):
     ai_style = int(match.group(1)) if match else None
 
     return JSONResponse(content={
-        "image_list": image_list,
+        # "image_list": image_list,
         "ai_style": ai_style
     })
 

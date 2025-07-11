@@ -132,6 +132,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     main: str
     temp: float
     image_list: List[RandomImage]  # ✅ 여기에 추가
+    all_image_list: List[RandomImage]
 
 # 문구 생성
 class AdsContentRequest(BaseModel):
