@@ -233,14 +233,38 @@ def generate_template(request: AutoApp):
 
         raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
         parts = raw.split("-")  # ["3", "1", "4"]
-
+        # print("parts:", parts)
         if female_text : 
             title, channel, style= parts
         else : 
             title, channel, female_text, style = parts
 
+            female_text = int(female_text)
 
-        
+            #성별 없을 때 연령대 대치
+            if female_text not in [1, 2, 3, 4, 5, 6]:
+                female_text = 3  # 유효하지 않으면 30대
+
+            age_map = {
+                1: "10대",
+                2: "20대",
+                3: "30대",
+                4: "40대",
+                5: "50대",
+                6: "60대 이상"
+            }
+
+            female_text = age_map[female_text]
+
+        # 유효성 검사 및 기본값 지정
+        if title not in [1, 2, 3, "1", "2", "3"]:
+            title = "1"
+
+        if channel not in [1, 2, 3, "1", "2", "3"]:
+            channel = "2"
+
+        if style not in [1, 2, 3, 4, 5, 6, "1", "2", "3", "4", "5", "6"]:
+            style = "1"
  
         detail_content = ""
         # 문구 생성
