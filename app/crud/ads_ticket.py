@@ -201,4 +201,32 @@ def get_history(user_id):
     finally:
         connection.close()
     
-        
+def get_valid_ticket(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT t.TICKET_NAME, p.EXPIRE_DATE
+                FROM ticket_payment p
+                JOIN ticket t
+                ON t.TICKET_ID = p.TICKET_ID           
+                WHERE p.USER_ID = %s
+                AND p.EXPIRE_DATE IS NOT NULL
+                AND p.EXPIRE_DATE >= CURDATE()
+                ORDER BY p.EXPIRE_DATE DESC
+                LIMIT 1
+            """, (user_id))
+            result = cursor.fetchone()
+
+        if result is None:
+            return None
+        return {
+            "ticket_name": result[0],
+            "expire": result[1]
+        }
+            
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()     

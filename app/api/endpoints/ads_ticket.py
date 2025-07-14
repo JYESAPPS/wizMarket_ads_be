@@ -10,7 +10,8 @@ from app.service.ads_ticket import (
     insert_payment as service_insert_payment,
     insert_token as service_insert_token,
     get_history as service_get_history,
-    get_token as service_get_token
+    get_token as service_get_token,
+    get_valid_ticket as service_get_valid_ticket
 )
 
 
@@ -71,3 +72,14 @@ def get_token(user_id: int):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "조회 중 오류 발생"}
+    
+# 사용자 티켓 & 토큰 정보 호출
+@router.get("/user/info")
+def get_valid_ticket(userId: int):
+    try: 
+        data = service_get_valid_ticket(userId)
+        return data
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "조회 중 오류 발생"}
+

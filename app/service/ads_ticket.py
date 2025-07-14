@@ -5,7 +5,8 @@ from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
     insert_onetime as crud_insert_onetime,
     get_history as crud_get_history,
-    get_latest_token_subscription as crud_get_latest_token_subscription
+    get_latest_token_subscription as crud_get_latest_token_subscription,
+    get_valid_ticket as crud_get_valid_ticket
 )
 
 from datetime import datetime
@@ -64,4 +65,16 @@ def get_token(user_id):
         "onetime": onetime,
         "subscription": subscription["sub"],
         "valid_until": subscription["valid"]
+    }
+
+# 사용자 티켓 & 토큰 호출
+def get_valid_ticket(user_id):
+    #
+    onetime = crud_get_latest_token_onetime(user_id)
+    subscription = crud_get_latest_token_subscription(user_id)
+    valid_ticket = crud_get_valid_ticket(user_id)
+
+    return {
+        "ticket_name": valid_ticket["ticket_name"] if valid_ticket else None,
+        "token_amount": onetime + (subscription["sub"] or 0)
     }

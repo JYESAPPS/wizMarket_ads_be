@@ -45,6 +45,9 @@ from app.service.ads_app import (
     generate_option_without_gender as service_generate_option_without_gender,
     get_manual_ai_reco_without_gender as service_get_manual_ai_reco_without_gender
 )
+from app.service.ads_ticket import (
+    get_valid_ticket as service_get_valid_ticket
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -869,10 +872,12 @@ def get_user_info(request : UserInfo):
     try:
         user_id = int(request.userId)
         info, record = service_get_user_info(user_id)
+        ticket_info = service_get_valid_ticket(user_id)
 
         return JSONResponse(content={
             "info": info,
-            "record": record
+            "record": record,
+            "ticket_info": ticket_info
         })
 
     except HTTPException as http_ex:
