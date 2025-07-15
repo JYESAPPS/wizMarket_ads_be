@@ -566,3 +566,70 @@ def generate_bg(image_url):
     response.raise_for_status()
     img = Image.open(BytesIO(response.content))
     return [img]
+
+#유효성 검사
+def validation_test(title, channel, female_text, style):
+        # 매핑 정의
+    title_map = {
+        "매장홍보": "1",
+        "상품소개": "2",
+        "이벤트": "3",
+    }
+
+    channel_map = {
+        "카카오톡": "1",
+        "인스타그램 스토리": "2",
+        "인스타그램 피드": "3",
+    }
+
+    style_map = {
+        "3D감성": "1",
+        "포토실사": "2",
+        "캐릭터/만화": "3",
+        "레트로": "4",
+        "AI모델": "5",
+        "예술": "6",
+    }
+    
+    # 주 고객
+    age_map = {
+        1: "10대",
+        2: "20대",
+        3: "30대",
+        4: "40대",
+        5: "50대",
+        6: "60대 이상"
+    }
+
+
+    # 문자열 매핑 → 숫자 문자열로 통일
+    title = title_map.get(str(title), str(title))
+    channel = channel_map.get(str(channel), str(channel))
+    style = style_map.get(str(style), str(style))
+
+    # 유효성 검사 및 기본값 지정
+    if title not in ["1", "2", "3"]:
+        title = "1"
+
+    if channel not in ["1", "2", "3"]:
+        channel = "2"
+
+    if style not in ["1", "2", "3", "4", "5", "6"]:
+        style = "1"
+
+    # 문자열이고 "여성 40대" 같은 문장이면 그대로 유지
+    if isinstance(female_text, str) and "대" in female_text:
+        pass  # 그대로 둠
+
+    else:
+        try:
+            female_text_int = int(female_text)
+        except (ValueError, TypeError):
+            female_text_int = 3  # 숫자 변환 불가능한 경우 기본 30대
+        if female_text_int not in age_map:
+            female_text_int = 3  # 범위 벗어나면 기본 30대
+
+        female_text = age_map[female_text_int]
+
+
+    return title, channel, female_text, style
