@@ -200,6 +200,27 @@ def get_user_profile(user_id):
         print(f"회원 정보 오류: {e}")
         return None
 
+# 유저 정보 추가
+def insert_user_info(user_id, request):
+    nickname = request.nickname
+    birth_year = request.birth_year
+    gender = request.gender
+    phone = request.phone
+
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO USER_INFO (user_id, nickname, birth_year, gender, phone)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, nickname, birth_year, gender, phone))
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
+
+    except Exception as e:
+        print(f"회원 정보 삽입 오류: {e}")
+        return False
 
 # 유저 정보 수정
 def update_user_info(user_id, request):

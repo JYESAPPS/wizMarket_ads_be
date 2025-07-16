@@ -34,6 +34,7 @@ from app.service.ads_app import (
     get_user_info as service_get_user_info,
     get_user_reco as service_get_user_reco,
     get_user_profile as service_get_user_profile,
+    service_insert_user_info,
     update_user_info as service_update_user_info,
     get_user_recent_reco as service_get_user_recent_reco,
     update_user_reco as service_update_user_reco,
@@ -937,15 +938,19 @@ def get_user_info(request : UserInfo):
         error_msg = f"Unexpected error while processing request: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
-    
-
 
 # 유저 정보 업데이트
 @router.post("/update/user/info")
 def update_user_info(request : UserInfoUpdate):
     try:
         user_id = int(request.user_id)
-        success = service_update_user_info(user_id, request)
+
+        exists = service_get_user_profile(user_id)
+
+        if exists:
+            success = service_update_user_info(user_id, request)
+        else:
+            success = service_insert_user_info(user_id, request)
 
         return JSONResponse(content={
             "success": success

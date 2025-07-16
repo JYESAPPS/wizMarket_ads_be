@@ -131,6 +131,14 @@ class ManualApp(BaseModel):
 class UserInfo(BaseModel):
     userId : str
 
+class UserInfoInsert(BaseModel):
+    user_id: str
+    birth_year: int
+    gender: str
+    nickname: str
+    phone: str
+    profile_image: str
+
 class UserInfoUpdate(BaseModel):
     user_id: str
     birth_year: int

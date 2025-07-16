@@ -18,6 +18,7 @@ from app.crud.ads_app import (
     get_user_record as crud_get_user_record,
     get_user_record_this_month as crud_get_user_record_this_month,
     get_user_profile as crud_get_user_profile,
+    insert_user_info as crud_insert_user_info,
     update_user_info as crud_update_user_info,
     get_user_recent_reco as crud_get_user_recent_reco,
     update_user_reco as crud_update_user_reco,
@@ -386,6 +387,9 @@ def get_user_reco(user_id):
 def get_user_profile(user_id):
     profile_image = crud_get_user_profile(user_id)
     return profile_image
+
+def service_insert_user_info(user_id, request):
+    return crud_insert_user_info(user_id, request)
 
 # 유저 정보 업데이트
 def update_user_info(user_id, request):
