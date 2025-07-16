@@ -969,8 +969,8 @@ def get_user_recent_record(request: UserRecentRecord):
 
         if not reco_list:
             return JSONResponse(content={
-                "message": "No recent records found."
-            }, status_code=status.HTTP_404_NOT_FOUND)
+                "reco_list": []
+            }, status_code=status.HTTP_200_OK)
 
 
         return JSONResponse(content={
