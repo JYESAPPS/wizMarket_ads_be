@@ -65,8 +65,19 @@ def parse_age_gender_info(age_info):
         age_raw = age_part[-1]  # '50S'
         age = age_raw.replace("S", "대")
 
-    return f"{gender} {age} ({percentage}%)"
+    prompt_templates = {
+        "10대": "유쾌하고 재밌는 말투로 짧은 광고 문구를 써줘. 이모지와 유행어를 자연스럽게 활용해서 친구끼리 말하는 듯한 느낌이면 좋아.",            
+        "20대": "감성적이고 세련된 말투로 SNS에 어울리는 광고 문구를 써줘. 유행하는 표현을 적절히 섞어서 자연스럽고 눈길을 끌 수 있게 해줘.",            
+        "30대": "바쁜 일상 속에서도 한눈에 들어올 수 있는 효율적인 문장으로 써줘. 감성은 유지하되 군더더기 없이 직관적인 톤이면 좋아.",            
+        "40대": "신뢰감 있고 차분한 말투로 제품이나 서비스의 가치를 안정적으로 전달할 수 있는 광고 문구를 써줘.",            
+        "50대": "정직하고 진중한 느낌을 주는 말투로, 신뢰할 수 있고 실용적인 정보가 담긴 광고 문구를 써줘.",            
+        "60대": "친절하고 배려 있는 말투로, 쉽게 이해할 수 있고 부담 없이 다가가는 느낌의 광고 문구를 써줘.",
+    }
 
+    prompt_template = prompt_templates.get(age, f"{age}를 위한 자연스러운 광고 문구를 써줘.")
+    female_text = f"{gender} {age} ({percentage}%) \n\n{prompt_template}"
+
+    return female_text
 
 # 옵션 값들 자동 선택 - 성별 값 있음
 def generate_option(request):

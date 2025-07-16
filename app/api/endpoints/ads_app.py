@@ -63,9 +63,9 @@ def generate_template(request: AutoAppMain):
     try:
         try : 
             female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
+            print(female_text)
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
-
         try:
             if female_text : 
                 options = service_generate_option(
@@ -179,6 +179,8 @@ def generate_template(request: AutoAppMain):
                     1. '{copyright}' 를 100~150자까지 인플루언서가 {request.detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+
+                    3.날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현한다. 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -335,6 +337,8 @@ def generate_template(request: AutoApp):
                     1. '{copyright}' 를 100~150자까지 인플루언서가 {request.detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+
+                    3.날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현한다. 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -391,7 +395,7 @@ def generate_template_regen(request: AutoAppRegen):
         road_name = request.road_name
         store_business_number = request.store_business_number
         
-        female_text = f"여성 {age}대"
+        female_text = f"{age}대"
         channel_text = ""
 
         if channel == "1" : 
@@ -490,6 +494,8 @@ def generate_template_regen(request: AutoAppRegen):
                     1. '{copyright}' 를 100~150자까지 인플루언서가 {detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+
+                    3.날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현한다. 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -638,7 +644,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
         main= request.main
         temp = request.temp
         road_name = request.road_name
-        female_text = f"여성 {age}대"
+        female_text = f"{age}대"
 
         detail_content = ""
         copyright_role = f'''
@@ -656,6 +662,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
                     주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
                     {category} 업종의 {formattedToday}, {main}, {temp}℃, 
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
+                    날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현해주세요. 나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                     ex2) 마라 칼국수 신메뉴! 얼얼하게 매운 맛!
                     ex3) 7월 대 오픈! 시원한 냉면 드시러 오세요~
@@ -666,6 +673,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
                     주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
                     {category} 업종의 {formattedToday}, {main}, {temp}℃, 
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
+                    날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현해주세요. 나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                     ex2) 마라 칼국수 신메뉴! 얼얼하게 매운 맛!
                     ex3) 7월 대 오픈! 시원한 냉면 드시러 오세요~
@@ -828,6 +836,8 @@ def generate_template_manual(request : ManualApp):
                     1. '{copyright}' 를 100~150자까지 인플루언서가 {menu} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+
+                    3.날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현한다. 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -1173,6 +1183,8 @@ async def generate_template_manual_camera(
                     1. '{copyright}' 를 100~150자까지 인플루언서가 {category} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+
+                    3.날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현한다. 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
