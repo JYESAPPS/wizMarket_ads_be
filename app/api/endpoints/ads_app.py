@@ -63,7 +63,6 @@ def generate_template(request: AutoAppMain):
     try:
         try : 
             female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-            print(female_text)
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
         try:
