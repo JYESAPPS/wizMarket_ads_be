@@ -125,7 +125,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, gender, birth_year, profile_image FROM USER_INFO WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
