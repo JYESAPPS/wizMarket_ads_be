@@ -734,6 +734,7 @@ def generate_template_manual(request : ManualApp):
         road_name= request.road_name
         detail_category_name= request.detail_category_name
         prompt = request.prompt
+        channel = request.channel
         
         female_text = f"{age}대"
         channel_text = ""
@@ -743,7 +744,7 @@ def generate_template_manual(request : ManualApp):
         if request.category == '' : 
             menu = request.customMenu
 
-        if not sub_channel:
+        if channel =="카카오톡":
             channel_text = "1"
         elif sub_channel == "스토리":
             channel_text = "2"
