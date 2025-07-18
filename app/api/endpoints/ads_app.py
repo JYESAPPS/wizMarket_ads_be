@@ -6,7 +6,7 @@ from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
     UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete,
-    ImageList
+    ImageList, ImageUploadRequest
 )
 import io
 from fastapi import Request, Body
@@ -1221,13 +1221,14 @@ async def generate_template_manual_camera(
 
 
 @router.post("/posting")
-def posting(image_base64: str):
+def posting(req: ImageUploadRequest):
     try:
         UPLOAD_DIR = "app/posting"
 
         os.makedirs(UPLOAD_DIR, exist_ok=True)
+
         # base64 헤더 제거
-        header, encoded = image_base64.split(",", 1)
+        header, encoded = req.image_base64.split(",", 1)
         binary_data = base64.b64decode(encoded)
 
         # 파일 이름 생성
@@ -1238,7 +1239,7 @@ def posting(image_base64: str):
         with open(filepath, "wb") as f:
             f.write(binary_data)
 
-        # 접근 가능한 URL 구성 (예시: nginx/static 연동 or 로컬 테스트용)
+        # URL 예시
         image_url = f"http://221.151.48.225:58002/posing/{filename}"  
 
         return JSONResponse(content={"url": image_url})

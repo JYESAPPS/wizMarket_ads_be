@@ -9,6 +9,8 @@ class ImageItem(BaseModel):
     path: str
 
 
+class ImageUploadRequest(BaseModel):
+    image_base64: str
 
 
 
