@@ -1221,30 +1221,3 @@ async def generate_template_manual_camera(
 
 
 
-@router.post("/posting")
-def posting(req: ImageUploadRequest):
-    try:
-        UPLOAD_DIR = "app/posting"
-
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-        # base64 헤더 제거
-        header, encoded = req.image_base64.split(",", 1)
-        binary_data = base64.b64decode(encoded)
-
-        # 파일 이름 생성
-        filename = f"{uuid.uuid4().hex}.png"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-
-        # 이미지 저장
-        with open(filepath, "wb") as f:
-            f.write(binary_data)
-
-        # URL 예시
-        image_url = f"http://221.151.48.225:58002/posing/{filename}"  
-
-        return JSONResponse(content={"url": image_url})
-
-    except Exception as e:
-        print("업로드 오류:", e)
-        raise HTTPException(status_code=500, detail="이미지 업로드 실패")
