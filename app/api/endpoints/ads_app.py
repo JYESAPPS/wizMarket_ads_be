@@ -45,7 +45,8 @@ from app.service.ads_app import (
     generate_bg as service_generate_bg,
     generate_option_without_gender as service_generate_option_without_gender,
     get_manual_ai_reco_without_gender as service_get_manual_ai_reco_without_gender,
-    validation_test as service_validation_test
+    validation_test as service_validation_test,
+    extract_age_group as service_extract_age_group,
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -627,6 +628,9 @@ def manual_ai_reco(request : AutoApp):
     else : 
         title, channel, female_text, style = parts
 
+    title, channel, female_text, style = service_validation_test(title, channel, female_text, style)
+    female_text = service_extract_age_group(female_text)
+
     return JSONResponse(content={
         "title" : title, 
         "channel" : channel, 
@@ -727,7 +731,7 @@ def generate_template_manual(request : ManualApp):
         main= request.main
         temp= request.temp
         style=request.style
-        age= request.age
+        female_text= request.age
         sub_channel= request.subChannel
         theme= request.theme
         store_name= request.store_name
@@ -735,8 +739,6 @@ def generate_template_manual(request : ManualApp):
         detail_category_name= request.detail_category_name
         prompt = request.prompt
         channel = request.channel
-        
-        female_text = f"{age}대"
         channel_text = ""
 
         menu = request.category

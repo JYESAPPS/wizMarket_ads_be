@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import re
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
@@ -646,5 +647,14 @@ def validation_test(title, channel, female_text, style):
 
         female_text = age_map[female_text_int]
 
-
     return title, channel, female_text, style
+
+def extract_age_group(text):
+    # 이미 원하는 형식이면 그대로 반환
+    if re.search(r'\b\d{2}대 이상\b', text):
+        return re.search(r'\b\d{2}대 이상\b', text).group(0)
+    elif re.search(r'\b\d{2}대\b', text):
+        age = re.search(r'\b(\d{2})대\b', text).group(1)
+        return "60대 이상" if age == "60" else f"{age}대"
+    else:
+        return None
