@@ -6,7 +6,9 @@ from app.crud.ads_ticket import (
     insert_onetime as crud_insert_onetime,
     get_history as crud_get_history,
     get_latest_token_subscription as crud_get_latest_token_subscription,
-    get_valid_ticket as crud_get_valid_ticket
+    get_valid_ticket as crud_get_valid_ticket,
+    insert_payment_history as crud_insert_token_deduction_history,
+    insert_token_deduction_history as crud_insert_token_deduction_history
 )
 
 from datetime import datetime
@@ -58,13 +60,15 @@ def get_history(user_id):
 
 # 사용자의 단건&정기 토큰 반환
 def get_token(user_id):
-    onetime = crud_get_latest_token_onetime(user_id)
-    subscription = crud_get_latest_token_subscription(user_id)
+    onetime = crud_get_latest_token_onetime(user_id) or 0
+    subscription = crud_get_latest_token_subscription(user_id) or {}
 
     return {
         "onetime": onetime,
-        "subscription": subscription["sub"],
-        "valid_until": subscription["valid"]
+        "subscription": subscription.get("sub", 0),
+        "valid_until": subscription.get("valid")
+        # "subscription": subscription["sub"],
+        # "valid_until": subscription["valid"]
     }
 
 # 사용자 티켓 & 토큰 호출
@@ -77,4 +81,56 @@ def get_valid_ticket(user_id):
     return {
         "ticket_name": valid_ticket["ticket_name"] if valid_ticket else None,
         "token_amount": onetime + (subscription["sub"] or 0)
+    }
+
+# 차감 함수
+def deduct_token(user_id):
+    sub_data  = crud_get_latest_token_subscription(user_id) # 정기 토큰 + 만료일
+    token_onetime = crud_get_latest_token_onetime(user_id) # 단건 토큰
+
+    token_subscription = sub_data["sub"]
+    valid_until = sub_data["valid"]
+
+    # None 대응
+    if sub_data is None:
+        token_subscription = 0
+        valid_until = None
+    else:
+        token_subscription = sub_data.get("sub") or 0
+        valid_until = sub_data.get("valid")
+
+    if token_onetime is None:
+        token_onetime = 0
+
+    total = token_subscription + token_onetime
+    if total < 1:
+        raise ValueError("사용 가능한 토큰이 없습니다.")
+    
+    # 차감
+    used_type = None
+    if token_subscription > 0:
+        token_subscription -= 1
+        used_type = "subscription"
+    elif token_onetime > 0:
+        token_onetime -= 1
+        used_type = "onetime"
+
+    # 차감 기록 DB 저장
+    crud_insert_token_deduction_history(
+        user_id=user_id,
+        ticket_id=1,
+        token_grant=1,
+        token_subscription=token_subscription,
+        token_onetime=token_onetime,
+        valid_until=valid_until,
+        grant_date=datetime.now()
+    )
+
+    return {
+        'user_id': user_id,
+        'used_type': used_type,
+        'token_subscription': token_subscription,
+        'token_onetime': token_onetime,
+        "remaining_tokens": token_subscription + token_onetime,
+        "total_tokens": total
     }

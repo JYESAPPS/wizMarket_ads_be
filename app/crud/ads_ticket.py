@@ -5,6 +5,7 @@ from app.db.connect import (
 from fastapi import HTTPException
 import pymysql
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -230,3 +231,91 @@ def get_valid_ticket(user_id):
         return []
     finally:
         connection.close()     
+
+# 구독 토큰 차감
+def update_subscription_token(user_id: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE ticket_token
+                SET TOKEN_SUBSCRIPTION = TOKEN_SUBSCRIPTION - 1
+                WHERE USER_ID = %s
+                AND TOKEN_SUBSCRIPTION > 0
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id,))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"구독 토큰 차감 실패: {e}")
+    finally:
+        connection.close()
+
+# 단건 토큰 차감
+def update_onetime_token(user_id: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE ticket_token
+                SET TOKEN_ONETIME = TOKEN_ONETIME - 1
+                WHERE USER_ID = %s
+                AND TOKEN_ONETIME > 0
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id,))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"단건 토큰 차감 실패: {e}")
+    finally:
+        connection.close()
+
+# ticket_payment 테이블에 차감 이력 저장
+def insert_payment_history(user_id: int, ticket_id: int = 1, payment_method: str = "deduct"):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO ticket_payment (
+                    USER_ID, TICKET_ID, PAYMENT_METHOD, PAYMENT_DATE
+                ) VALUES (%s, %s, %s, %s)
+            """, (
+                user_id,
+                ticket_id,
+                payment_method,
+                datetime.now()
+            ))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"토큰 차감 INSERT 실패: {e}")
+    finally:
+        connection.close()
+
+# 토큰 차감 시 ticket_token에 기록
+def insert_token_deduction_history(user_id: int, ticket_id: int, token_grant: int, token_subscription: int, token_onetime: int, valid_until, grant_date):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO ticket_token (
+                    GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, VALID_UNTIL, GRANT_DATE
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                0,  # GRANT_TYPE = 0 for deduction
+                user_id,
+                ticket_id,
+                token_grant,
+                token_subscription,
+                token_onetime,
+                valid_until,
+                grant_date
+            ))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"차감 기록 실패: {e}")
+    finally:
+        connection.close()

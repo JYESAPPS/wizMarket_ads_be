@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 from typing import List
 import logging
 from app.schemas.ads_ticket import (
-    InsertPayRequest
+    InsertPayRequest,
+    InsertTokenRequest
 )
 
 from app.service.ads_ticket import (
@@ -11,7 +12,8 @@ from app.service.ads_ticket import (
     insert_token as service_insert_token,
     get_history as service_get_history,
     get_token as service_get_token,
-    get_valid_ticket as service_get_valid_ticket
+    get_valid_ticket as service_get_valid_ticket,
+    deduct_token as service_deduct_token
 )
 
 
@@ -83,3 +85,20 @@ def get_valid_ticket(userId: int):
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "조회 중 오류 발생"}
 
+@router.post("/token/deduct")
+def deduct_token_endpoint(request: InsertTokenRequest):
+    try:
+        user_id = request.user_id
+        data = service_deduct_token(user_id=user_id)
+
+        return {
+            "used_type": data["used_type"],
+            "remaining_tokens": data["token_onetime"] + data["token_subscription"],
+            "total_tokens": data["total_tokens"]
+        }
+    except ValueError as ve:
+        logger.error(f"[400 Error] {str(ve)}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"[500 Error] {str(e)}")  # ✅ 에러 로그 출력
+        raise HTTPException(status_code=500, detail=f"토큰 차감 중 오류 발생: {str(e)}")
