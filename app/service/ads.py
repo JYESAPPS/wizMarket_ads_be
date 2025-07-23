@@ -188,7 +188,7 @@ def translate_weather_id_to_main(weather_id: int) -> str:
 
 # 카테고리 별 랜덤 이미지 가져오기
 def random_design_style(init_info):
-    gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 3개 알려주세요."
+    gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 1개 알려주세요."
     formattedToday = datetime.today().strftime("%Y-%m-%d")
     
     content = f"""[매장 정보]  
