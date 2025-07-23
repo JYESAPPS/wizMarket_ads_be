@@ -427,7 +427,7 @@ def generate_template_regen(request: AutoAppRegen):
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {detail_category_name}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {female_text} 
+                    {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text} 
                     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
@@ -438,7 +438,7 @@ def generate_template_regen(request: AutoAppRegen):
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 문구.
-                    {detail_category_name}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {female_text}
+                    {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text}
                     을 바탕으로 15자 이내로 작성해주세요
                 '''
 
@@ -485,7 +485,7 @@ def generate_template_regen(request: AutoAppRegen):
                     {store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {detail_category_name}
                     일시 : {formattedToday}
-                    오늘날씨 : {main}, {temp}℃
+                    오늘날씨 : {main}
                     주요 고객층: {female_text}
 
                     주소: {road_name}
@@ -568,7 +568,7 @@ def generate_template_regen_auto(request: AutoGenCopy):
             copyright_prompt = f'''
                 {store_name} 업체를 위한 홍보 내용을 작성해주세요.
                 주소는 {road_name} 이고 홍보할 주제는 {title} 입니다.
-                {category} 업종이며 오늘은 {formattedToday}, {main}, {temp}℃ 입니다, 
+                {category} 업종이며 오늘은 {formattedToday}, {main} 입니다, 
                 다음을 바탕으로 100자 이내로 작성해주세요.
                 ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                 ex2) 마라 칼국수 신메뉴! 얼얼하게 매운 맛!
@@ -667,7 +667,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 {subChannel} 에 포스팅할 홍보 내용을 작성해주세요.
                     주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
-                    {category} 업종의 {formattedToday}, {main}, {temp}℃, 
+                    {category} 업종의 {formattedToday}, {main}, 
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
                     날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현해주세요. 나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
@@ -678,7 +678,7 @@ def generate_template_regen_manual(request: ManualGenCopy):
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 {channel} 에 포스팅할 홍보 내용을 작성해주세요.
                     주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
-                    {category} 업종의 {formattedToday}, {main}, {temp}℃, 
+                    {category} 업종의 {formattedToday}, {main}, 
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
                     날씨는 온도를 명확하게 표기하지 않고 맥락에 따라 표현해주세요. 나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
@@ -771,7 +771,7 @@ def generate_template_manual(request : ManualApp):
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {menu}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {female_text} 
+                    {menu}, {formattedToday}, {main}, 주요 고객층: {female_text} 
                     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
@@ -782,7 +782,7 @@ def generate_template_manual(request : ManualApp):
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 문구.
-                    {menu}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {female_text}
+                    {menu}, {formattedToday}, {main}, 주요 고객층: {female_text}
                     을 바탕으로 15자 이내로 작성해주세요
                 '''
 
@@ -829,7 +829,7 @@ def generate_template_manual(request : ManualApp):
                     {store_name} 업체의 인스타그램 피드를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {menu}
                     일시 : {formattedToday}
-                    오늘날씨 : {main}, {temp}℃
+                    오늘날씨 : {main}
                     주요 고객층: {female_text}
 
                     주소: {road_name}
@@ -1118,7 +1118,7 @@ async def generate_template_manual_camera(
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {category}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {age} 
+                    {category}, {formattedToday}, {main}, 주요 고객층: {age} 
                     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
@@ -1129,7 +1129,7 @@ async def generate_template_manual_camera(
 
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 문구.
-                    {category}, {formattedToday}, {main}, {temp}℃, 주요 고객층: {age}
+                    {category}, {formattedToday}, {main}, 주요 고객층: {age}
                     을 바탕으로 15자 이내로 작성해주세요
                 '''
 
@@ -1180,7 +1180,7 @@ async def generate_template_manual_camera(
                     {store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {category}
                     일시 : {formattedToday}
-                    오늘날씨 : {main}, {temp}℃
+                    오늘날씨 : {main}
                     주요 고객층: {age}
 
                     주소: {road_name}

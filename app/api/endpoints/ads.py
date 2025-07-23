@@ -253,7 +253,7 @@ def generate_image_with_text(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}, {temp}℃
+                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
@@ -332,13 +332,13 @@ def generate_image_with_text_remove_background(
             if title == '이벤트':
                 copyright_prompt = f'''
                     {store_name} 업체의 {use_option} 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {tag}, {formattedToday}, {weather}, {temp}℃, {detail_content}
+                    {tag}, {formattedToday}, {weather}, {detail_content}
                     핵심 고객 연령대 : {male_base}, {female_base} 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
                 copyright_prompt = f'''
                     {store_name} 업체의 {use_option} 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {tag}, {formattedToday}, {weather}, {temp}℃, {detail_content}
+                    {tag}, {formattedToday}, {weather}, {detail_content}
                     핵심 고객 연령대 : {male_base}, {female_base} 내용 15자 이내로 작성해주세요
             '''
 
@@ -430,7 +430,7 @@ def generate_image_with_text_remove_background(
                     업종: {tag}
                     세부정보 : {detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {weather}, {temp}℃
+                    오늘날씨 : {weather}
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {female_base}
@@ -936,7 +936,7 @@ def generate_image_with_text_template2(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}, {temp}℃
+                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
@@ -961,7 +961,7 @@ def generate_image_with_text_template2(
                     업종: {tag}
                     세부정보 : {detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {weather}, {temp}℃
+                    오늘날씨 : {weather}
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {female_base}
@@ -1496,7 +1496,7 @@ def generate_video_with_text(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}, {temp}℃
+                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
