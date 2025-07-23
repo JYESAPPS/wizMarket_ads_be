@@ -49,7 +49,7 @@ def get_image_list(category_id: int):
         if connection.open:
             # 카테고리 ID에 따라 썸네일 이미지 조회
             select_query = """
-                SELECT tp.image_path, t.design_id
+                SELECT tp.image_path, t.design_id, t.prompt
                 FROM thumbnail t
                 JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
                 WHERE t.category_id = %s
