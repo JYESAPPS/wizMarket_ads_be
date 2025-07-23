@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
-from app.api.endpoints import ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_faq
+from app.api.endpoints import ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket
 from app.api.endpoints import webhook
 
 app = FastAPI()
@@ -40,10 +40,8 @@ app.include_router(ads_notice.router, prefix="/ads")
 app.include_router(ads_login.router, prefix="/ads")
 app.include_router(ads_user.router, prefix="/ads")
 app.include_router(ads_app.router, prefix="/ads")
-
 app.include_router(ads_plan.router, prefix="/plan")
 app.include_router(ads_ticket.router, prefix="/ticket")
-app.include_router(ads_faq.router, prefix="/faq")
 app.include_router(webhook.router, prefix="/ad")
 
 if __name__ == "__main__":
