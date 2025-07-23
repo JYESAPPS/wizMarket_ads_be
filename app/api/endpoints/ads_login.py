@@ -63,11 +63,17 @@ def ads_login_kakao_route(request: KaKao):
         raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
 
     kakao_id = str(user_info["id"])
-    nickname = user_info.get("properties", {}).get("nickname", "카카오유저")
-    email = user_info.get("kakao_account", {}).get("email", None)
+    kakao_account = user_info.get("kakao_account", {})
+
+    nickname = kakao_account.get("profile", {}).get("nickname", "카카오유저")
+    email = kakao_account.get("email")
+    name = kakao_account.get("name")
+    birthday = kakao_account.get("birthday")
+    birthyear = kakao_account.get("birthyear")
+    phone_number = kakao_account.get("phone_number")
 
     # 🧨 여기선 DB 없이 그냥 가정: 신규 유저 생성 처리만 함
-    fake_user_id = f"kakao-{kakao_id}"  # 예: 고유 식별자 생성
+    fake_user_id = f"kakao-{kakao_id}"
 
     # JWT 발급
     token = service_create_access_token(data={"sub": fake_user_id})
@@ -78,5 +84,9 @@ def ads_login_kakao_route(request: KaKao):
             "id": fake_user_id,
             "nickname": nickname,
             "email": email,
+            "name": name,
+            "birthday": birthday,
+            "birthyear": birthyear,
+            "phone_number": phone_number,
         }
     }
