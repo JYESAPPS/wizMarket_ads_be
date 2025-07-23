@@ -7,3 +7,7 @@ class UserRegisterRequest(BaseModel):
 
 class ImageListRequest(BaseModel):
     categoryId : int
+
+
+class KaKao(BaseModel):
+    kakao_access_token : str

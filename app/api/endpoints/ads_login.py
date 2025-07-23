@@ -1,12 +1,14 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest
+    UserRegisterRequest, ImageListRequest, KaKao
 )
 
 from app.service.ads_login import (
     ads_login as service_ads_login,
     get_category as service_get_category,
-    get_image_list as service_get_image_list
+    get_image_list as service_get_image_list,
+    get_kakao_user_info as service_get_kakao_user_info,
+    create_access_token as service_create_access_token
 )
 
 
@@ -50,3 +52,31 @@ def get_image_list(request: ImageListRequest):
     result = service_get_image_list(category_id)
 
     return {"image_list": result or []}
+
+
+
+@router.post("/login/kakao")
+def ads_login_kakao_route(request: KaKao):
+    user_info = service_get_kakao_user_info(request.kakao_access_token)
+
+    if not user_info or "id" not in user_info:
+        raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
+
+    kakao_id = str(user_info["id"])
+    nickname = user_info.get("properties", {}).get("nickname", "카카오유저")
+    email = user_info.get("kakao_account", {}).get("email", None)
+
+    # 🧨 여기선 DB 없이 그냥 가정: 신규 유저 생성 처리만 함
+    fake_user_id = f"kakao-{kakao_id}"  # 예: 고유 식별자 생성
+
+    # JWT 발급
+    token = service_create_access_token(data={"sub": fake_user_id})
+
+    return {
+        "access_token": token,
+        "user": {
+            "id": fake_user_id,
+            "nickname": nickname,
+            "email": email,
+        }
+    }
