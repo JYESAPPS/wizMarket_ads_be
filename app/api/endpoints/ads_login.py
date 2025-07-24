@@ -107,7 +107,7 @@ def ads_login_kakao_route(request: KaKao):
 
 
 
-@router.get("/auto/login")
+@router.post("/auto/login")
 def auto_login(request: User):
     """
     저장된 access_token으로 자동 로그인 시도
