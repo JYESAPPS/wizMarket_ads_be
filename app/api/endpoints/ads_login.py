@@ -64,24 +64,19 @@ def get_image_list(request: ImageListRequest):
 
 @router.post("/login/kakao")
 def ads_login_kakao_route(request: KaKao):
-    user_info = service_get_kakao_user_info(request.kakao_access_token)
+    kakao_info = service_get_kakao_user_info(request.kakao_access_token)
 
-    if not user_info or "id" not in user_info:
+    if not kakao_info or "id" not in kakao_info:
         raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
 
 
-    kakao_id = str(user_info["id"])
-    kakao_account = user_info.get("kakao_account", {})
+    kakao_id = str(kakao_info["id"])
+    kakao_account = kakao_info.get("kakao_account", {})
 
-    nickname = kakao_account.get("profile", {}).get("nickname", "카카오유저")
     email = kakao_account.get("email")
-    name = kakao_account.get("name")
-    birthday = kakao_account.get("birthday")
-    birthyear = kakao_account.get("birthyear")
-    phone_number = kakao_account.get("phone_number")
 
     user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email)
-
+    user_info = service_get_user_by_id(user_id)
 
     # JWT 발급
     access_token = service_create_access_token(data={"sub": str(user_id)})
@@ -95,13 +90,10 @@ def ads_login_kakao_route(request: KaKao):
         "access_token": access_token,
         "refresh_token": refresh_token,
         "user": {
-            "id": kakao_id,
-            "nickname": nickname,
+            "user_id": user_id,
             "email": email,
-            "name": name,
-            "birthday": birthday,
-            "birthyear": birthyear,
-            "phone_number": phone_number,
+            "type": user_info["type"],
+            "store_business_number": user_info.get("store_business_number", None)
         }
     }
 
@@ -123,5 +115,7 @@ def auto_login(request: User):
 
     return {
         "user_id": user["user_id"],
-        "email": user["email"]
+        "email": user["email"],
+        "type": user["type"],
+        "store_business_number": user.get("store_business_number", None)
     }
