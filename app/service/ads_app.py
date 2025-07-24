@@ -23,7 +23,8 @@ from app.crud.ads_app import (
     update_user_info as crud_update_user_info,
     get_user_recent_reco as crud_get_user_recent_reco,
     update_user_reco as crud_update_user_reco,
-    delete_user_reco as crud_delete_user_reco
+    delete_user_reco as crud_delete_user_reco,
+    get_store_info as crud_get_store_info
 )
 from app.crud.ads import (
     get_category_id as crud_get_category_id
@@ -658,3 +659,8 @@ def extract_age_group(text):
         return "60대 이상" if age == "60" else f"{age}대"
     else:
         return None
+
+
+def get_store_info(store_business_number):
+    store_info = crud_get_store_info(store_business_number)
+    return store_info

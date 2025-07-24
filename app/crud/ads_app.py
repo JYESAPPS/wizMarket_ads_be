@@ -328,3 +328,27 @@ def delete_user_reco(user_id, request):
         print(f"회원 기록 정보 삭제 오류: {e}")
         return False
 
+
+def get_store_info(store_business_number):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT STORE_NAME, ROAD_NAME
+                FROM REPORT
+                WHERE STORE_BUSINESS_NUMBER = %s
+            """, (store_business_number,))  # ✅ 쉼표 추가로 튜플로 만들어야 함
+            row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return row
+
+    except Exception as e:
+        print(f"매장 정보 오류: {e}")
+        return None
+
+
+
+

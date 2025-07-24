@@ -13,7 +13,8 @@ class ImageUploadRequest(BaseModel):
     image_base64: str
 
 
-
+class StoreInfo(BaseModel):
+    store_business_number: str
 
 
 class AutoApp(BaseModel):

@@ -6,7 +6,7 @@ from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
     UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete,
-    ImageList, ImageUploadRequest
+    ImageList, ImageUploadRequest, StoreInfo
 )
 import io
 from fastapi import Request, Body
@@ -47,6 +47,7 @@ from app.service.ads_app import (
     get_manual_ai_reco_without_gender as service_get_manual_ai_reco_without_gender,
     validation_test as service_validation_test,
     extract_age_group as service_extract_age_group,
+    get_store_info as service_get_store_info
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -1217,4 +1218,17 @@ async def generate_template_manual_camera(
     
 
 
-
+@router.post("/loc/store/info")
+def get_store_info(request: StoreInfo):
+    try:
+        store_info = service_get_store_info(request.store_business_number)
+        return JSONResponse(content={
+            "store_info": store_info
+        })
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
