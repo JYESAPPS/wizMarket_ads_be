@@ -196,7 +196,6 @@ def random_design_style(init_info):
     - 업종: {init_info.detail_category_name} 
     - 주소: {init_info.road_name}
     - 일시: {formattedToday}
-    - 날씨: {init_info.main}, {init_info.temp}
 
     [디자인 스타일]  
     - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5.AI모델 6. 예술 
@@ -250,7 +249,7 @@ def select_ai_age(init_info):
         - 업종: {init_info.detail_category_name} 
         - 주소: {init_info.road_name}
         - 일시: {formattedToday}
-        - 날씨: {init_info.main}, {init_info.temp}
+
 
         [연령대]
         1. 10대 2. 20대 3. 30대 4. 40대 5. 50대 6. 60대 이상
@@ -297,7 +296,6 @@ def select_ai_data(init_info):
     - 업종: {init_info.detail_category_name} 
     - 주소: {init_info.road_name}
     - 일시: {formattedToday}
-    - 날씨: {init_info.main}, {init_info.temp}
 
     [홍보 주제]  
         ※ 아래 중 하나를 조건에 따라 선택. 

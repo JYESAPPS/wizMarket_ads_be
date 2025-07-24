@@ -200,7 +200,7 @@ def select_suggest_channel(request: AdsSuggestChannelRequest):
 #                 주소 : {request.road_name}
 #                 업종 : {request.tag}
 #                 날짜 : {formattedToday}
-#                 날씨 : {request.weather}, {request.temp}℃
+#            
 #                 매출이 가장 높은 남성 연령대 : {request.male_base}
 #                 매출이 가장 높은 여성 연령대 : {request.female_base}
 #             '''
@@ -253,7 +253,6 @@ def generate_image_with_text(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
@@ -430,7 +429,7 @@ def generate_image_with_text_remove_background(
                     업종: {tag}
                     세부정보 : {detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {weather}
+        
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {female_base}
@@ -487,7 +486,6 @@ def generate_upload(request: AdsTestRequest):
                 주소 : {request.road_name}
                 업종 : {request.tag}
                 날짜 : {formattedToday}
-                날씨 : {request.weather}, {request.temp}℃
                 매출이 가장 높은 남성 연령대 : {request.male_base}
                 매출이 가장 높은 여성 연령대 : {request.female_base}
             '''
@@ -505,20 +503,20 @@ def generate_upload(request: AdsTestRequest):
             korean_story_prompt = f"""
                 - 세부업종 : {request.tag}
                 - 날짜 : {formattedToday}
-                - 날씨 : {request.weather}, {request.temp}℃
+    
                 - 매출이 가장 높은 남성 연령대 : {request.male_base}
                 - 매출이 가장 높은 여성 연령대 : {request.female_base}
                 - 장소 : {request.road_name}
                 - 추가정보 내용 : {request.detail_content}
                 - 홍보채널 : {request.use_option}
                 - 홍보채널에 포스팅되는 이미지나 동영상의 특징을 살려서 매장의 특성과 브랜드를 잘 느낄 수 있을것. 
-                - 주요고객이 오늘의 날씨와 환경, 날짜, 장소의 특징을 감안하여 매장에 대한 호감도를 느낄 수 있는 스토리를 작성할 것
+                - 주요고객이 오늘의 환경, 날짜, 장소의 특징을 감안하여 매장에 대한 호감도를 느낄 수 있는 스토리를 작성할 것
                 - 매장의 세부업종에 따른 이미지 컨셉을 도출하여 스토리에 접목시킬 것
             """
             korean_story_gpt_role = f'''
                 당신은 광고를 제작하는 크리에이티브 디자이너 입니다. 
                 멋진 온라인 광고 콘텐츠를 제작하기 위해 당신이 고려해야할 것은 
-                클라이언트 사업의 업종, 매장위치, 핵심고객, 오늘의 날씨, 홍보주제, 온라인 홍보채널 등을 고려하여 
+                클라이언트 사업의 업종, 매장위치, 핵심고객, 홍보주제, 온라인 홍보채널 등을 고려하여 
                 멋지고 창의적이고 때로는 엉뚱한 상상력을 발휘할 수 있는 스토리를 한 장의 이미지로 나타내려고 합니다. 
                 
                 핵심고객의 나이가 20대, 30대라면 동물을 테마로 한 엉뚱한 상상력을 발휘해도 좋고 40대라면 일상에서 일어나는 일들을 테마로 하고, 
@@ -749,7 +747,7 @@ def generate_template(request: AdsTemplateRequest):
                     업종: {request.tag}
                     세부정보 : {request.detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {request.weather}, {request.temp}℃
+        
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {request.male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {request.female_base}
@@ -870,7 +868,7 @@ def generate_template(request: AdsTemplateSeedImage):
                     업종: {request.tag}
                     세부정보 : {request.detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {request.weather}, {request.temp}℃
+        
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {request.male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {request.female_base}
@@ -936,7 +934,6 @@ def generate_image_with_text_template2(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
@@ -961,7 +958,7 @@ def generate_image_with_text_template2(
                     업종: {tag}
                     세부정보 : {detail_content}
                     일시 : {formattedToday}
-                    오늘날씨 : {weather}
+        
                     핵심고객: 
                     매출이 가장 높은 남성 연령대 : 남자 {male_base}
                     매출이 가장 높은 여성 연령대 : 여자 {female_base}
@@ -1496,7 +1493,6 @@ def generate_video_with_text(
                 주소 : {road_name}
                 업종 : {tag}
                 날짜 : {formattedToday}
-                날씨 : {weather}
                 매출이 가장 높은 남성 연령대 : {male_base}
                 매출이 가장 높은 여성 연령대 : {female_base}
             '''
