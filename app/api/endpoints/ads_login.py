@@ -122,6 +122,6 @@ def auto_login(request: User):
     user = service_get_user_by_id(int(user_id))
 
     return {
-        "user_id": user["id"],
+        "user_id": user["user_id"],
         "email": user["email"]
     }
