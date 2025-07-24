@@ -44,3 +44,12 @@ def create_access_token(data: dict):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+
+
+def get_user_by_provider(provider: str, provider_id: str):
+    # 이 함수는 provider와 provider_id를 사용하여 사용자 정보를 조회하는 로직을 구현해야 합니다.
+    # 예시로, provider가 "kakao"인 경우 카카오 사용자 정보를 조회하는 로직을 작성할 수 있습니다.
+    # 실제 구현은 데이터베이스나 다른 서비스와의 연동에 따라 달라질 수 있습니다.
+    pass

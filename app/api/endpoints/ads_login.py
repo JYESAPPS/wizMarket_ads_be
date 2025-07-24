@@ -8,7 +8,8 @@ from app.service.ads_login import (
     get_category as service_get_category,
     get_image_list as service_get_image_list,
     get_kakao_user_info as service_get_kakao_user_info,
-    create_access_token as service_create_access_token
+    create_access_token as service_create_access_token,
+    get_user_by_provider as service_get_user_by_provider
 )
 
 
@@ -63,6 +64,9 @@ def ads_login_kakao_route(request: KaKao):
         raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
 
     kakao_id = str(user_info["id"])
+
+    user = service_get_user_by_provider(provider="kakao", provider_id=kakao_id)
+
     kakao_account = user_info.get("kakao_account", {})
 
     nickname = kakao_account.get("profile", {}).get("nickname", "카카오유저")
