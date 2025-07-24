@@ -157,3 +157,35 @@ def update_user_token(user_id: int, access_token: str, refresh_token: str):
     finally:
         cursor.close()
         connection.close()
+
+
+
+def get_user_by_id(user_id: int):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT *
+                FROM user
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (user_id,))
+            user = cursor.fetchone()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+
+            return user
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()

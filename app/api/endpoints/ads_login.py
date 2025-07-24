@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao
+    UserRegisterRequest, ImageListRequest, KaKao, User
 )
+
+
 
 from app.service.ads_login import (
     ads_login as service_ads_login,
@@ -11,7 +13,9 @@ from app.service.ads_login import (
     create_access_token as service_create_access_token,
     create_refresh_token as service_create_refresh_token,
     get_user_by_provider as service_get_user_by_provider,
-    update_user_token as service_update_user_token
+    update_user_token as service_update_user_token,
+    decode_token as service_decode_token,
+    get_user_by_id as service_get_user_by_id
 )
 
 
@@ -100,3 +104,27 @@ def ads_login_kakao_route(request: KaKao):
             "phone_number": phone_number,
         }
     }
+
+
+
+@router.get("/auto/login")
+def auto_login(request: User):
+    """
+    저장된 access_token으로 자동 로그인 시도
+    """
+    access_token  = request.access_token
+
+    payload = service_decode_token(access_token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="토큰에 user_id(sub)가 없습니다.")
+
+    user = service_get_user_by_id(int(user_id))
+
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "type": user.type
+    }
+
+    pass
