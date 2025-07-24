@@ -9,7 +9,9 @@ from app.service.ads_login import (
     get_image_list as service_get_image_list,
     get_kakao_user_info as service_get_kakao_user_info,
     create_access_token as service_create_access_token,
-    get_user_by_provider as service_get_user_by_provider
+    create_refresh_token as service_create_refresh_token,
+    get_user_by_provider as service_get_user_by_provider,
+    update_user_token as service_update_user_token
 )
 
 
@@ -63,10 +65,8 @@ def ads_login_kakao_route(request: KaKao):
     if not user_info or "id" not in user_info:
         raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
 
+
     kakao_id = str(user_info["id"])
-
-    user = service_get_user_by_provider(provider="kakao", provider_id=kakao_id)
-
     kakao_account = user_info.get("kakao_account", {})
 
     nickname = kakao_account.get("profile", {}).get("nickname", "카카오유저")
@@ -76,16 +76,22 @@ def ads_login_kakao_route(request: KaKao):
     birthyear = kakao_account.get("birthyear")
     phone_number = kakao_account.get("phone_number")
 
-    # 🧨 여기선 DB 없이 그냥 가정: 신규 유저 생성 처리만 함
-    fake_user_id = f"kakao-{kakao_id}"
+    user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email)
+
 
     # JWT 발급
-    token = service_create_access_token(data={"sub": fake_user_id})
+    access_token = service_create_access_token(data={"sub": str(user_id)})
+    refresh_token = service_create_refresh_token({"sub": str(user_id)})
+
+    # 토큰 update
+    service_update_user_token(user_id, access_token, refresh_token)
+
 
     return {
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "user": {
-            "id": fake_user_id,
+            "id": kakao_id,
             "nickname": nickname,
             "email": email,
             "name": name,

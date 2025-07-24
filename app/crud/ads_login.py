@@ -75,3 +75,85 @@ def get_image_list(category_id: int):
         cursor.close()
         connection.close()
 
+
+
+
+def get_user_by_provider(login_provider: str, provider_id: str):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT *
+                FROM user
+                WHERE login_provider = %s AND provider_id = %s
+            """
+            cursor.execute(query, (login_provider, provider_id))
+            user = cursor.fetchone()
+
+            return user  # dict 형태
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def insert_user_kakao(email: str, provider: str, provider_id: str):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            insert_query = """
+                INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
+            """
+            cursor.execute(insert_query, (email, provider, provider_id, 1))
+            connection.commit()
+
+            # ✅ 방금 삽입한 user_id 가져오기
+            user_id = cursor.lastrowid
+            return user_id
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="회원 가입 중 DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def update_user_token(user_id: int, access_token: str, refresh_token: str):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            update_query = """
+                UPDATE user
+                SET access_token = %s,
+                    refresh_token = %s,
+                    updated_at = NOW()
+                WHERE user_id = %s
+            """
+            cursor.execute(update_query, (access_token, refresh_token, user_id))
+            connection.commit()
+    except Exception as e:
+        logger.error(f"토큰 저장 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail="토큰 저장 실패")
+    finally:
+        cursor.close()
+        connection.close()
