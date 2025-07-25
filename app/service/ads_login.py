@@ -16,7 +16,7 @@ from jose import jwt, JWTError
 from typing import Optional
 from playwright.sync_api import sync_playwright
 from fastapi import HTTPException
-
+import re
 
 
 def ads_login(email, temp_pw):
@@ -119,10 +119,10 @@ def update_user(user_id: int, store_business_number: str, insta_account: Optiona
 def select_insta_account(store_business_number: str):
     insta_account = crud_select_insta_account(store_business_number)
 
-    ul_html = get_first_ul_content(insta_account)
+    ul_html = get_insta_stats(insta_account)
     print(ul_html)
 
-def get_first_ul_content(insta_account: str) -> str:
+def get_insta_stats(insta_account: str) -> dict:
     url = f"https://www.instagram.com/{insta_account}/"
 
     try:
@@ -131,16 +131,33 @@ def get_first_ul_content(insta_account: str) -> str:
             context = browser.new_context()
             page = context.new_page()
 
-            page.goto(url, timeout=10000)  # 10초 제한
-            page.wait_for_selector("ul", timeout=5000)  # 첫 번째 ul 등장 대기
+            page.goto(url, timeout=10000)
+            # page.keyboard.press("Escape")
+            page.wait_for_selector("ul", timeout=5000)
 
             ul_element = page.query_selector("ul")
             if not ul_element:
                 raise HTTPException(status_code=404, detail="ul 태그를 찾을 수 없습니다.")
 
-            ul_html = ul_element.inner_html()
+            # ✅ 정확한 경로에 따라 선택
+            posts_el = ul_element.query_selector("li:nth-child(1) > div > button > span > span > span")
+            followers_el = ul_element.query_selector("li:nth-child(2) > div > button > span > span > span")
+            following_el = ul_element.query_selector("li:nth-child(3) > div > button > span > span > span")
+
+
+            posts = posts_el.inner_text().strip() if posts_el else "0"
+            followers = followers_el.inner_text().strip() if followers_el else "0"
+            following = following_el.inner_text().strip() if following_el else "0"
+
             browser.close()
-            return ul_html
+
+            return {
+                "posts": posts,
+                "followers": followers,
+                "following": following
+            }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"크롤링 실패: {str(e)}")
+if __name__ == "__main__":
+    select_insta_account('JS0051')
