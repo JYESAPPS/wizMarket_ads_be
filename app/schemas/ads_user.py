@@ -14,3 +14,8 @@ class KaKao(BaseModel):
 
 class User(BaseModel):
     access_token : str
+
+
+class UserUpdate(BaseModel):
+    user_id : int
+    store_business_number : str

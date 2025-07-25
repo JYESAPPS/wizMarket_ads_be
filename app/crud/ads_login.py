@@ -189,3 +189,36 @@ def get_user_by_id(user_id: int):
     finally:
         cursor.close()
         connection.close()
+
+
+
+def update_user(user_id: int, store_business_number: str):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            update_query = """
+                UPDATE user
+                SET store_business_number = %s,
+                    updated_at = NOW()
+                WHERE user_id = %s
+            """
+            cursor.execute(update_query, (store_business_number, user_id))
+            connection.commit()
+
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+
+            return True
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()

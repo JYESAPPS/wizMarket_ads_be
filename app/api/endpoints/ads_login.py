@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao, User
+    UserRegisterRequest, ImageListRequest, KaKao, User, UserUpdate
 )
 
 
@@ -15,7 +15,8 @@ from app.service.ads_login import (
     get_user_by_provider as service_get_user_by_provider,
     update_user_token as service_update_user_token,
     decode_token as service_decode_token,
-    get_user_by_id as service_get_user_by_id
+    get_user_by_id as service_get_user_by_id,
+    update_user as service_update_user
 )
 
 
@@ -118,4 +119,17 @@ def auto_login(request: User):
         "email": user["email"],
         "type": user["type"],
         "store_business_number": user.get("store_business_number", None)
+    }
+
+
+@router.post("update/user/store/info")
+def update_user_store_info(request: UserUpdate):
+    user_id = request.user_id
+    store_business_number = request.store_business_number
+
+    sucess = service_update_user(user_id, store_business_number=store_business_number)
+
+    return {
+        "success": sucess,  # 성공 여부
+        "message": "유저 정보가 업데이트 되었습니다." if sucess else "유저 정보 업데이트에 실패했습니다."
     }

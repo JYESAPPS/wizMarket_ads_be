@@ -5,7 +5,8 @@ from app.crud.ads_login import (
     get_user_by_provider as crud_get_user_by_provider,
     insert_user_kakao as crud_insert_user_kakao,
     update_user_token as crud_update_user_token,
-    get_user_by_id as crud_get_user_by_id
+    get_user_by_id as crud_get_user_by_id,
+    update_user as crud_update_user
 )
 import requests
 from datetime import datetime, timedelta
@@ -100,3 +101,11 @@ def get_user_by_id(user_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     return user
+
+
+def update_user(user_id: int, store_business_number: str):
+    sucess = crud_update_user(user_id, store_business_number=store_business_number)
+
+    if not sucess:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    return sucess
