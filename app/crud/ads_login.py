@@ -234,3 +234,36 @@ def update_user(user_id: int, store_business_number: str, insta_account: Optiona
     finally:
         cursor.close()
         connection.close()
+
+
+
+
+def select_insta_account(store_business_number: str):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT insta_account
+                FROM user
+                WHERE store_business_number = %s
+            """
+            cursor.execute(query, (store_business_number,))
+            result = cursor.fetchone()
+
+            if not result:
+                raise HTTPException(status_code=404, detail="인스타 계정을 찾을 수 없습니다.")
+
+            return result['insta_account']
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()

@@ -6,13 +6,18 @@ from app.crud.ads_login import (
     insert_user_kakao as crud_insert_user_kakao,
     update_user_token as crud_update_user_token,
     get_user_by_id as crud_get_user_by_id,
-    update_user as crud_update_user
+    update_user as crud_update_user,
+    select_insta_account as crud_select_insta_account
 )
 import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import jwt, JWTError
 from typing import Optional
+from playwright.sync_api import sync_playwright
+from fastapi import HTTPException
+
+
 
 def ads_login(email, temp_pw):
     user = crud_ads_login(email, temp_pw)
@@ -109,3 +114,33 @@ def update_user(user_id: int, store_business_number: str, insta_account: Optiona
     if not sucess:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     return sucess
+
+
+def select_insta_account(store_business_number: str):
+    insta_account = crud_select_insta_account(store_business_number)
+
+    ul_html = get_first_ul_content(insta_account)
+    print(ul_html)
+
+def get_first_ul_content(insta_account: str) -> str:
+    url = f"https://www.instagram.com/{insta_account}/"
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
+
+            page.goto(url, timeout=10000)  # 10초 제한
+            page.wait_for_selector("ul", timeout=5000)  # 첫 번째 ul 등장 대기
+
+            ul_element = page.query_selector("ul")
+            if not ul_element:
+                raise HTTPException(status_code=404, detail="ul 태그를 찾을 수 없습니다.")
+
+            ul_html = ul_element.inner_html()
+            browser.close()
+            return ul_html
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"크롤링 실패: {str(e)}")

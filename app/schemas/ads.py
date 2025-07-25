@@ -166,36 +166,10 @@ class AdsImageTestFront(BaseModel):
     detail_content: Optional[str]
 
 
-# 테스트 생성용
-class AdsTestRequest(BaseModel):
-    gpt_role: str
-    weather: str
-    temp: float
-    male_base: str
-    female_base: str
-    store_name: str
-    road_name: str
-    tag: str
-    use_option: str
-    title: str
-    ai_model_option: str
-    detail_content: Optional[str]
 
 
-class AdsTemplateRequest(BaseModel):
-    gpt_role: str
-    weather: str
-    temp: float
-    male_base: str
-    female_base: str
-    store_name: str
-    road_name: str
-    tag: str
-    use_option: str
-    title: str
-    ai_model_option: str
-    seed_prompt : str
-    detail_content: Optional[str]
+
+
 
 # 시드 이미지 전달 테스트
 class AdsTemplateSeedImage(BaseModel):
@@ -286,10 +260,7 @@ class AuthCallbackRequest(BaseModel):
     code: str
 
 
-# 인스타 영상 업로드
-class AdsUploadVideoInsta(BaseModel):
-    content: str
-    video_path : str
+
 
 
 # 카카오 임시 저장
