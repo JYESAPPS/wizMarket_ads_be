@@ -83,13 +83,14 @@ def select_ads_init_info(store_business_number: str):
         init_data = service_select_ads_init_info(store_business_number)
         random_image_list = service_random_design_style(init_data)
         all_image_list = service_get_style_image(init_data)
-        insta_account = service_select_insta_account(store_business_number)
+        insta_info = service_select_insta_account(store_business_number)
         # ai_age = service_select_ai_age(init_data)
         # ai_data = service_select_ai_data(init_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
             image_list=random_image_list,
-            all_image_list=all_image_list
+            all_image_list=all_image_list,
+            insta_info=insta_info,
         )
 
     except HTTPException as http_ex:

@@ -110,7 +110,10 @@ class LocalStoreInfoWeaterInfoOutput(BaseModel):
     class Config:
         from_attributes = True
 
-
+class InstaAccount(BaseModel):
+    posts: int
+    followers: int
+    following: int
 
 
 class AdsInitInfoOutPutWithImages(BaseModel):
@@ -133,6 +136,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     temp: float
     image_list: List[RandomImage]  # ✅ 여기에 추가
     all_image_list: List[RandomImage]
+    insta_info: Optional[InstaAccount] = None  # ← 추가
 
 # 문구 생성
 class AdsContentRequest(BaseModel):
