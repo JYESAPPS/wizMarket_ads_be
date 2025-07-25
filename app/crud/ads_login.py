@@ -7,7 +7,7 @@ from fastapi import HTTPException
 import logging
 from app.schemas.ads import AdsInitInfo, RandomImage
 import random
-from typing import List
+from typing import List, Optional
 
 def ads_login(email: str, temp_pw: str):
     try:
@@ -192,20 +192,32 @@ def get_user_by_id(user_id: int):
 
 
 
-def update_user(user_id: int, store_business_number: str):
+def update_user(user_id: int, store_business_number: str, insta_account: Optional[str] = None):
     connection = get_re_db_connection()
     cursor = connection.cursor()
     logger = logging.getLogger(__name__)
 
     try:
         if connection.open:
-            update_query = """
-                UPDATE user
-                SET store_business_number = %s,
-                    updated_at = NOW()
-                WHERE user_id = %s
-            """
-            cursor.execute(update_query, (store_business_number, user_id))
+            # 🔹 조건에 따라 쿼리 구성
+            if insta_account not in (None, ""):
+                update_query = """
+                    UPDATE user
+                    SET store_business_number = %s,
+                        insta_account = %s,
+                        updated_at = NOW()
+                    WHERE user_id = %s
+                """
+                cursor.execute(update_query, (store_business_number, insta_account, user_id))
+            else:
+                update_query = """
+                    UPDATE user
+                    SET store_business_number = %s,
+                        updated_at = NOW()
+                    WHERE user_id = %s
+                """
+                cursor.execute(update_query, (store_business_number, user_id))
+
             connection.commit()
 
             if cursor.rowcount == 0:

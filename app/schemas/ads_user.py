@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class UserRegisterRequest(BaseModel):
     email: str
@@ -19,3 +20,4 @@ class User(BaseModel):
 class UserUpdate(BaseModel):
     user_id : int
     store_business_number : str
+    insta_account: Optional[str] = None

@@ -12,7 +12,7 @@ import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import jwt, JWTError
-
+from typing import Optional
 
 def ads_login(email, temp_pw):
     user = crud_ads_login(email, temp_pw)
@@ -103,8 +103,8 @@ def get_user_by_id(user_id: int):
     return user
 
 
-def update_user(user_id: int, store_business_number: str):
-    sucess = crud_update_user(user_id, store_business_number=store_business_number)
+def update_user(user_id: int, store_business_number: str, insta_account: Optional[str] = None):
+    sucess = crud_update_user(user_id, store_business_number, insta_account)
 
     if not sucess:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
