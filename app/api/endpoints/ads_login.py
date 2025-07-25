@@ -122,7 +122,7 @@ def auto_login(request: User):
     }
 
 
-@router.post("update/user/store/info")
+@router.post("/update/user/store/info")
 def update_user_store_info(request: UserUpdate):
     user_id = request.user_id
     store_business_number = request.store_business_number
