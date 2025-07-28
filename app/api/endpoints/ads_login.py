@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao, User, UserUpdate
+    UserRegisterRequest, ImageListRequest, KaKao, User, UserUpdate,
+    TokenRefreshRequest, TokenRefreshResponse
 )
-
+from jose import jwt, ExpiredSignatureError, JWTError
 
 
 from app.service.ads_login import (
@@ -16,7 +17,8 @@ from app.service.ads_login import (
     update_user_token as service_update_user_token,
     decode_token as service_decode_token,
     get_user_by_id as service_get_user_by_id,
-    update_user as service_update_user
+    update_user as service_update_user,
+    token_refresh as service_token_refresh
 )
 
 
@@ -62,7 +64,7 @@ def get_image_list(request: ImageListRequest):
     return {"image_list": result or []}
 
 
-
+# 카카오 로그인 API 엔드포인트
 @router.post("/login/kakao")
 def ads_login_kakao_route(request: KaKao):
     kakao_info = service_get_kakao_user_info(request.kakao_access_token)
@@ -99,7 +101,7 @@ def ads_login_kakao_route(request: KaKao):
     }
 
 
-
+# 자동 로그인 API 엔드포인트
 @router.post("/auto/login")
 def auto_login(request: User):
     """
@@ -120,6 +122,12 @@ def auto_login(request: User):
         "type": user["type"],
         "store_business_number": user.get("store_business_number", None)
     }
+
+
+@router.post("/token/refresh", response_model=TokenRefreshResponse)
+def token_refresh(req: TokenRefreshRequest):
+    return service_token_refresh(req.refresh_token)
+
 
 
 @router.post("/update/user/store/info")

@@ -21,3 +21,12 @@ class UserUpdate(BaseModel):
     user_id : int
     store_business_number : str
     insta_account: Optional[str] = None
+
+
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
+
+class TokenRefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str

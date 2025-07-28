@@ -12,7 +12,7 @@ from app.crud.ads_login import (
 import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
-from jose import jwt, JWTError
+from jose import jwt, ExpiredSignatureError, JWTError
 from typing import Optional
 from playwright.sync_api import sync_playwright
 from fastapi import HTTPException
@@ -101,6 +101,37 @@ def decode_token(token: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"알 수 없는 오류: {str(e)}")
     
+
+# 토큰 갱신
+def token_refresh(refresh_token: str):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="토큰에 사용자 정보가 없습니다.")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="리프레시 토큰이 만료되었습니다.")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="유효하지 않은 리프레시 토큰입니다.")
+
+    user = get_user_by_id(int(user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    # DB에 저장된 refresh_token 과 비교 (선택사항)
+    if user["refresh_token"] != refresh_token:
+        raise HTTPException(status_code=403, detail="리프레시 토큰이 일치하지 않습니다.")
+
+    # 새 토큰 발급
+    new_access = create_access_token(data={"sub": str(user_id)})
+    new_refresh = create_refresh_token(data={"sub": str(user_id)})
+
+    update_user_token(user_id, new_access, new_refresh)
+
+    return {
+        "access_token": new_access,
+        "refresh_token": new_refresh,
+    }
 
 
 # 유저 ID로 유저 정보 조회
