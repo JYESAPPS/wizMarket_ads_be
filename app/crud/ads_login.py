@@ -254,7 +254,7 @@ def select_insta_account(store_business_number: str):
             result = cursor.fetchone()
 
             if not result:
-                raise HTTPException(status_code=404, detail="인스타 계정을 찾을 수 없습니다.")
+                return None
 
             return result['insta_account']
 
