@@ -148,7 +148,7 @@ def ads_login_naver_route(request: Naver):
         raise HTTPException(status_code=401, detail="네이버 토큰이 유효하지 않습니다.")
 
     naver_id = str(naver_info["id"])
-    email = naver_info.get("email")
+    email = f"{naver_id}@naver.com"
 
     provider = "naver"
     user_id = service_get_user_by_provider(provider=provider, provider_id=naver_id, email=email)
