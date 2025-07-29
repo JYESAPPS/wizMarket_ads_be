@@ -733,13 +733,13 @@ def generate_event(request: EventGenCopy):
             
             copyright_prompt = f'''
                     {store_name} 업체의 단기 이벤트 내용을 작성해주세요.
-                    주소는 {road_name} 이고 {category} 업종입니다.
-                    주소, 업종, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
+                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
+                    주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
                     날씨, 주소는 표현하지 않도록 합니다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                     ex2) 마라 칼국수 신메뉴! 10% 할인!
                     ex3) 7월 대 오픈! 첫 100명에게 냉면 1000원에 제공
-                    ex4) 8월 여름맞이 이벤트! 금일 방문하여 2인분 주문 시 숙성 삼겹살 100g 서비스
+                    ex4) 8월 여름맞이 이벤트! 금일 방문하여 3인분 주문 시 숙성 삼겹살 100g 서비스
                 '''
 
             copyright = service_generate_content(
@@ -994,7 +994,8 @@ def generate_template_event(request : ManualApp):
                     이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
                     핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
                     호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구 제목: 내용: 형식으로 작성해주세요.
-
+                    단, 고객의 연령대와 날씨는 직접 언급하지 마세요.
+                    
                     ex)
                     제목: 대동로 경동모텔, 8월 평일 할인!
                     내용: 무더위 피한 조용한 휴식처, 주중 20% 혜택 놓치지 마세요.
