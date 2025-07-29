@@ -3,7 +3,7 @@ from app.crud.ads_login import (
     get_category as crud_get_category,
     get_image_list as crud_get_image_list,
     get_user_by_provider as crud_get_user_by_provider,
-    insert_user_kakao as crud_insert_user_kakao,
+    insert_user_sns as crud_insert_user_sns,
     update_user_token as crud_update_user_token,
     get_user_by_id as crud_get_user_by_id,
     update_user as crud_update_user,
@@ -51,6 +51,22 @@ def get_kakao_user_info(access_token: str) -> dict | None:
     return None
 
 
+
+def get_google_user_info(id_token: str) -> dict | None:
+    """
+    구글 id_token을 검증하고 사용자 정보를 반환합니다.
+    """
+    url = "https://oauth2.googleapis.com/tokeninfo"
+    params = {
+        "id_token": id_token
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일
@@ -76,12 +92,16 @@ def create_refresh_token(data: dict):
 # 유저 조회 하거나 없으면 카카오로 회원가입
 def get_user_by_provider(provider: str, provider_id: str, email: str):
     user = crud_get_user_by_provider(provider, provider_id)
-    if user is None:
-        user_id = crud_insert_user_kakao(email, "kakao", provider_id)
-    else:
-        user_id = user["user_id"]
 
-    return user_id
+    if user:
+        return user["user_id"]
+
+    if provider == "kakao":
+        return crud_insert_user_sns(email, provider, provider_id)
+    elif provider == "google":
+        return crud_insert_user_sns(email, provider, provider_id)
+    else:
+        raise ValueError(f"지원하지 않는 provider: {provider}")
 
 
 # 해당 유저 토큰 정보 DB 업데이트

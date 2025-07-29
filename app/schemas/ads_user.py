@@ -13,6 +13,11 @@ class ImageListRequest(BaseModel):
 class KaKao(BaseModel):
     kakao_access_token : str
 
+
+
+class Google(BaseModel):
+    google_access_token : str
+
 class User(BaseModel):
     access_token : str
 

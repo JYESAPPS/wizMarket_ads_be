@@ -106,7 +106,7 @@ def get_user_by_provider(login_provider: str, provider_id: str):
         connection.close()
 
 
-def insert_user_kakao(email: str, provider: str, provider_id: str):
+def insert_user_sns(email: str, provider: str, provider_id: str):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)

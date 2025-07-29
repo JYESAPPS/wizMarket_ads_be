@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao, User, UserUpdate,
+    UserRegisterRequest, ImageListRequest, KaKao, Google, User, UserUpdate,
     TokenRefreshRequest, TokenRefreshResponse
 )
 from jose import jwt, ExpiredSignatureError, JWTError
@@ -11,6 +11,7 @@ from app.service.ads_login import (
     get_category as service_get_category,
     get_image_list as service_get_image_list,
     get_kakao_user_info as service_get_kakao_user_info,
+    get_google_user_info as service_get_google_user_info,
     create_access_token as service_create_access_token,
     create_refresh_token as service_create_refresh_token,
     get_user_by_provider as service_get_user_by_provider,
@@ -78,6 +79,7 @@ def ads_login_kakao_route(request: KaKao):
 
     email = kakao_account.get("email")
 
+    provider = "kakao"
     user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email)
     user_info = service_get_user_by_id(user_id)
 
@@ -94,7 +96,43 @@ def ads_login_kakao_route(request: KaKao):
         "refresh_token": refresh_token,
         "user": {
             "user_id": user_id,
-            "email": email,
+            "provider": provider,
+            "type": user_info["type"],
+            "store_business_number": user_info.get("store_business_number", None)
+        }
+    }
+
+
+# 구글 로그인 API 엔드포인트
+@router.post("/login/google")
+def ads_login_kakao_route(request: Google):
+    google_info = service_get_google_user_info(request.google_access_token)
+
+    if not google_info or "id" not in google_info:
+        raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
+
+
+    google_id = str(google_info["sub"])
+    email = google_info.get("email")
+
+    provider = "google"
+    user_id = service_get_user_by_provider(provider="google", provider_id=google_id, email=email)
+    user_info = service_get_user_by_id(user_id)
+
+    # JWT 발급
+    access_token = service_create_access_token(data={"sub": str(user_id)})
+    refresh_token = service_create_refresh_token({"sub": str(user_id)})
+
+    # 토큰 update
+    service_update_user_token(user_id, access_token, refresh_token)
+
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "user_id": user_id,
+            "provider" : provider,
             "type": user_info["type"],
             "store_business_number": user_info.get("store_business_number", None)
         }
