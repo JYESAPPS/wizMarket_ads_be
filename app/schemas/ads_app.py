@@ -98,6 +98,18 @@ class ManualGenCopy(BaseModel):
     main: str
     temp: float
     road_name : str
+
+
+class EventGenCopy(BaseModel):
+    category: str
+    # age: str
+    # channel: str
+    # subChannel: Optional[str]
+    theme: str
+    store_name : str
+    weather: str
+    temp: float
+    road_name : str
     
 
 class ManualImageListAIReco(BaseModel):
