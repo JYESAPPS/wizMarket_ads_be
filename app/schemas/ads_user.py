@@ -18,6 +18,9 @@ class KaKao(BaseModel):
 class Google(BaseModel):
     google_access_token : str
 
+class Naver(BaseModel):
+    naver_access_token : str
+
 class User(BaseModel):
     access_token : str
 

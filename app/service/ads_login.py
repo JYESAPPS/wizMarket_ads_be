@@ -67,6 +67,25 @@ def get_google_user_info(id_token: str) -> dict | None:
     return None
 
 
+def get_naver_user_info(access_token: str) -> dict | None:
+    """
+    네이버 access_token을 이용해 사용자 정보를 반환합니다.
+    """
+    url = "https://openapi.naver.com/v1/nid/me"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        # API 형식: { "resultcode": "00", "message": "success", "response": { ... } }
+        if data.get("resultcode") == "00":
+            return data.get("response")  # ✅ 사용자 정보만 반환
+    return None
+
+
+
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일

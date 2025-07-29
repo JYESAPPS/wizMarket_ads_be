@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao, Google, User, UserUpdate,
+    UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
     TokenRefreshRequest, TokenRefreshResponse
 )
 from jose import jwt, ExpiredSignatureError, JWTError
@@ -12,6 +12,7 @@ from app.service.ads_login import (
     get_image_list as service_get_image_list,
     get_kakao_user_info as service_get_kakao_user_info,
     get_google_user_info as service_get_google_user_info,
+    get_naver_user_info as service_get_naver_user_info,
     create_access_token as service_create_access_token,
     create_refresh_token as service_create_refresh_token,
     get_user_by_provider as service_get_user_by_provider,
@@ -105,7 +106,7 @@ def ads_login_kakao_route(request: KaKao):
 
 # 구글 로그인 API 엔드포인트
 @router.post("/login/google")
-def ads_login_kakao_route(request: Google):
+def ads_login_google_route(request: Google):
     google_info = service_get_google_user_info(request.google_access_token)
 
     if not google_info or "sub" not in google_info:
@@ -136,6 +137,41 @@ def ads_login_kakao_route(request: Google):
             "store_business_number": user_info.get("store_business_number", None)
         }
     }
+
+
+# 네이버 로그인 API 엔드포인트
+@router.post("/login/naver")
+def ads_login_naver_route(request: Naver):
+    naver_info = service_get_naver_user_info(request.naver_access_token)
+
+    if not naver_info or "id" not in naver_info:
+        raise HTTPException(status_code=401, detail="네이버 토큰이 유효하지 않습니다.")
+
+    naver_id = str(naver_info["id"])
+    email = naver_info.get("email")
+
+    provider = "naver"
+    user_id = service_get_user_by_provider(provider=provider, provider_id=naver_id, email=email)
+    user_info = service_get_user_by_id(user_id)
+
+    # JWT 발급
+    access_token = service_create_access_token(data={"sub": str(user_id)})
+    refresh_token = service_create_refresh_token({"sub": str(user_id)})
+
+    # 토큰 update
+    service_update_user_token(user_id, access_token, refresh_token)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "user_id": user_id,
+            "provider": provider,
+            "type": user_info["type"],
+            "store_business_number": user_info.get("store_business_number", None)
+        }
+    }
+
 
 
 # 자동 로그인 API 엔드포인트
