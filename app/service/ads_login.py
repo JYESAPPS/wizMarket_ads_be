@@ -119,6 +119,8 @@ def get_user_by_provider(provider: str, provider_id: str, email: str):
         return crud_insert_user_sns(email, provider, provider_id)
     elif provider == "google":
         return crud_insert_user_sns(email, provider, provider_id)
+    elif provider == "naver":
+        return crud_insert_user_sns(email, provider, provider_id)
     else:
         raise ValueError(f"지원하지 않는 provider: {provider}")
 
