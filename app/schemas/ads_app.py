@@ -110,6 +110,7 @@ class EventGenCopy(BaseModel):
     weather: str
     temp: float
     road_name : str
+    custom_text: Optional[str] = None
     
 
 class ManualImageListAIReco(BaseModel):

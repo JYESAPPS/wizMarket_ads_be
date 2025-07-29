@@ -765,6 +765,60 @@ def generate_event(request: EventGenCopy):
         raise HTTPException(status_code=500, detail=error_msg)
 
 
+# 이벤트 문구 재생성
+@router.post("/event/regen/copy")
+def regenerate_event(request: EventGenCopy):
+    try:
+        category = request.category
+        store_name= request.store_name
+        weather= request.weather
+        road_name = request.road_name
+        custom_text = request.custom_text
+
+        detail_content = ""
+        copyright_role = f'''
+            you are a marketing expert
+        '''
+        # 문구 생성
+        try:
+            today = datetime.now()
+            formattedToday = today.strftime('%Y-%m-%d')
+            
+            
+            copyright_prompt = f'''
+                    {store_name} 업체의 이벤트 내용을 다른 표현 혹은 말투로 재작성해주세요.
+                    이벤트 내용 :  {custom_text}
+                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
+                    주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
+                    날씨, 주소는 표현하지 않도록 합니다.
+                    ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
+                    ex2) 마라 칼국수 신메뉴! 10% 할인!
+                    ex3) 7월 대 오픈! 첫 100명에게 냉면 1000원에 제공
+                    ex4) 8월 여름맞이 이벤트! 금일 방문하여 3인분 주문 시 숙성 삼겹살 100g 서비스
+                '''
+
+            copyright = service_generate_content(
+                copyright_prompt,
+                copyright_role,
+                detail_content
+            )
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+
+
+        # 문구 반환
+        return JSONResponse(content={
+            "copyright": copyright
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+
 # AI 생성 수동 - 이벤트 
 @router.post("/manual/style/image")
 def get_style_image_ai_reco(request: ManualImageListAIReco):
