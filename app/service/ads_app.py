@@ -597,6 +597,7 @@ def validation_test(title, channel, female_text, style):
         "카카오톡": "1",
         "인스타그램 스토리": "2",
         "인스타그램 피드": "3",
+        "블로그": "4",
     }
 
     style_map = {
@@ -628,7 +629,7 @@ def validation_test(title, channel, female_text, style):
     if title not in ["1", "2", "3"]:
         title = "1"
 
-    if channel not in ["1", "2", "3"]:
+    if channel not in ["1", "2", "3", "4"]:
         channel = "2"
 
     if style not in ["1", "2", "3", "4", "5", "6"]:

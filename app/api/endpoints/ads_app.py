@@ -860,6 +860,9 @@ def generate_template_manual(request : ManualApp):
         if channel =="카카오톡":
             channel_text = "1"
             sub_channel = ""
+        elif channel == "블로그":
+            channel_text = "4"
+            sub_channel = ""
         elif sub_channel == "스토리":
             channel_text = "2"
         else:
@@ -933,12 +936,12 @@ def generate_template_manual(request : ManualApp):
         try:
             insta_copyright = ''
             
-            if channel_text == "3":
+            if channel_text == "3" or channel_text == "4":
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 인스타그램 피드를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    {store_name} 업체의 {channel} {sub_channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {menu}
                     일시 : {formattedToday}
                     주요 고객층: {female_text}
@@ -1022,6 +1025,7 @@ def generate_template_event(request : ManualApp):
             channel_text = "2"
         elif channel == "블로그":
             channel_text = "4"
+            sub_channel = ""
         else:
             channel_text = "3"
 
@@ -1048,7 +1052,7 @@ def generate_template_event(request : ManualApp):
                         - 계절 : 오늘 계절
                         - 핵심 고객 연령대 : {female_text} 
                     이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 두 문장 내외의 
                     호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구 제목: 내용: 형식으로 작성해주세요.
                     단, 고객의 연령대와 날씨는 직접 언급하지 마세요.
                     
@@ -1092,7 +1096,7 @@ def generate_template_event(request : ManualApp):
         try:
             insta_copyright = ''
             
-            if channel_text == "3":
+            if channel_text == "3" or channel_text == "4":
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
@@ -1439,7 +1443,7 @@ async def generate_template_manual_camera(
         # 인스타 문구 처리
         insta_copyright = ''
         detail_content = ''
-        if channel == "인스타그램":
+        if channel == "인스타그램" or channel == "블로그":
             try:
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
@@ -1573,7 +1577,7 @@ async def generate_template_event_camera(
         # 인스타 문구 처리
         insta_copyright = ''
         detail_content = ''
-        if channel == "인스타그램":
+        if channel == "인스타그램" or channel == "블로그":
             try:
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
