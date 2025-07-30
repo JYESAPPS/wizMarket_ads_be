@@ -282,12 +282,12 @@ def select_ai_age(init_info):
 
 
 # 초기 AI 추천 값 가져오기
-def select_ai_data(init_info):
+def select_ai_data(init_info, ai_age):
     gpt_content = f''' 
-        당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
-        홍보 주제, 채널, 디자인 스타일을 선택 후 숫자로만 답해주세요.
+        해당 매장의 핵심 고객 연령층에 맞는 인지심리적 접근을 통해 아래 구분에 대해 가장 많이 선호되는 내용을 정해주세요. 
+        핵심 고객이 {ai_age}에 맞는 디자인 선호 스타일, 카피문구 선호 스타일, 자주 이용하는 채널, 홍보 주제, 매장 방문 선호 요일, 매장 방문 선호 시간대 선택 후 숫자로만 답해주세요.
         대답은 숫자 조합으로만 해주세요
-        ex) 1, 2, 4
+        ex) 4, 4, 1, 1, 6, 4
     '''
     formattedToday = datetime.today().strftime("%Y-%m-%d")
     
@@ -297,18 +297,30 @@ def select_ai_data(init_info):
     - 주소: {init_info.road_name}
     - 일시: {formattedToday}
 
-    [홍보 주제]  
-        ※ 아래 중 하나를 조건에 따라 선택. 
-        - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
-        1. 매장 홍보 2. 상품 소개 3. 이벤트 
-
-    [채널]  
-    ※ 고객층에 적합한 채널 1개 선택 
-    1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 
-
     [디자인 스타일]  
     ※ 고객층에 적합한 하나의 카테고리 선택 
     - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5. AI모델 6. 예술 
+
+    [카피문구 스타일]  
+    - 1. 설명중심 2. 스토리중심 3. 유행어 4. 품격 5. 전문용어 6. 단축어(급식체) 7. 농담, 8. 영어, 9. 감성, 10. 개조식, 11. 경어체, 12. 반말체, 13. 대화체, 14. 한자성어, 15. 문답체 
+
+    [채널]  
+    ※ 고객층에 적합한 채널 1개 선택 
+    1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 4. 블로그
+
+    [홍보 주제]  
+    ※ 아래 중 하나를 조건에 따라 선택. 
+    - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+    1. 매장 홍보 2. 상품 소개 3. 이벤트 
+
+    [선호 요일]  
+    ※ 고객층에 적합한 요일 1개 선택 
+    1. 월 2. 화 3. 수 4. 목 5. 금 6. 토 7. 일 
+
+    [선호 시간대]  
+    ※ 고객층에 적합한 시간대 1개 선택 
+    1. 오전 2. 점심 3. 오후 4. 저녁 5. 밤 6. 심야 7.새벽
+
     """
 
     client = OpenAI(api_key=os.getenv("GPT_KEY"))
@@ -320,18 +332,19 @@ def select_ai_data(init_info):
         ],
     )
     report = completion.choices[0].message.content
-
+    # print(report)
     # 숫자만 추출 (정규식)
-    numbers = re.findall(r"\b[1-6]\b", report)
+    numbers = re.findall(r"\d+", report) 
     selected = list(map(int, numbers))
-
+    # print(selected)
     # 비어 있으면 디폴트
     if not selected:
-        selected = [1, 2, 5]
-
-    category_id = crud_get_category_id(init_info.detail_category_name)
-    random_image_list = crud_random_image_list(selected, category_id)
-    return random_image_list
+        selected = [4, 4, 1, 1, 6, 4]
+    init_ai_reco = selected
+    return init_ai_reco
+    # category_id = crud_get_category_id(init_info.detail_category_name)
+    # random_image_list = crud_random_image_list(selected, category_id)
+    # return random_image_list
 
 
 

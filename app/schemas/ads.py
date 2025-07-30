@@ -116,6 +116,8 @@ class InstaAccount(BaseModel):
     following: int
 
 
+
+
 class AdsInitInfoOutPutWithImages(BaseModel):
     store_business_number: str
     store_name: str
@@ -137,6 +139,8 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     image_list: List[RandomImage]  # ✅ 여기에 추가
     all_image_list: List[RandomImage]
     insta_info: Optional[InstaAccount] = None  # ← 추가
+    ai_age: str
+    ai_data: Optional[List[int]] = None
 
 # 문구 생성
 class AdsContentRequest(BaseModel):

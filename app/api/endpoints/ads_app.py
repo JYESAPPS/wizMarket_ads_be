@@ -1020,6 +1020,8 @@ def generate_template_event(request : ManualApp):
             sub_channel = ""
         elif sub_channel == "스토리":
             channel_text = "2"
+        elif channel == "블로그":
+            channel_text = "4"
         else:
             channel_text = "3"
 
