@@ -283,6 +283,44 @@ def select_ai_age(init_info):
 
 # 초기 AI 추천 값 가져오기
 def select_ai_data(init_info, ai_age):
+
+    design_map = {
+        1: "3D감성",
+        2: "포토실사",
+        3: "캐릭터/만화",
+        4: "레트로",
+        5: "AI모델",
+        6: "예술",
+    }
+
+    channel_map = {
+        1: "카카오톡",
+        2: "인스타그램 스토리",
+        3: "안스라그램 피드",
+        4: "네이버 블로그"
+    }
+
+    day_map = {
+        1: "월요일",
+        2: "화요일",
+        3: "수요일",
+        4: "목요일",
+        5: "금요일",
+        6: "토요일",
+        7: "일요일",
+    }
+
+    time_map = {
+        1: "오전",
+        2: "점심",
+        3: "오후",
+        4: "저녁",
+        5: "밤",
+        6: "심야",
+        7: "새벽",
+    }
+
+    
     gpt_content = f''' 
         해당 매장의 핵심 고객 연령층에 맞는 인지심리적 접근을 통해 아래 구분에 대해 가장 많이 선호되는 내용을 정해주세요. 
         핵심 고객이 {ai_age}에 맞는 디자인 선호 스타일, 카피문구 선호 스타일, 자주 이용하는 채널, 홍보 주제, 매장 방문 선호 요일, 매장 방문 선호 시간대 선택 후 숫자로만 답해주세요.
@@ -320,7 +358,6 @@ def select_ai_data(init_info, ai_age):
     [선호 시간대]  
     ※ 고객층에 적합한 시간대 1개 선택 
     1. 오전 2. 점심 3. 오후 4. 저녁 5. 밤 6. 심야 7.새벽
-
     """
 
     client = OpenAI(api_key=os.getenv("GPT_KEY"))
@@ -332,19 +369,55 @@ def select_ai_data(init_info, ai_age):
         ],
     )
     report = completion.choices[0].message.content
-    # print(report)
-    # 숫자만 추출 (정규식)
+
     numbers = re.findall(r"\d+", report) 
     selected = list(map(int, numbers))
-    # print(selected)
-    # 비어 있으면 디폴트
+
     if not selected:
         selected = [4, 4, 1, 1, 6, 4]
     init_ai_reco = selected
-    return init_ai_reco
-    # category_id = crud_get_category_id(init_info.detail_category_name)
-    # random_image_list = crud_random_image_list(selected, category_id)
-    # return random_image_list
+
+    design_text = design_map.get(init_ai_reco[0])
+    channel_text = channel_map.get(init_ai_reco[2])
+    day_text = day_map.get(init_ai_reco[4], "정보 없음")
+    time_text = time_map.get(init_ai_reco[5], "정보 없음")
+
+    gpt_content = f''' 
+        매장명의 현재 계절, 날씨, 주고객층, 세부업종을 반영하여 오늘 어떤 마케팅을 하면 좋을지 추천해주세요. 문장은 다음과 같이 짧게 한 문장으로 해주세요.
+        - 날씨, 주 고객층에게 채널 이름과 디자인 스타일을 언급하며 마케팅해보세요 라는 말로 끝나게끔 해주세요.
+    '''
+
+    content = f"""[매장 정보]  
+        - 매장명: {init_info.store_name}  
+        - 업종: {init_info.detail_category_name} 
+        - 주소: {init_info.road_name}
+        - 일시: {formattedToday}
+        - 고객 층 : {ai_age}
+        - 선호 채널 : {channel_text}
+        - 선호 디자인 : {design_text}
+        - 날씨 : {init_info.main}, {init_info.temp}도
+        - 최고 매출 요일 : {day_text}
+        - 최고 매출 시간 : {time_text}
+    """
+
+    client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": gpt_content},
+            {"role": "user", "content": content},
+        ],
+    )
+    today_tip = completion.choices[0].message.content
+
+    return init_ai_reco, today_tip
+
+
+
+# 오늘의 팁
+def get_today_tip():
+    pass
+
 
 
 
