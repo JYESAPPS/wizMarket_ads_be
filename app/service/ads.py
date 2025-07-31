@@ -377,46 +377,42 @@ def select_ai_data(init_info, ai_age):
         selected = [4, 4, 1, 1, 6, 4]
     init_ai_reco = selected
 
-    design_text = design_map.get(init_ai_reco[0])
-    channel_text = channel_map.get(init_ai_reco[2])
-    day_text = day_map.get(init_ai_reco[4], "정보 없음")
-    time_text = time_map.get(init_ai_reco[5], "정보 없음")
+    # design_text = design_map.get(init_ai_reco[0])
+    # channel_text = channel_map.get(init_ai_reco[2])
+    # day_text = day_map.get(init_ai_reco[4], "정보 없음")
+    # time_text = time_map.get(init_ai_reco[5], "정보 없음")
 
-    gpt_content = f''' 
-        매장명의 현재 계절, 날씨, 주고객층, 세부업종을 반영하여 오늘 어떤 마케팅을 하면 좋을지 추천해주세요. 문장은 다음과 같이 짧게 한 문장으로 해주세요.
-        - 날씨, 주 고객층에게 채널 이름과 디자인 스타일을 언급하며 마케팅해보세요 라는 말로 끝나게끔 해주세요.
-    '''
+    # gpt_content = f''' 
+    #     매장명의 현재 계절, 날씨, 주고객층, 세부업종을 반영하여 오늘 어떤 마케팅을 하면 좋을지 추천해주세요. 문장은 다음과 같이 짧게 한 문장으로 해주세요.
+    #     - 날씨, 주 고객층에게 채널 이름과 디자인 스타일을 언급하며 마케팅해보세요 라는 말로 끝나게끔 해주세요.
+    # '''
 
-    content = f"""[매장 정보]  
-        - 매장명: {init_info.store_name}  
-        - 업종: {init_info.detail_category_name} 
-        - 주소: {init_info.road_name}
-        - 일시: {formattedToday}
-        - 고객 층 : {ai_age}
-        - 선호 채널 : {channel_text}
-        - 선호 디자인 : {design_text}
-        - 날씨 : {init_info.main}, {init_info.temp}도
-        - 최고 매출 요일 : {day_text}
-        - 최고 매출 시간 : {time_text}
-    """
+    # content = f"""[매장 정보]  
+    #     - 매장명: {init_info.store_name}  
+    #     - 업종: {init_info.detail_category_name} 
+    #     - 주소: {init_info.road_name}
+    #     - 일시: {formattedToday}
+    #     - 고객 층 : {ai_age}
+    #     - 선호 채널 : {channel_text}
+    #     - 선호 디자인 : {design_text}
+    #     - 날씨 : {init_info.main}, {init_info.temp}도
+    #     - 최고 매출 요일 : {day_text}
+    #     - 최고 매출 시간 : {time_text}
+    # """
 
-    client = OpenAI(api_key=os.getenv("GPT_KEY"))
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": gpt_content},
-            {"role": "user", "content": content},
-        ],
-    )
-    today_tip = completion.choices[0].message.content
+    # client = OpenAI(api_key=os.getenv("GPT_KEY"))
+    # completion = client.chat.completions.create(
+    #     model="gpt-4o",
+    #     messages=[
+    #         {"role": "system", "content": gpt_content},
+    #         {"role": "user", "content": content},
+    #     ],
+    # )
+    # today_tip = completion.choices[0].message.content
 
-    return init_ai_reco, today_tip
+    return init_ai_reco
 
 
-
-# 오늘의 팁
-def get_today_tip():
-    pass
 
 
 

@@ -141,7 +141,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     insta_info: Optional[InstaAccount] = None  # ← 추가
     ai_age: str
     ai_data: Optional[List[int]] = None
-    today_tip: str
+    # today_tip: str
 
 # 문구 생성
 class AdsContentRequest(BaseModel):

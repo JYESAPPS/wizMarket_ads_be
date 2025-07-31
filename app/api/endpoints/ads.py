@@ -24,7 +24,6 @@ from app.service.ads import (
     random_design_style as service_random_design_style,
     select_ai_age as service_select_ai_age,
     select_ai_data as service_select_ai_data,
-    get_today_tip as service_get_today_tip
 )
 from app.service.ads_generate import (
     generate_content as service_generate_content,
@@ -87,7 +86,7 @@ def select_ads_init_info(store_business_number: str):
         insta_info = service_select_insta_account(store_business_number)
         ai_age = service_select_ai_age(init_data)
         # print(ai_age)
-        ai_data, today_tip = service_select_ai_data(init_data, ai_age)
+        ai_data = service_select_ai_data(init_data, ai_age)
 
         # print(ai_age, ai_data)
         return AdsInitInfoOutPutWithImages(
@@ -97,7 +96,6 @@ def select_ads_init_info(store_business_number: str):
             insta_info=insta_info,
             ai_age = ai_age,
             ai_data = ai_data,
-            today_tip = today_tip
         )
 
     except HTTPException as http_ex:
