@@ -64,34 +64,14 @@ logger = logging.getLogger(__name__)
 # 메인 페이지에서 바로 생성
 @router.post("/auto/prompt/app")
 def generate_template(request: AutoAppMain):
-    female_text = ""
-    options = ""
     try:
-        try : 
-            female_text = service_parse_age_gender_info(request.commercial_district_max_sales_f_age)
-        except Exception as e:
-            print(f"Error occurred: {e}, 문구 생성 오류")
-        try:
-            if female_text : 
-                options = service_generate_option(
-                    request
-                )
-            else : 
-                options = service_generate_option_without_gender(
-                    request
-                )
-        except Exception as e:
-            print(f"Error occurred: {e}, 문구 생성 오류")
+        title = request.ai_data[3]
+        channel = request.ai_data[2]
+        design = request.ai_data[0]
+        age = request.ai_age
 
-        raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
-        parts = raw.split("-")  # ["3", "1", "4"]
 
-        if female_text : 
-            title, channel, _= parts
-        else : 
-            title, channel, female_text, _ = parts
 
- 
         detail_content = ""
         # 문구 생성
         try:
@@ -112,7 +92,7 @@ def generate_template(request: AutoAppMain):
                 copyright_prompt = f'''
                     {request.store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
-                    주요 고객층: {female_text} 제목 :, 내용 : 형식으로 작성해주세요
+                    주요 고객층: {age} 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
                 copyright_role = f'''
@@ -123,7 +103,7 @@ def generate_template(request: AutoAppMain):
                 copyright_prompt = f'''
                     {request.store_name} 업체를 위한 문구.
                     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
-                    주요 고객층: {female_text}을 바탕으로 15자 이내로 작성해주세요
+                    주요 고객층: {age}을 바탕으로 15자 이내로 작성해주세요
                 '''
             copyright = service_generate_content(
                 copyright_prompt,
@@ -136,8 +116,8 @@ def generate_template(request: AutoAppMain):
 
 
         # 전달받은 선택한 템플릿의 시드 프롬프트 gpt로 소분류에 맞게 바꾸기
-        seed_prompt = request.prompt
-        style = request.designId
+        seed_prompt = request.image_list.prompt
+        style = design
         # 이미지 생성
         try:
             origin_image = service_generate_by_seed_prompt(
@@ -171,7 +151,7 @@ def generate_template(request: AutoAppMain):
                     {request.store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
                     일시 : {formattedToday}
-                    주요 고객층:  {female_text}
+                    주요 고객층:  {age}
 
                     주소: {request.road_name}
                     
@@ -198,7 +178,7 @@ def generate_template(request: AutoAppMain):
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
-            "title": title, "channel":channel, "style": style, "core_f": female_text,
+            "title": title, "channel":channel, "style": style, "core_f": age,
             "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
             "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })

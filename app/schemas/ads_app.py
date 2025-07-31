@@ -9,6 +9,11 @@ class ImageItem(BaseModel):
     path: str
 
 
+class ImageItemMain(BaseModel):
+    path: str
+    design_id : int
+    prompt : str
+
 class ImageUploadRequest(BaseModel):
     image_base64: str
 
@@ -42,9 +47,34 @@ class AutoApp(BaseModel):
     image_list: List[ImageItem]
 
 
-class AutoAppMain(AutoApp):
-    prompt: str
-    designId: int
+class AutoAppMain(BaseModel):
+    store_business_number: str
+    city_name: str
+    district_name: str
+    sub_district_name: str
+    road_name: str
+    latitude: float
+    longitude: float
+
+    store_name: str
+    detail_category_name: str
+
+    commercial_district_max_sales_day: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_f_age: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_m_age: Optional[List[Optional[Union[str, float]]]] = None
+    commercial_district_max_sales_time: Optional[List[Optional[Union[str, float]]]] = None
+    loc_info_average_sales_k:Optional[int]
+    
+    main: str
+    temp: float
+
+
+    image_list: ImageItemMain
+
+    ai_age : str
+    ai_data: Optional[List[int]] = None
+
+    
 
 
 class AutoAppRegen(BaseModel):

@@ -84,7 +84,6 @@ class AdsInitInfoOutPut(BaseModel):
     commercial_district_max_sales_time: Optional[Tuple[Optional[str], Optional[float]]] = (None, None)
     commercial_district_max_sales_m_age: Optional[Tuple[Optional[str], Optional[float]]] = (None, None)
     commercial_district_max_sales_f_age: Optional[Tuple[Optional[str], Optional[float]]] = (None, None)
-    id : int
     main: Optional[str] = None
     temp: Optional[float] = None
 
@@ -133,10 +132,9 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     commercial_district_max_sales_time: tuple | None
     commercial_district_max_sales_m_age: tuple | None
     commercial_district_max_sales_f_age: tuple | None
-    id: int
     main: str
     temp: float
-    image_list: List[RandomImage]  # ✅ 여기에 추가
+    image_list: RandomImage  # ✅ 여기에 추가
     all_image_list: List[RandomImage]
     insta_info: Optional[InstaAccount] = None  # ← 추가
     ai_age: str

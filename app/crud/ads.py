@@ -136,61 +136,60 @@ def get_category_id(name):
         return {"available": False}
 
 
-def random_image_list(selected_ids: List[int], category_id: int):
+def random_image_list(category_id: int, design_id: str):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
-
     result = []
 
     try:
+        design_id_int = int(design_id)  # ✅ str → int 변환
+
         if connection.open:
-            for design_id in selected_ids:
-                # 1차 시도: 지정된 category_id 기준
-                select_query = """
-                    SELECT tp.image_path, t.design_id, t.prompt
-                    FROM thumbnail t
-                    JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
-                    WHERE t.category_id = %s AND t.design_id = %s
-                """
-                cursor.execute(select_query, (category_id, design_id))
+            # 1차 시도: 사용자가 보낸 category_id로 조회
+            select_query = """
+                SELECT tp.image_path, t.design_id, t.prompt
+                FROM thumbnail t
+                JOIN thumbnail_path tp ON t.thumbnail_id = tp.thumbnail_id
+                WHERE t.category_id = %s AND t.design_id = %s
+            """
+            cursor.execute(select_query, (category_id, design_id_int))
+            rows = cursor.fetchall()
+
+            # 2차 시도: 기본 카테고리(249)
+            if not rows:
+                logger.warning(f"[랜덤이미지] 카테고리 {category_id}, 디자인 {design_id_int} → 기본 카테고리로 재시도")
+                cursor.execute(select_query, (249, design_id_int))
                 rows = cursor.fetchall()
 
-                # 2차 시도: 기본 category_id (249) 기준 fallback
-                if not rows:
-                    logger.warning(f"카테고리 {category_id}, 디자인 {design_id}에 해당하는 이미지 없음. 기본 카테고리(249)로 재시도.")
-                    cursor.execute(select_query, (249, design_id))
-                    rows = cursor.fetchall()
+            if not rows:
+                logger.warning(f"[랜덤이미지] 디자인 {design_id_int}는 모든 카테고리에 이미지 없음")
+                raise HTTPException(status_code=404, detail="해당 디자인에 대한 이미지가 존재하지 않습니다.")
 
-                if not rows:
-                    logger.warning(f"디자인 {design_id}에 대한 이미지가 기본 카테고리에도 없음. 스킵.")
-                    continue
+            random_row = random.choice(rows)
+            return RandomImage(
+                path=random_row["image_path"],
+                prompt=random_row["prompt"],
+                design_id=random_row["design_id"]
+            )
 
-                random_row = random.choice(rows)
-                random_path = random_row["image_path"]
-                prompt = random_row["prompt"]
-                design_id = random_row["design_id"]
-                result.append(RandomImage(path=random_path, prompt=prompt, design_id = design_id))
-
-            if not result:
-                raise HTTPException(
-                    status_code=404,
-                    detail="해당 카테고리 및 디자인에 대한 이미지가 존재하지 않습니다."
-                )
-            return result
+    except ValueError:
+        logger.error(f"잘못된 design_id 입력값: {design_id}")
+        raise HTTPException(status_code=400, detail="design_id는 숫자여야 합니다.")
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
         raise HTTPException(status_code=500, detail="DB 오류 발생")
+
     except Exception as e:
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
+
     finally:
         if cursor:
             cursor.close()
         if connection:
             connection.close()
-
 # 글만 먼저 저장 처리
 def insert_ads(store_business_number: str, use_option: str, title: str, detail_title: str, content: str):
     # 데이터베이스 연결 설정

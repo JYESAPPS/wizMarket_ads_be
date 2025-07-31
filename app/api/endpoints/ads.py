@@ -81,12 +81,13 @@ def select_ads_init_info(store_business_number: str):
     # 쿼리 매개변수로 전달된 store_business_number 값 수신
     try:
         init_data = service_select_ads_init_info(store_business_number)
-        random_image_list = service_random_design_style(init_data)
-        all_image_list = service_get_style_image(init_data)
-        insta_info = service_select_insta_account(store_business_number)
         ai_age = service_select_ai_age(init_data)
         # print(ai_age)
         ai_data = service_select_ai_data(init_data, ai_age)
+        random_image_list = service_random_design_style(init_data, ai_data[0])
+        all_image_list = service_get_style_image(init_data)
+        insta_info = service_select_insta_account(store_business_number)
+        
 
         # print(ai_age, ai_data)
         return AdsInitInfoOutPutWithImages(

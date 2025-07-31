@@ -112,7 +112,6 @@ def select_ads_init_info(store_business_number: str) -> AdsInitInfoOutPut:
             commercial_district_max_sales_time=max_sales_time,
             commercial_district_max_sales_m_age=max_male_age,  
             commercial_district_max_sales_f_age=max_female_age,  
-            id = wether_main_temp.id,
             main = wether_main,
             temp = wether_main_temp.temp
         )
@@ -187,40 +186,11 @@ def translate_weather_id_to_main(weather_id: int) -> str:
 
 
 # 카테고리 별 랜덤 이미지 가져오기
-def random_design_style(init_info):
-    gpt_content = "당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 디자인 스타일을 번호로만 1개 알려주세요."
-    formattedToday = datetime.today().strftime("%Y-%m-%d")
-    
-    content = f"""[매장 정보]  
-    - 매장명: {init_info.store_name}  
-    - 업종: {init_info.detail_category_name} 
-    - 주소: {init_info.road_name}
-    - 일시: {formattedToday}
+def random_design_style(init_info, design_id):
 
-    [디자인 스타일]  
-    - 1. 3D감성 2. 포토실사 3. 캐릭터/만화 4. 레트로 5.AI모델 6. 예술 
-    """
-
-    client = OpenAI(api_key=os.getenv("GPT_KEY"))
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": gpt_content},
-            {"role": "user", "content": content},
-        ],
-    )
-    report = completion.choices[0].message.content
-
-    # 숫자만 추출 (정규식)
-    numbers = re.findall(r"\b[1-6]\b", report)
-    selected = list(map(int, numbers))
-
-    # 비어 있으면 디폴트
-    if not selected:
-        selected = [1, 2, 5]
 
     category_id = crud_get_category_id(init_info.detail_category_name)
-    random_image_list = crud_random_image_list(selected, category_id)
+    random_image_list = crud_random_image_list(category_id, design_id)
     return random_image_list
 
 
@@ -296,7 +266,7 @@ def select_ai_data(init_info, ai_age):
     channel_map = {
         1: "카카오톡",
         2: "인스타그램 스토리",
-        3: "안스라그램 피드",
+        3: "안스타그램 피드",
         4: "네이버 블로그"
     }
 
