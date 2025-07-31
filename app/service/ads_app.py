@@ -301,7 +301,8 @@ def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app
     channel_map = {
         "1": "kakao",
         "2": "story",
-        "3": "feed"
+        "3": "feed",
+        "4": "blog"
     }
     channel_name = channel_map.get(channel_code, "unknown")
 

@@ -175,10 +175,25 @@ def generate_template(request: AutoAppMain):
         except Exception as e:
             print(f"Error occurred: {e}, 인스타 생성 오류")
 
+        if age == "10대":
+            age = "1"
+        elif age == "20대":
+            age = "2"
+        elif age == "30대":
+            age = "3"
+        elif age == "40대":
+            age = "4"
+        elif age == "50대":
+            age = "5"
+        elif age == "60대 이상":
+            age = "6"
+
+        
+
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
-            "title": title, "channel":channel, "style": style, "core_f": age,
+            "title": str(title), "channel":str(channel), "style": style, "core_f": age,
             "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
             "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
@@ -385,8 +400,10 @@ def generate_template_regen(request: AutoAppRegen):
             channel_text = "카카오톡"
         elif channel == "2":
             channel_text = "인스타 스토리"
-        else :
+        elif channel == "3":
             channel_text = "인스타 피드"
+        else :
+            channel_text = "블로그"
 
 
         detail_content = getattr(request, "ad_text", "") or ""
@@ -456,7 +473,7 @@ def generate_template_regen(request: AutoAppRegen):
         try:
             insta_copyright = ''
             
-            if channel == "3":
+            if channel == "3" or channel == "4":
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
@@ -488,10 +505,31 @@ def generate_template_regen(request: AutoAppRegen):
         except Exception as e:
             print(f"Error occurred: {e}, 인스타 생성 오류")
 
+        # 반환 전 프론트와 맞춰주기
+        if title == "매장홍보":
+            title = "1"
+        elif title == "상품소개":
+            title = "2"
+        elif title == "이벤트":
+            title = "3"
+
+        if female_text == "10대":
+            age = "1"
+        elif female_text == "20대":
+            age = "2"
+        elif female_text == "30대":
+            age = "3"
+        elif female_text == "40대":
+            age = "4"
+        elif female_text == "50대":
+            age = "5"
+        elif female_text == "60대 이상":
+            age = "6"
+
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
-            "title": title, "channel":channel, "style": style, "core_f": female_text,
+            "title": title, "channel":channel, "style": style, "core_f": age,
             "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
             "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
         })
@@ -955,15 +993,29 @@ def generate_template_manual(request : ManualApp):
             title = "2"
         elif theme == "이벤트":
             title = "3"
+
+        if female_text == "10대":
+            age = "1"
+        elif female_text == "20대":
+            age = "2"
+        elif female_text == "30대":
+            age = "3"
+        elif female_text == "40대":
+            age = "4"
+        elif female_text == "50대":
+            age = "5"
+        elif female_text == "60대 이상":
+            age = "6"
         
         style = str(style)
 
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
-            "title": title, "channel":channel_text, "style": style, "core_f": female_text,
+            "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, 
+            "prompt" : prompt, "customText" : request.customText
         })
 
     except HTTPException as http_ex:
@@ -1116,14 +1168,28 @@ def generate_template_event(request : ManualApp):
         elif theme == "이벤트":
             title = "3"
         
+        if female_text == "10대":
+            age = "1"
+        elif female_text == "20대":
+            age = "2"
+        elif female_text == "30대":
+            age = "3"
+        elif female_text == "40대":
+            age = "4"
+        elif female_text == "50대":
+            age = "5"
+        elif female_text == "60대 이상":
+            age = "6"
+
         style = str(style)
 
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
-            "title": title, "channel":channel_text, "style": style, "core_f": female_text,
+            "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
+            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, 
+            "prompt" : prompt, "customText" : request.customText
         })
 
     except HTTPException as http_ex:
