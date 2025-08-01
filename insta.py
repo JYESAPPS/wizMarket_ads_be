@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 def get_insta_stats(insta_account: str):
     url = f"https://www.instagram.com/{insta_account}/"
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         page.goto(url, timeout=10000)
         page.wait_for_selector("ul", timeout=5000)
