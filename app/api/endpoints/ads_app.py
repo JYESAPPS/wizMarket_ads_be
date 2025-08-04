@@ -77,7 +77,7 @@ def generate_template(request: AutoAppMain):
         try:
             copyright_role = ""
             copyright_prompt = ""
-            # print(request.example_image)
+            
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
@@ -143,7 +143,7 @@ def generate_template(request: AutoAppMain):
         try:
             insta_copyright = ''
             
-            if channel == "3":
+            if channel == 3 or channel == 4:
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
@@ -1547,7 +1547,8 @@ async def generate_template_event_camera(
     title: str = Form(...),
     age: str = Form(...),
     style: str = Form(...),
-    customText:str = Form(...),
+    customMenu: str = Form(None),
+    customText:str = Form(None),
     category: str = Form(...),
     store_name: str = Form(...),
     road_name: str = Form(...),
@@ -1564,15 +1565,16 @@ async def generate_template_event_camera(
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
-            copyright_role = f'''
+            if title == "이벤트" : 
+                copyright_role = f'''
                     당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
                     광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
                     지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
                 '''
 
-            copyright_prompt = f'''
+                copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                        - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 자동으로 생성
+                        - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 {customMenu}
                         - 주소 : {road_name} 
                         - 날짜 : {formattedToday}
                         - 계절 : 오늘 계절
@@ -1584,6 +1586,26 @@ async def generate_template_event_camera(
                     ex)
                     제목: 대동로 경동모텔, 8월 평일 할인!
                     내용: 무더위 피한 조용한 휴식처, 주중 20% 혜택 놓치지 마세요.
+                '''
+            else:
+                copyright_role = f'''
+                    당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                    광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                    지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
+                '''
+
+                copyright_prompt = f'''
+                    {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
+                    - 홍보 내용 : {customMenu} --> 입력이 없다면 {category}
+                    - 홍보 컨셉 : {detail_content}
+                    - 주소 : {road_name}
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 
+                    간결하고 호기심을 유발할 수 있는 {channel}에 업로드할 광고문구를 작성해주세요.
+
                 '''
 
             copyright = service_generate_content(
