@@ -10,7 +10,18 @@ from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push
 from app.api.endpoints import webhook
 
+# 예약 설정
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+from datetime import datetime
+import pytz  # 시간대 고려
+from app.service.ads_push import select_user_id_token
+
+
 app = FastAPI()
+scheduler = BackgroundScheduler()
+
 
 load_dotenv()
 
@@ -28,10 +39,27 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")
 app.mount("/posting", StaticFiles(directory="app/posting"), name="posting")
 
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to FastAPI!"}
 
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI with Scheduler"}
+
+
+def push_test_job():
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"[{now.strftime('%H:%M:%S')}] 예약 테스트 실행됨!")
+
+@app.on_event("startup")
+def start_scheduler():
+    scheduler.add_job(
+        select_user_id_token,                 # 실행할 함수
+        CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
+        id="push_job",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("✅ APScheduler 시작됨")
 
 
 app.include_router(ads.router, prefix="/ads")
