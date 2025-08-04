@@ -192,7 +192,7 @@ def get_user_by_id(user_id: int):
 
 
 
-def update_user(user_id: int, store_business_number: str, insta_account: Optional[str] = None):
+def update_user(user_id: int, store_business_number: str, custom_menu: str, insta_account: Optional[str] = None):
     connection = get_re_db_connection()
     cursor = connection.cursor()
     logger = logging.getLogger(__name__)
@@ -205,18 +205,20 @@ def update_user(user_id: int, store_business_number: str, insta_account: Optiona
                     UPDATE user
                     SET store_business_number = %s,
                         insta_account = %s,
+                        custom_menu = %s,
                         updated_at = NOW()
                     WHERE user_id = %s
                 """
-                cursor.execute(update_query, (store_business_number, insta_account, user_id))
+                cursor.execute(update_query, (store_business_number, insta_account, custom_menu, user_id))
             else:
                 update_query = """
                     UPDATE user
                     SET store_business_number = %s,
+                        custom_menu = %s,
                         updated_at = NOW()
                     WHERE user_id = %s
                 """
-                cursor.execute(update_query, (store_business_number, user_id))
+                cursor.execute(update_query, (store_business_number, custom_menu, user_id))
 
             connection.commit()
 

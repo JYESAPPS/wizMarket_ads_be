@@ -208,8 +208,9 @@ def update_user_store_info(request: UserUpdate):
     user_id = request.user_id
     store_business_number = request.store_business_number
     insta_account = request.insta_account
+    custom_menu = request.custom_menu
 
-    sucess = service_update_user(user_id, store_business_number, insta_account)
+    sucess = service_update_user(user_id, store_business_number, custom_menu, insta_account )
 
     return {
         "success": sucess,  # 성공 여부
