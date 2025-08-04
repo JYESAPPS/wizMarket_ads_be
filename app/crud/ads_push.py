@@ -61,12 +61,13 @@ def crud_get_user_reserves(user_id: int) -> list[UserReserve]:
 
     try:
         if connection.open:
+            today_str = datetime.now().strftime("%Y-%m-%d")
             query = """
                 SELECT *
                 FROM user_reserve
-                WHERE user_id = %s
+                WHERE user_id = %s AND end_date >= %s
             """
-            cursor.execute(query, (user_id,))
+            cursor.execute(query, (user_id, today_str))
             rows = cursor.fetchall()
 
             return [UserReserve(**row) for row in rows]
@@ -89,7 +90,7 @@ def is_user_due_for_push(user_id: int) -> bool:
     today = now.date()
     current_time_str = now.strftime("%H:%M")   # 예: "14:00"
     current_weekday = now.strftime("%a")       # 예: "Mon"
-    current_day = now.day                      # 예: 4
+    today_str = today.strftime("%Y-%m-%d")
 
     # 1. 예약 정보 가져오기
     reserves = crud_get_user_reserves(user_id)
@@ -123,7 +124,7 @@ def is_user_due_for_push(user_id: int) -> bool:
         elif reserve.repeat_type == "monthly":
             try:
                 monthly_days = json.loads(reserve.monthly_days)  # ex: [1, 10, 25]
-                if current_day in monthly_days:
+                if today_str in monthly_days:
                     return True
             except Exception:
                 continue

@@ -10,7 +10,7 @@ class ReserveCreate(BaseModel):
     repeat_count: int
     upload_times: List[str]
     weekly_days: Optional[List[str]] = None  # ["Mon", "Wed"]
-    monthly_days: Optional[List[int]] = None  # [3, 10, 20]
+    monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
 
     class Config:
         orm_mode = True
