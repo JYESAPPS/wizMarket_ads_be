@@ -3,8 +3,12 @@ import json
 import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
+import os
 
-SERVICE_ACCOUNT_FILE = "../static/auth/mypuapp.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_FILE = os.path.normpath(
+    os.path.join(BASE_DIR, "../static/auth/mypushapp.json")
+)
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 PROJECT_ID = "mypushapp-2af63"  # 예: mypushapp-abc123
 FCM_ENDPOINT = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"

@@ -106,7 +106,7 @@ def get_user_by_provider(login_provider: str, provider_id: str):
         connection.close()
 
 
-def insert_user_sns(email: str, provider: str, provider_id: str):
+def insert_user_sns(email: str, provider: str, provider_id: str, device_token : str):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
@@ -114,10 +114,10 @@ def insert_user_sns(email: str, provider: str, provider_id: str):
     try:
         if connection.open:
             insert_query = """
-                INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, NOW(), NOW())
+                INSERT INTO user (email, login_provider, provider_id, is_active, device_token, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
             """
-            cursor.execute(insert_query, (email, provider, provider_id, 1))
+            cursor.execute(insert_query, (email, provider, provider_id, 1, device_token))
             connection.commit()
 
             # ✅ 방금 삽입한 user_id 가져오기

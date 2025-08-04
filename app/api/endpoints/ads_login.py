@@ -81,7 +81,7 @@ def ads_login_kakao_route(request: KaKao):
     email = kakao_account.get("email")
 
     provider = "kakao"
-    user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email)
+    user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email, device_token = request.device_token)
     user_info = service_get_user_by_id(user_id)
 
     # JWT 발급
@@ -116,7 +116,7 @@ def ads_login_google_route(request: Google):
     email = google_info.get("email")
 
     provider = "google"
-    user_id = service_get_user_by_provider(provider="google", provider_id=google_id, email=email)
+    user_id = service_get_user_by_provider(provider="google", provider_id=google_id, email=email, device_token = request.device_token)
     user_info = service_get_user_by_id(user_id)
 
     # JWT 발급
@@ -151,7 +151,7 @@ def ads_login_naver_route(request: Naver):
     email = f"{naver_id}@naver.com"
 
     provider = "naver"
-    user_id = service_get_user_by_provider(provider=provider, provider_id=naver_id, email=email)
+    user_id = service_get_user_by_provider(provider=provider, provider_id=naver_id, email=email, device_token = request.device_token)
     user_info = service_get_user_by_id(user_id)
 
     # JWT 발급

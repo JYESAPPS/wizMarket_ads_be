@@ -109,20 +109,16 @@ def create_refresh_token(data: dict):
 
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
-def get_user_by_provider(provider: str, provider_id: str, email: str):
+def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str):
     user = crud_get_user_by_provider(provider, provider_id)
 
     if user:
         return user["user_id"]
 
-    if provider == "kakao":
-        return crud_insert_user_sns(email, provider, provider_id)
-    elif provider == "google":
-        return crud_insert_user_sns(email, provider, provider_id)
-    elif provider == "naver":
-        return crud_insert_user_sns(email, provider, provider_id)
-    else:
-        raise ValueError(f"지원하지 않는 provider: {provider}")
+    if provider in {"kakao", "google", "naver"}:
+        return crud_insert_user_sns(email, provider, provider_id, device_token)
+    
+    raise ValueError(f"지원하지 않는 provider: {provider}")
 
 
 # 해당 유저 토큰 정보 DB 업데이트
