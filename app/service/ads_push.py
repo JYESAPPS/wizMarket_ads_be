@@ -53,6 +53,7 @@ def send_push_fcm_v1(device_token: str, title: str, body: str):
 
 
 def select_user_id_token():
+    print("매분 실행")
     user_id_token = crud_select_user_id_token()
 
     for user in user_id_token:
