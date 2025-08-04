@@ -180,7 +180,7 @@ def get_user_by_id(user_id: int):
 
 
 def update_user(user_id: int, store_business_number: str, custom_menu: str, insta_account: Optional[str] = None, ):
-    sucess = crud_update_user(user_id, store_business_number, insta_account, custom_menu)
+    sucess = crud_update_user(user_id, store_business_number, custom_menu, insta_account )
 
     if not sucess:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")

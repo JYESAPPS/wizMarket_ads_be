@@ -58,16 +58,16 @@ def select_user_id_token():
 
     for user in user_id_token:
         user_id = user.user_id
-        token = user.device_token
+        device_token = user.device_token
 
-        if not token:
+        if not device_token:
             continue  # 디바이스 토큰이 없는 경우 건너뜀
 
         # 예약 조건 일치 여부 확인
         if is_user_due_for_push(user_id):
             print(f"📨 푸시 전송 대상: user_id={user_id}")
             send_push_fcm_v1(
-                token=token,
+                device_token=device_token,
                 title="[예약 알림]",
                 body="지금 홍보를 시작해보세요!"
             )
