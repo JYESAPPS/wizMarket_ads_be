@@ -947,10 +947,9 @@ def generate_template_manual(request : ManualApp):
         channel = request.channel
         channel_text = ""
 
-        menu = request.category
-
-        if request.category == '' : 
-            menu = request.customMenu
+        menu = request.customMenu
+        if request.customMenu == '' : 
+            menu = request.category
 
         if channel =="카카오톡":
             channel_text = "1"
@@ -964,6 +963,7 @@ def generate_template_manual(request : ManualApp):
             channel_text = "3"
 
         detail_content = getattr(request, "customText", "") or ""
+
         # 사용자 커스텀 메뉴 값 업데이트
         try : 
             service_update_user_custom_menu(menu, store_business_number)
@@ -1145,11 +1145,7 @@ def generate_template_event(request : ManualApp):
         prompt = request.prompt
         channel = request.channel
         channel_text = ""
-
-        menu = request.category
-
-        if request.category == '' : 
-            menu = request.customMenu
+        menu = request.customMenu
 
         if channel =="카카오톡":
             channel_text = "1"
@@ -1163,6 +1159,13 @@ def generate_template_event(request : ManualApp):
             channel_text = "3"
 
         detail_content = getattr(request, "customText", "") or ""
+
+        # custom menu DB 수정
+        try : 
+            service_update_user_custom_menu(menu, store_business_number)
+        except Exception as e:
+            print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
+
         # 문구 생성
         try:
             today = datetime.now()
@@ -1652,7 +1655,7 @@ async def generate_template_manual_camera(
         raise HTTPException(status_code=500, detail=error_msg)
     
 
-# 이벤트 마케팅 - 내 사진 사용 (이벤트 내용 반영)
+# 이벤트 마케팅 - 내 사진 사용 (메뉴 / 이벤트 내용 반영)
 @router.post("/event/app/camera")
 async def generate_template_event_camera(
     image: UploadFile = File(None),
@@ -1665,11 +1668,18 @@ async def generate_template_event_camera(
     customText:str = Form(None),
     category: str = Form(...),
     store_name: str = Form(...),
+    store_business_number: str = Form(...),
     road_name: str = Form(...),
     main: str = Form(...),
     temp: float = Form(...),
 ):
     try:
+        # custom menu DB 수정
+        try : 
+            service_update_user_custom_menu(customMenu, store_business_number)
+        except Exception as e:
+            print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
+        
         # 문구 생성
         try:
             detail_content = customText or ""
