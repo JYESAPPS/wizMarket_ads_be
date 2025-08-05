@@ -94,7 +94,7 @@ def is_user_due_for_push(user_id: int) -> bool:
 
     # 1. 예약 정보 가져오기
     reserves = crud_get_user_reserves(user_id)
-    print(reserves)
+
     for reserve in reserves:
         # 날짜 유효성 검사
         if not (reserve.start_date <= today <= reserve.end_date):
