@@ -70,41 +70,81 @@ def generate_template(request: AutoAppMain):
         design = request.ai_data[0]
         age = request.ai_age
 
+        channel_text = ""
+        if channel == 1:
+            channel_text = "카카오톡"
+        elif channel == 2:
+            channel_text = "인스타그램 스토리"
+        elif channel == 3:
+            channel_text = "인스타그램 피드 게시글"
+        else: channel_text = "네이버 블로그"
 
 
         detail_content = ""
         # 문구 생성
         try:
-            copyright_role = ""
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
             copyright_prompt = ""
             
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
             if title == 3 or "3":
-                copyright_role = f'''
-                    you are professional writer.
-                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                    - 내용 : 20자 내외 간결하고 함축적인 내용
-                    - 특수기호, 이모티콘은 제외할 것
-                '''
 
                 copyright_prompt = f'''
-                    {request.store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
-                    주요 고객층: {age} 제목 :, 내용 : 형식으로 작성해주세요
+                    {request.store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
+
+                    - 이벤트 컨셉 : {request.detail_category_name}
+                    - 주소 : {request.road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
+                    호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요.
+                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
+                    제목 :, 내용 : 형식으로 작성해주세요.
                 '''
+                # copyright_role = f'''
+                #     you are professional writer.
+                #     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                #     - 내용 : 20자 내외 간결하고 함축적인 내용
+                #     - 특수기호, 이모티콘은 제외할 것
+                # '''
+
+                # copyright_prompt = f'''
+                #     {request.store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
+                #     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
+                #     주요 고객층: {age} 제목 :, 내용 : 형식으로 작성해주세요
+                # '''
             else:
-                copyright_role = f'''
-                    you are professional writer.
-                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                '''
-
                 copyright_prompt = f'''
-                    {request.store_name} 업체를 위한 문구.
-                    {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
-                    주요 고객층: {age}을 바탕으로 15자 이내로 작성해주세요
+                    {request.store_name} 매장의 {channel_text}를 위한 광고 문구를 제작하려고 합니다.
+                    - 홍보컨셉 : {request.detail_category_name}
+                    - 주소 : {request.road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
+                    유발할 수 있는 {channel_text}에 업로드할 광고문구를 작성해주세요.
+                    단, 연령대와 날씨, 년도, 해시태그를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
                 '''
+                # copyright_role = f'''
+                #     you are professional writer.
+                #     10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                # '''
+
+                # copyright_prompt = f'''
+                #     {request.store_name} 업체를 위한 문구.
+                #     {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
+                #     주요 고객층: {age}을 바탕으로 15자 이내로 작성해주세요
+                # '''
             copyright = service_generate_content(
                 copyright_prompt,
                 copyright_role,
@@ -254,7 +294,7 @@ def generate_template(request: AutoApp):
             formattedToday = today.strftime('%Y-%m-%d')
 
             if title == 3 or "3":
-                copyright_role = f'''
+                copyright_role = '''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
                     - 내용 : 20자 내외 간결하고 함축적인 내용
@@ -393,50 +433,85 @@ def generate_template_regen(request: AutoAppRegen):
         road_name = request.road_name
         store_business_number = request.store_business_number
         
-        female_text = f"{age}대"
+        female_text = f"{age}0대"
         channel_text = ""
 
         if channel == "1" : 
             channel_text = "카카오톡"
         elif channel == "2":
-            channel_text = "인스타 스토리"
+            channel_text = "인스타그램 스토리"
         elif channel == "3":
-            channel_text = "인스타 피드"
+            channel_text = "인스타그램 피드 게시글"
         else :
-            channel_text = "블로그"
+            channel_text = "네이버 블로그"
 
 
         detail_content = getattr(request, "ad_text", "") or ""
+
         # 문구 생성
         try:
-            copyright_role = ""
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
             copyright_prompt = ""
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+
             if title == 3 or "3":
-                copyright_role = f'''
-                    you are professional writer.
-                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                    - 내용 : 20자 내외 간결하고 함축적인 내용
-                    - 특수기호, 이모티콘은 제외할 것
-                '''
-
                 copyright_prompt = f'''
-                    {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text} 
-                    을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
+                    {store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
+
+                    - 이벤트 컨셉 : {detail_content}
+                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
+                    호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요.
+                    단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
+                    제목 :, 내용 : 형식으로 작성해주세요.
                 '''
+                # copyright_role = f'''
+                #     you are professional writer.
+                #     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                #     - 내용 : 20자 내외 간결하고 함축적인 내용
+                #     - 특수기호, 이모티콘은 제외할 것
+                # '''
+
+                # copyright_prompt = f'''
+                #     {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
+                #     {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text} 
+                #     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
+                # '''
             else:
-                copyright_role = f'''
-                    you are professional writer.
-                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                '''
-
                 copyright_prompt = f'''
-                    {store_name} 업체를 위한 문구.
-                    {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text}
-                    을 바탕으로 15자 이내로 작성해주세요
+                    {store_name} 매장의 {channel_text}를 위한 광고 문구를 제작하려고 합니다.
+                    - 홍보 컨셉 : {detail_content}
+                        - 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
+                    유발할 수 있는 {channel_text}에 업로드할 광고문구를 작성해주세요.
+                    단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
                 '''
+                # copyright_role = f'''
+                #     you are professional writer.
+                #     10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                # '''
+
+                # copyright_prompt = f'''
+                #     {store_name} 업체를 위한 문구.
+                #     {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text}
+                #     을 바탕으로 15자 이내로 작성해주세요
+                # '''
 
             copyright = service_generate_content(
                 copyright_prompt,
@@ -523,8 +598,9 @@ def generate_template_regen(request: AutoAppRegen):
             age = "4"
         elif female_text == "50대":
             age = "5"
-        elif female_text == "60대 이상":
+        elif female_text == "60대":
             age = "6"
+        else: age = "3"
 
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
@@ -889,34 +965,50 @@ def generate_template_manual(request : ManualApp):
         detail_content = getattr(request, "customText", "") or ""
         # 문구 생성
         try:
-            copyright_role = ""
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
             copyright_prompt = ""
 
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
             if theme == "이벤트":
-                copyright_role = f'''
-                    you are professional writer.
-                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                    - 내용 : 20자 내외 간결하고 함축적인 내용
-                    - 특수기호, 이모티콘은 제외할 것
-                '''
+                # copyright_role = f'''
+                #     you are professional writer.
+                #     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
+                #     - 내용 : 20자 내외 간결하고 함축적인 내용
+                #     - 특수기호, 이모티콘은 제외할 것
+                # '''
 
                 copyright_prompt = f'''
-                    {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {menu}, {formattedToday}, {main}, 주요 고객층: {female_text} 
-                    을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
+                    {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
+                    - 이벤트 컨셉 : {detail_content} ---> 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {female_text} 
+                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
+                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요.
+                    단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
+                    제목 :, 내용 : 형식으로 작성해주세요.
                 '''
+
             else:
-                copyright_role = f'''
-                    you are professional writer.
-                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                '''
-
                 copyright_prompt = f'''
-                    {store_name} 업체를 위한 문구.
-                    {menu}, {formattedToday}, {main}, 주요 고객층: {female_text}
-                    을 바탕으로 15자 이내로 작성해주세요
+                    {store_name} 매장의 {channel} {sub_channel}를 위한 광고 문구를 제작하려고 합니다.
+                    - 홍보 컨셉 : {detail_content} ---> 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {female_text} 
+                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
+                    유발할 수 있는 {channel} {sub_channel}에 업로드할 광고문구를 작성해주세요.
+                    단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
                 '''
 
             copyright = service_generate_content(
@@ -1064,34 +1156,32 @@ def generate_template_event(request : ManualApp):
         detail_content = getattr(request, "customText", "") or ""
         # 문구 생성
         try:
-            copyright_role = ""
-            copyright_prompt = ""
-
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
-            copyright_role = f'''
-                    당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                    광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                    지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
-                '''
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
 
             copyright_prompt = f'''
-                    {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                        - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 자동으로 생성
-                        - 주소 : {road_name} 
-                        - 날짜 : {formattedToday}
-                        - 계절 : 오늘 계절
-                        - 핵심 고객 연령대 : {female_text} 
-                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 두 문장 내외의 
-                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구 제목: 내용: 형식으로 작성해주세요.
-                    단, 고객의 연령대와 날씨는 직접 언급하지 마세요.
+                {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
+                    - 이벤트 컨셉 : {detail_content} ---> 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {female_text} 
+                이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 두 문장 내외의 
+                호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구 제목: 내용: 형식으로 작성해주세요.
+                단, 고객의 연령대와 날씨는 직접 언급하지 마세요.
                     
-                    ex)
-                    제목: 대동로 경동모텔, 8월 평일 할인!
-                    내용: 무더위 피한 조용한 휴식처, 주중 20% 혜택 놓치지 마세요.
-                '''
+                ex)
+                제목: 대동로 경동모텔, 8월 평일 할인!
+                내용: 무더위 피한 조용한 휴식처, 주중 20% 혜택 놓치지 마세요.
+            '''
 
             copyright = service_generate_content(
                 copyright_prompt,
@@ -1421,30 +1511,45 @@ async def generate_template_manual_camera(
         # 문구 생성
         try:
             detail_content = ""
-            copyright_role = ""
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
             copyright_prompt = ""
 
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
-            if title == "이벤트" : 
-                copyright_role = f'''
-                    you are professional writer.
-                    - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                    - 내용 : 20자 내외 간결하고 함축적인 내용
-                    - 특수기호, 이모티콘은 제외할 것
-                '''
-
+            if title == "이벤트" :
                 copyright_prompt = f'''
-                    {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {category}, {formattedToday}, {main}, 주요 고객층: {age} 
-                    을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
-                '''
-            else:
-                copyright_role = f'''
-                    you are professional writer.
-                    10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                '''
+                    {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
 
+                    - 이벤트 컨셉 : {category}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
+                    호기심을 유발할 수 있는 {channel}에 업로드할 이벤트 문구를 작성해주세요.
+                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
+                    제목 :, 내용 : 형식으로 작성해주세요.
+                ''' 
+
+            else:
+                copyright_prompt = f'''
+                    {store_name} 매장의 {channel}를 위한 광고 문구를 제작하려고 합니다.
+                    - 홍보 컨셉 : {category}을 주제로 생성
+                    - 주소 : {road_name} 
+                    - 날짜 : {formattedToday}
+                    - 계절 : 오늘 계절
+                    - 핵심 고객 연령대 : {age} 
+                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
+                    유발할 수 있는 {channel}에 업로드할 광고문구를 작성해주세요.
+                    단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘은 제외해 주세요.
+                '''
                 copyright_prompt = f'''
                     {store_name} 업체를 위한 문구.
                     {category}, {formattedToday}, {main}, 주요 고객층: {age}
@@ -1559,22 +1664,21 @@ async def generate_template_event_camera(
         # 문구 생성
         try:
             detail_content = customText or ""
-            copyright_role = ""
+            copyright_role = '''
+                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
+                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
+                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
+                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+            '''
             copyright_prompt = ""
 
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
             if title == "이벤트" : 
-                copyright_role = f'''
-                    당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                    광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                    지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
-                '''
-
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                        - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 {customMenu}
+                        - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 {customMenu}으로 컨셉 생성
                         - 주소 : {road_name} 
                         - 날짜 : {formattedToday}
                         - 계절 : 오늘 계절
@@ -1588,15 +1692,9 @@ async def generate_template_event_camera(
                     내용: 무더위 피한 조용한 휴식처, 주중 20% 혜택 놓치지 마세요.
                 '''
             else:
-                copyright_role = f'''
-                    당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                    광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                    지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
-                '''
-
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 홍보 내용 : {customMenu} --> 입력이 없다면 {category}
+                    - 홍보 내용 : {customMenu} --> 입력이 없다면 {category}으로 내용 생성
                     - 홍보 컨셉 : {detail_content}
                     - 주소 : {road_name}
                     - 날짜 : {formattedToday}
