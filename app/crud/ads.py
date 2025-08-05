@@ -122,6 +122,23 @@ def select_ads_init_info(store_business_number: str) -> AdsInitInfo:
 
 
 
+# 유저가 설정한 커스텀 메뉴 값 가져오기
+def select_custom_menu(store_business_number) :
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT CUSTOM_MENU FROM USER WHERE store_business_number = %s", (store_business_number,))
+            result = cursor.fetchone()
+
+        if result:
+            return result[0]  # ✅ 튜플에서 첫 번째 값 추출
+        else:
+            return None
+    except Exception as e:
+        print(f"중복 검사 오류: {e}")
+        return {"available": False}
+
+
 # 카테고리 name 값으로 id 값 조회
 def get_category_id(name):
     try:

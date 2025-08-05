@@ -1,5 +1,6 @@
 from app.crud.ads import (
     select_ads_init_info as crud_select_ads_init_info,
+    select_custom_menu as crud_select_custom_menu,
     insert_ads as crud_insert_ads,
     insert_ads_image as crud_insert_ads_image,
     delete_status as crud_delete_status,
@@ -183,6 +184,13 @@ def translate_weather_id_to_main(weather_id: int) -> str:
         return "구름"  # Clouds
     else:
         return "알 수 없음"  # Unknown case
+
+
+# 유저가 설정한 커스텀 메뉴 가져오기
+def select_custom_menu(store_business_number):
+    custom_menu = crud_select_custom_menu(store_business_number)
+    return custom_menu
+
 
 
 # 카테고리 별 랜덤 이미지 가져오기

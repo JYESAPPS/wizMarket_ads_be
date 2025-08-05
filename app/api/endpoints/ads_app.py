@@ -47,7 +47,8 @@ from app.service.ads_app import (
     get_manual_ai_reco_without_gender as service_get_manual_ai_reco_without_gender,
     validation_test as service_validation_test,
     extract_age_group as service_extract_age_group,
-    get_store_info as service_get_store_info
+    get_store_info as service_get_store_info,
+    update_user_custom_menu as service_update_user_custom_menu
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -963,6 +964,14 @@ def generate_template_manual(request : ManualApp):
             channel_text = "3"
 
         detail_content = getattr(request, "customText", "") or ""
+        # 사용자 커스텀 메뉴 값 업데이트
+        try : 
+            service_update_user_custom_menu(menu, store_business_number)
+        except Exception as e:
+            print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
+
+
+
         # 문구 생성
         try:
             copyright_role = '''

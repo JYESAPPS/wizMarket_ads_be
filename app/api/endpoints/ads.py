@@ -18,6 +18,7 @@ import requests
 from google_auth_oauthlib.flow import Flow
 from app.service.ads import (
     select_ads_init_info as service_select_ads_init_info,
+    select_custom_menu as service_select_custom_menu,
     insert_ads as service_insert_ads,
     delete_status as service_delete_status,
     update_ads as service_update_ads,
@@ -81,6 +82,7 @@ def select_ads_init_info(store_business_number: str):
     # 쿼리 매개변수로 전달된 store_business_number 값 수신
     try:
         init_data = service_select_ads_init_info(store_business_number)
+        custom_menu = service_select_custom_menu(store_business_number)
         ai_age = service_select_ai_age(init_data)
         # print(ai_age)
         ai_data = service_select_ai_data(init_data, ai_age)
@@ -92,6 +94,7 @@ def select_ads_init_info(store_business_number: str):
         # print(ai_age, ai_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
+            custom_menu=custom_menu,
             image_list=random_image_list,
             all_image_list=all_image_list,
             insta_info=insta_info,

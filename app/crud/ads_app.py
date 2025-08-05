@@ -351,4 +351,20 @@ def get_store_info(store_business_number):
 
 
 
+def update_user_custom_menu(menu, store_business_number):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER
+                SET CUSTOM_MENU = %s
+                WHERE store_business_number = %s
+            """
+            cursor.execute(sql, (menu, store_business_number,))
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
+
+    except Exception as e:
+        print(f"회원 정보 업데이트 오류: {e}")
+        return False
 
