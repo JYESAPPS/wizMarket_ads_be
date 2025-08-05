@@ -17,7 +17,7 @@ def insert_reserve(request):
     connection = get_re_db_connection()
 
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(pymysql.cursors.DictCursor) 
 
         insert_query = """
             INSERT INTO user_reserve (
@@ -47,7 +47,28 @@ def insert_reserve(request):
             ),
         )
 
+        reserve_id = cursor.lastrowid  # ✅ 방금 삽입된 PK 가져오기
         commit(connection)
+
+        select_query = """
+            SELECT 
+                RESERVE_ID AS reserve_id,
+                REPEAT_TYPE AS repeat_type,
+                REPEAT_COUNT AS repeat_count,
+                START_DATE AS start_date,
+                END_DATE AS end_date,
+                UPLOAD_TIMES AS upload_times,
+                WEEKLY_DAYS AS weekly_days,
+                MONTHLY_DAYS AS monthly_days,
+                IS_ACTIVE AS is_active,
+                CREATED_AT AS created_at
+            FROM USER_RESERVE
+            WHERE RESERVE_ID = %s;
+
+        """
+        cursor.execute(select_query, (reserve_id,))
+        new_item = cursor.fetchone()
+        return new_item
 
     except Exception as e:
         rollback(connection)

@@ -6,8 +6,8 @@ from app.crud.ads_reserve import (
 
 
 def insert_reserve(request):
-    status = crud_insert_reserve(request)
-    return status
+    new_reserve  = crud_insert_reserve(request)
+    return new_reserve 
 
 
 def get_user_reserve_list(request):

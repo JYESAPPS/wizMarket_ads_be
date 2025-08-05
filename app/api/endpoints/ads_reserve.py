@@ -15,8 +15,8 @@ router = APIRouter()
 
 @router.post("/insert")
 def insert_reserve(request: ReserveCreate):
-    status = service_insert_reserve(request)
-    return {"status": status}
+    new_reserve  = service_insert_reserve(request)
+    return new_reserve
 
 
 @router.post("/get/user/list")
