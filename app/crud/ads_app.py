@@ -156,10 +156,10 @@ def get_user_record(user_id):
 def get_user_record_this_month(user_id):
 
     try:
-        today = datetime.today()
-        month_start = today.replace(day=1)
-        next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-        month_end = next_month - timedelta(days=1)
+        # today = datetime.today()
+        # month_start = today.replace(day=1)
+        # next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+        # month_end = next_month - timedelta(days=1)
 
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -167,10 +167,8 @@ def get_user_record_this_month(user_id):
                 SELECT start_date, end_date, repeat_time, age, style, title, channel, image_path
                 FROM user_record
                 WHERE user_id = %s
-                AND end_date >= %s
-                AND start_date <= %s
             """
-            cursor.execute(query, (user_id, month_start.strftime("%Y-%m-%d"), month_end.strftime("%Y-%m-%d")))
+            cursor.execute(query, (user_id))
             rows = cursor.fetchall()
 
         if not rows:
