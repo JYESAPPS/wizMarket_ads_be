@@ -21,7 +21,8 @@ def get_plan_list() -> List[PlanList]:
             select_query = """
                 SELECT 
                     TICKET_ID, TICKET_NAME, TICKET_PRICE, TICKET_TYPE, BILLING_CYCLE, TOKEN_AMOUNT
-                FROM TICKET;
+                FROM TICKET
+                WHERE TICKET_NAME = '테스트 이용권';
             """
             cursor.execute(select_query)
             rows = cursor.fetchall()
