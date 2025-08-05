@@ -134,7 +134,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     commercial_district_max_sales_f_age: tuple | None
     main: str
     temp: float
-    custom_menu : str = None
+    custom_menu: Optional[str] = None
     image_list: RandomImage  # ✅ 여기에 추가
     all_image_list: List[RandomImage]
     insta_info: Optional[InstaAccount] = None  # ← 추가
