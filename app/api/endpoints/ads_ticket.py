@@ -10,6 +10,7 @@ from app.schemas.ads_ticket import (
 from app.service.ads_ticket import (
     insert_payment as service_insert_payment,
     insert_token as service_insert_token,
+    get_history_100 as service_get_history_100,
     get_history as service_get_history,
     get_token as service_get_token,
     get_valid_ticket as service_get_valid_ticket,
@@ -23,7 +24,23 @@ logger = logging.getLogger(__name__)
 
 # 결제
 @router.post("/payment")
-def insert_payment(request: List[InsertPayRequest]):    
+def insert_payment(request: List[InsertPayRequest]):  
+    # 토큰 구매 100개 제한
+    try:
+        is_exist = service_get_history_100(request[0])
+        if not is_exist:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "success": False,
+                    "message": "이미 구매하셨습니다.",
+                }
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
+        )  
     # 결제 내역에 추가 로직
     try:
         for each in request:
