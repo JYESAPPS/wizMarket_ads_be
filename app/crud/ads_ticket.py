@@ -194,17 +194,21 @@ def get_history_100(user_id):
                 ORDER BY p.PAYMENT_DATE DESC
             """, (user_id))
             row = cursor.fetchone()
-            status = True
+            # status = True
 
             # if row : 
+                # status = False
             if row and row[0] > 0: 
-                status = False
+                # print(f"[중복 결제 차단] 유저 {user_id}가 이미 구매함 → row={row}")
+                return False
 
-            return status
+            # return status
+            # print(f"[결제 가능] 유저 {user_id}는 아직 구매 안함 → row={row}")
+            return True
 
     except Exception as e:
-        logger.error(f"get_history error: {e}")
-        return []
+        logger.error(f"get_history_100 error: {e}")
+        return False
     finally:
         connection.close()
     

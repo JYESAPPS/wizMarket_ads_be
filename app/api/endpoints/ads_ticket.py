@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def insert_payment(request: List[InsertPayRequest]):  
     # 토큰 구매 100개 제한
     try:
-        is_exist = service_get_history_100(request[0])
+        is_exist = service_get_history_100(request[0].user_id)
         if not is_exist:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
