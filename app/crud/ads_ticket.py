@@ -190,13 +190,14 @@ def get_history_100(user_id):
                 FROM ticket t 
                 JOIN ticket_payment p
                 ON t.TICKET_ID = p.TICKET_ID
-                WHERE p.USER_ID = %s AND TICKET_ID = 12
+                WHERE p.USER_ID = %s AND p.TICKET_ID = 12
                 ORDER BY p.PAYMENT_DATE DESC
             """, (user_id))
             row = cursor.fetchone()
             status = True
 
-            if row : 
+            # if row : 
+            if row and row[0] > 0: 
                 status = False
 
             return status
