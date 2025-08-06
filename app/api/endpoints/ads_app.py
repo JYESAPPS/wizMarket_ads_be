@@ -1771,8 +1771,8 @@ async def generate_template_event_camera(
                 formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
-                    업종: {category}
+                    {store_name} 업체의 인스타그램 피드를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    업종: {customMenu}
                     일시 : {formattedToday}
                     주요 고객층: {age}
 
@@ -1783,7 +1783,7 @@ async def generate_template_event_camera(
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {category} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
+                    1. '{copyright}' 를 100~150자까지 인플루언서가 {customMenu} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
 
