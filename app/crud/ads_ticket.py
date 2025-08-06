@@ -353,3 +353,28 @@ def insert_token_deduction_history(user_id: int, ticket_id: int, token_grant: in
         raise RuntimeError(f"차감 기록 실패: {e}")
     finally:
         connection.close()
+
+# 토큰 차감 기록 가져오기
+def get_token_deduction_history(user_id: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT
+                    DATE(GRANT_DATE) AS grant_date,
+
+                    -- 차감량과 지급량을 따로 합산
+                    SUM(CASE WHEN GRANT_TYPE = 0 THEN TOKEN_GRANT ELSE 0 END) AS total_deducted,
+                    SUM(CASE WHEN GRANT_TYPE = 1 THEN TOKEN_GRANT ELSE 0 END) AS total_granted,
+
+                    SUBSTRING_INDEX(GROUP_CONCAT(TOKEN_ONETIME ORDER BY GRANT_DATE DESC), ',', 1) AS end_onetime,
+                    SUBSTRING_INDEX(GROUP_CONCAT(TOKEN_SUBSCRIPTION ORDER BY GRANT_DATE DESC), ',', 1) AS end_subscription
+
+                FROM ticket_token
+                WHERE USER_ID = %s
+                GROUP BY DATE(GRANT_DATE)
+                ORDER BY GRANT_DATE DESC
+            """, (user_id,))
+            return cursor.fetchall()
+    finally:
+        connection.close()

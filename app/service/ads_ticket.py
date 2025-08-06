@@ -9,7 +9,8 @@ from app.crud.ads_ticket import (
     get_latest_token_subscription as crud_get_latest_token_subscription,
     get_valid_ticket as crud_get_valid_ticket,
     insert_payment_history as crud_insert_token_deduction_history,
-    insert_token_deduction_history as crud_insert_token_deduction_history
+    insert_token_deduction_history as crud_insert_token_deduction_history,
+    get_token_deduction_history as crud_get_token_deduction_history
 )
 
 from datetime import datetime
@@ -142,3 +143,27 @@ def deduct_token(user_id):
         "remaining_tokens": token_subscription + token_onetime,
         "total_tokens": total
     }
+
+def get_token_deduction_history(user_id: int):
+    rows = crud_get_token_deduction_history(user_id)
+
+    result = []
+    running_total = 0
+
+    for row in rows:
+        deducted = row["total_deducted"]
+        granted = int(row["total_granted"] or 0)
+        remaining_onetime = int(row["end_onetime"] or 0)
+        remaining_subscription = int(row["end_subscription"] or 0)
+        running_total += deducted  # 누적 차감량
+        
+        result.append({
+            "grant_date": row["grant_date"],
+            "deducted": deducted,
+            "granted": granted,
+            "running_total": running_total,
+            "remaining_onetime": remaining_onetime,
+            "remaining_subscription": remaining_subscription,
+        })
+
+    return result

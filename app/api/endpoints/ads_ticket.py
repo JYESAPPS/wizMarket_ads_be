@@ -14,7 +14,8 @@ from app.service.ads_ticket import (
     get_history as service_get_history,
     get_token as service_get_token,
     get_valid_ticket as service_get_valid_ticket,
-    deduct_token as service_deduct_token
+    deduct_token as service_deduct_token,
+    get_token_deduction_history as service_get_token_deduction_history
 )
 
 
@@ -119,3 +120,12 @@ def deduct_token_endpoint(request: InsertTokenRequest):
     except Exception as e:
         logger.error(f"[500 Error] {str(e)}")  # ✅ 에러 로그 출력
         raise HTTPException(status_code=500, detail=f"토큰 차감 중 오류 발생: {str(e)}")
+    
+@router.get("/token/history")
+def get_token_history(user_id: int):
+    try:
+        data = service_get_token_deduction_history(user_id)
+        return {"success": True, "history": data}
+    except Exception as e:
+        logger.error(f"[토큰 차감 이력 오류] {e}")
+        raise HTTPException(status_code=500, detail="토큰 차감 이력 조회 중 오류 발생")
