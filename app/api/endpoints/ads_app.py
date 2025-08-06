@@ -106,7 +106,7 @@ def generate_template(request: AutoAppMain):
                     - 계절 : 오늘 계절
                     - 핵심 고객 연령대 : {age} 
                     이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
                     호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요.
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
@@ -126,7 +126,7 @@ def generate_template(request: AutoAppMain):
             else:
                 copyright_prompt = f'''
                     {request.store_name} 매장의 {channel_text}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보컨셉 : {request.detail_category_name}
+                    - 홍보 컨셉 : {request.detail_category_name}
                     - 주소 : {request.road_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -994,7 +994,8 @@ def generate_template_manual(request : ManualApp):
 
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 이벤트 컨셉 : {detail_content} ---> 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 이벤트 컨셉 : {detail_content} 
+                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
                     - 주소 : {road_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1009,7 +1010,8 @@ def generate_template_manual(request : ManualApp):
             else:
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel} {sub_channel}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {detail_content} ---> 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 홍보 컨셉 : {detail_content} 
+                        - 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
                     - 주소 : {road_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1180,7 +1182,8 @@ def generate_template_event(request : ManualApp):
 
             copyright_prompt = f'''
                 {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 이벤트 컨셉 : {detail_content} ---> 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
+                    - 이벤트 컨셉 : {detail_content} 
+                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
                     - 주소 : {road_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1543,7 +1546,7 @@ async def generate_template_manual_camera(
                     - 계절 : 오늘 계절
                     - 핵심 고객 연령대 : {age} 
                     이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 30자 내외의 
+                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
                     호기심을 유발할 수 있는 {channel}에 업로드할 이벤트 문구를 작성해주세요.
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
@@ -1552,7 +1555,7 @@ async def generate_template_manual_camera(
             else:
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {category}을 주제로 생성
+                    - 홍보 컨셉 : {category}
                     - 주소 : {road_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1562,11 +1565,11 @@ async def generate_template_manual_camera(
                     유발할 수 있는 {channel}에 업로드할 광고문구를 작성해주세요.
                     단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
                 '''
-                copyright_prompt = f'''
-                    {store_name} 업체를 위한 문구.
-                    {category}, {formattedToday}, {main}, 주요 고객층: {age}
-                    을 바탕으로 15자 이내로 작성해주세요
-                '''
+                # copyright_prompt = f'''
+                #     {store_name} 업체를 위한 문구.
+                #     {category}, {formattedToday}, {main}, 주요 고객층: {age}
+                #     을 바탕으로 15자 이내로 작성해주세요
+                # '''
 
             copyright = service_generate_content(
                 copyright_prompt,
