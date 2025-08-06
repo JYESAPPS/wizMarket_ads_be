@@ -160,4 +160,89 @@ def update_reserve_status(request):
         connection.close()
 
 
+def delete_reserve(request):
+    reserve_id = request.reserve_id
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            update_sql = """
+                DELETE FROM USER_RESERVE
+                WHERE RESERVE_ID = %s
+            """
+            cursor.execute(update_sql, (reserve_id,))
+            connection.commit()
+        return True
+    except Exception as e:
+        logger.error(f"상태 토글 실패: {e}")
+        raise HTTPException(status_code=500, detail="상태 변경 실패")
+    finally:
+        connection.close()
+
+
+def update_reserve(request):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        update_query = """
+            UPDATE user_reserve
+            SET
+                repeat_type = %s,
+                repeat_count = %s,
+                start_date = %s,
+                end_date = %s,
+                upload_times = %s,
+                weekly_days = %s,
+                monthly_days = %s
+            WHERE reserve_id = %s
+        """
+
+        cursor.execute(
+            update_query,
+            (
+                request.repeat_type,
+                request.repeat_count,
+                request.start_date,
+                request.end_date,
+                json.dumps(request.upload_times),
+                json.dumps(request.weekly_days) if request.weekly_days else None,
+                json.dumps(request.monthly_days) if request.monthly_days else None,
+                request.reserve_id,
+            ),
+        )
+
+        commit(connection)
+
+        # ✅ 수정된 데이터 다시 조회해서 반환
+        select_query = """
+            SELECT 
+                RESERVE_ID AS reserve_id,
+                REPEAT_TYPE AS repeat_type,
+                REPEAT_COUNT AS repeat_count,
+                START_DATE AS start_date,
+                END_DATE AS end_date,
+                UPLOAD_TIMES AS upload_times,
+                WEEKLY_DAYS AS weekly_days,
+                MONTHLY_DAYS AS monthly_days,
+                IS_ACTIVE AS is_active,
+                CREATED_AT AS created_at
+            FROM USER_RESERVE
+            WHERE RESERVE_ID = %s;
+        """
+        cursor.execute(select_query, (request.reserve_id,))
+        updated_item = cursor.fetchone()
+        return updated_item
+
+    except Exception as e:
+        rollback(connection)
+        print(f"❌ 예약 수정 오류: {e}")
+        raise HTTPException(status_code=500, detail="예약 수정 실패")
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+
 

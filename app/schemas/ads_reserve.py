@@ -38,3 +38,22 @@ class ReserveGetList(BaseModel):
 
 class ReserveUpdateStatus(BaseModel):
     reserve_id : int
+
+
+class ReserveDelete(BaseModel):
+    reserve_id : int
+
+
+class ReserveUpdate(BaseModel):
+    reserve_id : int
+    user_id: str
+    start_date: date
+    end_date: date
+    repeat_type: str  # daily, weekly, monthly
+    repeat_count: int
+    upload_times: List[str]
+    weekly_days: Optional[List[str]] = None  # ["Mon", "Wed"]
+    monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
+
+    class Config:
+        orm_mode = True
