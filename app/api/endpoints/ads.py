@@ -88,7 +88,7 @@ def select_ads_init_info(store_business_number: str):
         ai_data = service_select_ai_data(init_data, ai_age)
         random_image_list = service_random_design_style(init_data, ai_data[0])
         all_image_list = service_get_style_image(init_data)
-        insta_info = service_select_insta_account(store_business_number)
+        # insta_info = service_select_insta_account(store_business_number)
         
 
         # print(ai_age, ai_data)
@@ -97,7 +97,7 @@ def select_ads_init_info(store_business_number: str):
             custom_menu=custom_menu,
             image_list=random_image_list,
             all_image_list=all_image_list,
-            insta_info=insta_info,
+            insta_info=None,
             ai_age = ai_age,
             ai_data = ai_data,
         )
