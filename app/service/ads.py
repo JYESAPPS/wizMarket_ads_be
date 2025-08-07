@@ -203,7 +203,7 @@ def random_design_style(init_info, design_id):
 
 
 # 나이 값 추천 or 꺼내기
-def select_ai_age(init_info):
+def select_ai_age(init_info, custom_menu):
     age_tuple = init_info.commercial_district_max_sales_f_age
     age_map = {
         "COMMERCIAL_DISTRICT_AVG_CLIENT_PER_F_10S": "10대",
@@ -216,7 +216,7 @@ def select_ai_age(init_info):
     if not age_tuple or age_tuple[0] is None:
         gpt_content = f''' 
             당신은 온라인 광고 콘텐츠 기획자입니다. 아래 조건을 바탕으로 SNS 또는 디지털 홍보에 적합한 콘텐츠를 제작하려고 합니다.
-            연령대를 선택 후 숫자 하나만 답해주세요.
+            현재 계절과 요일, 날짜 및 세부업종을 반영하여 주고객층을 선택 후 숫자 하나만 답해주세요.
             
             ex) 1
         '''
@@ -225,6 +225,7 @@ def select_ai_age(init_info):
         content = f"""[매장 정보]  
         - 매장명: {init_info.store_name}  
         - 업종: {init_info.detail_category_name} 
+        - 세부 업종: {custom_menu}
         - 주소: {init_info.road_name}
         - 일시: {formattedToday}
 
@@ -260,7 +261,7 @@ def select_ai_age(init_info):
 
 
 # 초기 AI 추천 값 가져오기
-def select_ai_data(init_info, ai_age):
+def select_ai_data(init_info, ai_age, custom_menu):
 
     # design_map = {
     #     1: "3D감성",
@@ -301,7 +302,7 @@ def select_ai_data(init_info, ai_age):
     
     gpt_content = f''' 
         해당 매장의 핵심 고객 연령층에 맞는 인지심리적 접근을 통해 아래 구분에 대해 가장 많이 선호되는 내용을 정해주세요. 
-        핵심 고객이 {ai_age}에 맞는 디자인 선호 스타일, 카피문구 선호 스타일, 자주 이용하는 채널, 홍보 주제, 매장 방문 선호 요일, 매장 방문 선호 시간대 선택 후 숫자로만 답해주세요.
+        현재 계절과 요일, 날짜, 세부업종, 핵심 고객인 {ai_age}에 맞는 디자인 선호 스타일, 카피문구 선호 스타일, 자주 이용하는 채널, 홍보 주제, 매장 방문 선호 요일, 매장 방문 선호 시간대 선택 후 숫자로만 답해주세요.
         대답은 숫자 조합으로만 해주세요
         ex) 4, 4, 1, 1, 6, 4
     '''
@@ -310,6 +311,7 @@ def select_ai_data(init_info, ai_age):
     content = f"""[매장 정보]  
     - 매장명: {init_info.store_name}  
     - 업종: {init_info.detail_category_name} 
+    - 세부 업종: {custom_menu}
     - 주소: {init_info.road_name}
     - 일시: {formattedToday}
 
@@ -322,11 +324,11 @@ def select_ai_data(init_info, ai_age):
 
     [채널]  
     ※ 고객층에 적합한 채널 1개 선택 
-    1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드 4. 블로그
+    1. 카카오톡 2. 인스타그램 스토리 3. 인스타그램 피드
 
     [홍보 주제]  
     ※ 아래 중 하나를 조건에 따라 선택. 
-    - 단, 특정 시즌/기념일 이벤트 (예: 발렌타인데이, 할로윈 데이, 크리스마스 등) 엔 이벤트만 선택하고 연말, 설날, 추석에만 감사인사를 선택 그외의 날짜엔 선택하지 않음
+    - 단, 특정 시즌/기념일 이벤트(예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등)엔 이벤트 선택
     1. 매장 홍보 2. 상품 소개 3. 이벤트 
 
     [선호 요일]  
