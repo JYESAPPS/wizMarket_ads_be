@@ -84,7 +84,7 @@ def select_ads_init_info(store_business_number: str):
         init_data = service_select_ads_init_info(store_business_number)
         custom_menu = service_select_custom_menu(store_business_number)
         ai_age = service_select_ai_age(init_data, custom_menu)
-        print(init_data)
+        # print(init_data)
         ai_data = service_select_ai_data(init_data, ai_age, custom_menu)
         random_image_list = service_random_design_style(init_data, ai_data[0])
         all_image_list = service_get_style_image(init_data)
