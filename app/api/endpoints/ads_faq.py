@@ -6,10 +6,12 @@ import logging
 from app.service.ads_faq import (
     get_faq as service_get_faq,
     get_tag as service_get_tag,
-    create_faq as service_create_faq
+    create_faq as service_create_faq,
+    update_faq as service_update_faq,
+    delete_faq as service_delete_faq
 )
 from app.schemas.ads_faq import (
-    AdsFAQCreateRequest
+    AdsFAQCreateRequest, AdsFAQUpdateRequest, AdsFAQDeleteRequest
 )
 
 router = APIRouter()
@@ -51,7 +53,32 @@ def get_tag():
 def create_faq(request: AdsFAQCreateRequest):
     try:
         service_create_faq(request)
-        return {"success": True, "message": "공지사항이 등록되었습니다."}
+        return {"success": True, "message": "FAQ가 등록되었습니다."}
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
+    
+
+# FAQ 수정
+@router.post("/update", status_code=201)
+def update_faq(request: AdsFAQUpdateRequest):
+    try:
+        service_update_faq(request)
+        return {"success": True, "message": "FAQ가 업데이트되었습니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+    
+
+
+# FAQ 삭제
+@router.post("/delete", status_code=201)
+def delete_faq(request: AdsFAQDeleteRequest):
+    try:
+        service_delete_faq(request)
+        return {"success": True, "message": "FAQ가 업데이트되었습니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+
+

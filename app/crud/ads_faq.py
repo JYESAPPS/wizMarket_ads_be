@@ -131,3 +131,70 @@ def create_faq(question: str, answer: str, category_name: str):
     finally:
         close_cursor(cursor)
         close_connection(connection)
+
+def update_faq(faq_id: int, question: str, answer: str, category_name: str):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        # 1️⃣ 카테고리 ID 조회
+        select_query = "SELECT faq_category_id FROM faq_category WHERE name = %s"
+        cursor.execute(select_query, (category_name,))
+        result = cursor.fetchone()
+
+        # 2️⃣ 없으면 카테고리 새로 추가
+        if result:
+            category_id = result[0]
+        else:
+            insert_category_query = "INSERT INTO faq_category (name) VALUES (%s)"
+            cursor.execute(insert_category_query, (category_name,))
+            category_id = cursor.lastrowid  # 방금 삽입한 ID 가져오기
+
+        # 3️⃣ FAQ 수정
+        update_faq_query = """
+            UPDATE faq
+            SET faq_category_id = %s,
+                question = %s,
+                answer = %s
+            WHERE faq_id = %s
+        """
+        cursor.execute(update_faq_query, (category_id, question, answer, faq_id))
+
+        commit(connection)
+
+    except pymysql.MySQLError as e:
+        rollback(connection)
+        print(f"❌ FAQ 수정 중 DB 오류: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+def delete_faq(faq_id: int):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        # 1️⃣ FAQ 삭제 쿼리
+        delete_query = "DELETE FROM faq WHERE faq_id = %s"
+        cursor.execute(delete_query, (faq_id,))
+
+        commit(connection)
+
+    except pymysql.MySQLError as e:
+        rollback(connection)
+        print(f"❌ FAQ 삭제 중 오류 발생: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+

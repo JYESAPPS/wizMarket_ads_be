@@ -23,3 +23,15 @@ class AdsFAQCreateRequest(BaseModel):
     question: str
     answer: str
     name : str
+
+
+class AdsFAQUpdateRequest(BaseModel):
+    faq_id : int
+    question: str
+    answer: str
+    name : str
+
+
+class AdsFAQDeleteRequest(BaseModel):
+    faq_id : int
+
