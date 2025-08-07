@@ -184,6 +184,7 @@ class UserInfoInsert(BaseModel):
     nickname: str
     phone: str
     profile_image: str
+    custom_menu: str
 
 class UserInfoUpdate(BaseModel):
     user_id: str
@@ -192,6 +193,7 @@ class UserInfoUpdate(BaseModel):
     nickname: str
     phone: str
     profile_image: str
+    custom_menu: str
 
 
 class UserRecentRecord(BaseModel):
