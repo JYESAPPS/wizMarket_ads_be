@@ -57,6 +57,7 @@ class AutoAppMain(BaseModel):
     longitude: float
 
     store_name: str
+    custom_menu: Optional[str] = None
     detail_category_name: str
 
     commercial_district_max_sales_day: Optional[List[Optional[Union[str, float]]]] = None
@@ -81,7 +82,9 @@ class AutoAppRegen(BaseModel):
     store_business_number: str
     store_name: str
     detail_category_name: str
+    custom_menu: str
     road_name: str
+    district_name: str
 
     style:str
     channel : str
@@ -171,6 +174,7 @@ class ManualApp(BaseModel):
     theme: str
     store_name : str
     road_name : str
+    district_name: str
     detail_category_name : str
 
     

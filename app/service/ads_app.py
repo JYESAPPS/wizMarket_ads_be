@@ -671,3 +671,15 @@ def get_store_info(store_business_number):
 
 def update_user_custom_menu(menu, store_business_number):
     crud_update_user_custom_menu(menu, store_business_number)
+
+def get_season(date: datetime) -> str:
+    month = datetime.strptime(date, "%Y-%m-%d").month
+
+    if 3 <= month <= 5:
+        return "봄"
+    elif 6 <= month <= 8:
+        return "여름"
+    elif 9 <= month <= 11:
+        return "가을"
+    else:
+        return "겨울"

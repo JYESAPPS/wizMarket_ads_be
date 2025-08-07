@@ -48,7 +48,8 @@ from app.service.ads_app import (
     validation_test as service_validation_test,
     extract_age_group as service_extract_age_group,
     get_store_info as service_get_store_info,
-    update_user_custom_menu as service_update_user_custom_menu
+    update_user_custom_menu as service_update_user_custom_menu,
+    get_season as service_get_season,
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -80,6 +81,13 @@ def generate_template(request: AutoAppMain):
             channel_text = "인스타그램 피드 게시글"
         else: channel_text = "네이버 블로그"
 
+        menu = request.custom_menu 
+        if request.custom_menu == '' : 
+            menu = request.detail_category_name
+
+        theme = ""
+        if title == 1: theme = "매장 홍보"
+        elif title ==2: theme = "상품 소개"
 
         detail_content = ""
         # 문구 생성
@@ -94,20 +102,18 @@ def generate_template(request: AutoAppMain):
             
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+            season = service_get_season(formattedToday)
 
-            if title == 3 or "3":
+            if title == 3 or title == "3":
 
                 copyright_prompt = f'''
                     {request.store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
-
-                    - 이벤트 컨셉 : {request.detail_category_name}
-                    - 주소 : {request.road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
+                    - 세부 업종 혹은 상품 : {menu}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                     - 핵심 고객 연령대 : {age} 
-                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
-                    호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요.
+                    {season}의 특성, {request.district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 {age}가 선호하는 문체 스타일을 기반으로 
+                    20자 내외의 제목과 40자 내외의 호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
                 '''
@@ -125,15 +131,14 @@ def generate_template(request: AutoAppMain):
                 # '''
             else:
                 copyright_prompt = f'''
-                    {request.store_name} 매장의 {channel_text}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {request.detail_category_name}
-                    - 주소 : {request.road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
+                    {request.store_name} 매장의 {channel_text}에 포스팅할 광고 문구를 제작하려고 합니다.
+                    - 세부 업종 혹은 상품 : {menu}
+                    - 홍보 컨셉 : {theme}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등)엔 해당 내용으로 문구 생성
                     - 핵심 고객 연령대 : {age} 
-                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
-                    유발할 수 있는 {channel_text}에 업로드할 광고문구를 작성해주세요.
+                    {season}의 특성, {request.district_name} 지역의 특성을 살려서 {age}이 선호하는 문체 스타일을 기반으로 
+                    20자 내외 간결하고 호기심을 유발할 수 있는 {channel_text} 이미지에 업로드할 {theme} 문구를 작성해주세요. 
                     단, 연령대와 날씨, 년도, 해시태그를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                 '''
                 # copyright_role = f'''
@@ -205,7 +210,7 @@ def generate_template(request: AutoAppMain):
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
 
-                    3.나이는 표현하지 않는다.
+                    3.핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -236,7 +241,8 @@ def generate_template(request: AutoAppMain):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": str(title), "channel":str(channel), "style": style, "core_f": age,
             "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
-            "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number, "prompt" : seed_prompt
+            "store_name": request.store_name, "road_name": request.road_name, "district_name": request.district_name,
+            "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
 
     except HTTPException as http_ex:
@@ -294,7 +300,7 @@ def generate_template(request: AutoApp):
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
 
-            if title == 3 or "3":
+            if title == 3 or title == "3":
                 copyright_role = '''
                     you are professional writer.
                     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
@@ -446,6 +452,13 @@ def generate_template_regen(request: AutoAppRegen):
         else :
             channel_text = "네이버 블로그"
 
+        theme = ""
+        if title == "1" : theme = "매장 홍보"
+        elif title =="2": theme = "상품 소개"
+
+        menu = request.custom_menu 
+        if request.custom_menu == '' : 
+            menu = request.detail_category_name
 
         detail_content = getattr(request, "ad_text", "") or ""
 
@@ -460,59 +473,36 @@ def generate_template_regen(request: AutoAppRegen):
             copyright_prompt = ""
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+            season = service_get_season(formattedToday)
 
-            if title == 3 or "3":
+            if title == 3 or title == "3":
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
 
-                    - 이벤트 컨셉 : {detail_content}
-                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
-                    - 주소 : {road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
-                    - 핵심 고객 연령대 : {age} 
-                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
-                    호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요.
+                    - 세부업종 혹은 상품 : {menu}
+                    - 이벤트내용 : {request.ad_text}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                    - 핵심 고객 연령대 : {female_text} 
+
+                    {season}의 특성, {request.district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                    {age}가 선호하는 문체 스타일을 기반으로 20자 내외의 제목과 40자 내외의 호기심을 유발할 수 있는 
+                    {channel_text}에 업로드할 이벤트 문구를 작성해주세요. 
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
                 '''
-                # copyright_role = f'''
-                #     you are professional writer.
-                #     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                #     - 내용 : 20자 내외 간결하고 함축적인 내용
-                #     - 특수기호, 이모티콘은 제외할 것
-                # '''
-
-                # copyright_prompt = f'''
-                #     {store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                #     {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text} 
-                #     을 바탕으로 제목 :, 내용 : 형식으로 작성해주세요
-                # '''
             else:
                 copyright_prompt = f'''
-                    {store_name} 매장의 {channel_text}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {detail_content}
-                        - 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
-                    - 주소 : {road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
-                    - 핵심 고객 연령대 : {age} 
-                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
-                    유발할 수 있는 {channel_text}에 업로드할 광고문구를 작성해주세요.
+                    {store_name} 매장의 {channel_text}에 포스팅할 광고 문구를 제작하려고 합니다.
+                    - 세부업종 혹은 상품 : {menu}
+                    - 홍보컨셉 : {theme}, {request.ad_text}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
+                    - 핵심 고객 연령대 : {female_text} 
+                    {season}의 특성, {request.district_name} 지역의 특성을 살려서 {age}이 선호하는 문체 스타일을 기반으로 
+                    20자 내외 간결하고 호기심을 유발할 수 있는 {channel_text} 이미지에 업로드할 {theme} ({request.ad_text}) 문구를 작성해주세요. 
                     단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
                 '''
-                # copyright_role = f'''
-                #     you are professional writer.
-                #     10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                # '''
-
-                # copyright_prompt = f'''
-                #     {store_name} 업체를 위한 문구.
-                #     {detail_category_name}, {formattedToday}, {main}, 주요 고객층: {female_text}
-                #     을 바탕으로 15자 이내로 작성해주세요
-                # '''
 
             copyright = service_generate_content(
                 copyright_prompt,
@@ -608,7 +598,8 @@ def generate_template_regen(request: AutoAppRegen):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_f": age,
             "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
+            "store_name": store_name, "road_name": road_name, "district_name": request.district_name,
+            "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
         })
 
     except HTTPException as http_ex:
@@ -942,6 +933,7 @@ def generate_template_manual(request : ManualApp):
         theme= request.theme
         store_name= request.store_name
         road_name= request.road_name
+        district_name = request.district_name
         detail_category_name= request.detail_category_name
         prompt = request.prompt
         channel = request.channel
@@ -984,41 +976,37 @@ def generate_template_manual(request : ManualApp):
 
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+            season = service_get_season(formattedToday)
+            
             if theme == "이벤트":
-                # copyright_role = f'''
-                #     you are professional writer.
-                #     - 제목 : 10자 내외 간결하고 호기심을 유발할 수 있는 문구
-                #     - 내용 : 20자 내외 간결하고 함축적인 내용
-                #     - 특수기호, 이모티콘은 제외할 것
-                # '''
-
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 이벤트 컨셉 : {detail_content} 
-                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
-                    - 주소 : {road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
+
+                    - 세부업종 혹은 상품 : {menu}
+                    - 이벤트내용 :  {detail_content}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                     - 핵심 고객 연령대 : {female_text} 
-                    이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
-                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요.
+
+                    {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                    {female_text}가 선호하는 문체 스타일을 기반으로 20자 내외의 제목과 40자 내외의 
+                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+
                     단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
                 '''
 
             else:
                 copyright_prompt = f'''
-                    {store_name} 매장의 {channel} {sub_channel}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {detail_content} 
-                        - 홍보 컨셉이 없을 시 {detail_category_name}을 주제로 생성
-                    - 주소 : {road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
+                    {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
+                    - 세부업종 혹은 상품 : {menu}
+                    - 홍보컨셉 : {theme}, {detail_content}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
                     - 핵심 고객 연령대 : {female_text} 
-                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 간결하고 호기심을 
-                    유발할 수 있는 {channel} {sub_channel}에 업로드할 광고문구를 작성해주세요.
+                    {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                    20자 내외 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
+                    {theme} ({detail_content}) 문구를 작성해주세요. 
                     단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
                 '''
 
@@ -1117,8 +1105,8 @@ def generate_template_manual(request : ManualApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, 
-            "prompt" : prompt, "customText" : request.customText
+            "store_name": store_name, "road_name": road_name, "district_name": district_name, 
+            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
         })
 
     except HTTPException as http_ex:
@@ -1143,12 +1131,13 @@ def generate_template_event(request : ManualApp):
         theme= request.theme
         store_name= request.store_name
         road_name= request.road_name
+        district_name = request.district_name
         detail_category_name= request.detail_category_name
         prompt = request.prompt
         channel = request.channel
-        channel_text = ""
         menu = request.customMenu
 
+        channel_text = ""
         if channel =="카카오톡":
             channel_text = "1"
             sub_channel = ""
@@ -1172,6 +1161,7 @@ def generate_template_event(request : ManualApp):
         try:
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
+            season = service_get_season(formattedToday)
 
             copyright_role = '''
                 당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
@@ -1181,17 +1171,20 @@ def generate_template_event(request : ManualApp):
             '''
 
             copyright_prompt = f'''
-                {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 이벤트 컨셉 : {detail_content} 
-                        - 이벤트 컨셉이 없을 시 {detail_category_name}을 주제로 생성
-                    - 주소 : {road_name} 
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
-                    - 핵심 고객 연령대 : {female_text} 
-                이벤트 컨셉에 대한 문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                핵심고객 연령대의 카피문구 선호 스타일을 기반으로 20자 내외의 제목과 두 문장 내외의 
-                호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구 제목: 내용: 형식으로 작성해주세요.
+                {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
+
+                - 세부업종 혹은 상품 : {menu}
+                - 이벤트내용 : {detail_content} 
+                - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                    빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                - 핵심 고객 연령대 : {female_text} 
+
+                {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                {female_text}가 선호하는 문체 스타일을 기반으로 20자 내외의 제목과 40자 내외의 호기심을 유발할 수 있는 
+                {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+
                 단, 고객의 연령대와 날씨는 직접 언급하지 마세요.
+                제목: 내용: 형식으로 작성해주세요.
                     
                 ex)
                 제목: 대동로 경동모텔, 8월 평일 할인!
@@ -1293,8 +1286,8 @@ def generate_template_event(request : ManualApp):
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
-            "store_name": store_name, "road_name": road_name, "store_business_number": store_business_number, 
-            "prompt" : prompt, "customText" : request.customText
+            "store_name": store_name, "road_name": road_name, "district_name": district_name, 
+            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
         })
 
     except HTTPException as http_ex:
