@@ -21,7 +21,8 @@ def get_notice() -> List[AdsNotice]:
                     NOTICE_TITLE,
                     NOTICE_CONTENT,
                     CREATED_AT
-                FROM NOTICE;
+                FROM NOTICE
+                ORDER BY CREATED_AT DESC;
             """
             cursor.execute(select_query)
             rows = cursor.fetchall()
