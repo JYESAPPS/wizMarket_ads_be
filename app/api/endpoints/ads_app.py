@@ -194,7 +194,7 @@ def generate_template(request: AutoAppMain):
                     {request.store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
                     세부정보: {menu}
-                    주요 고객층: {age}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {request.district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -204,9 +204,7 @@ def generate_template(request: AutoAppMain):
 
                 insta_role = f'''
                     1. '{copyright}' 를 100~150자까지 {channel_text} 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘.
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다.
-
+                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
                     3.핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
@@ -457,6 +455,10 @@ def generate_template_regen(request: AutoAppRegen):
         if request.custom_menu == '' : 
             menu = request.detail_category_name
 
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
+
         detail_content = getattr(request, "ad_text", "") or ""
 
         # 문구 생성
@@ -467,9 +469,6 @@ def generate_template_regen(request: AutoAppRegen):
                 마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            season = service_get_season(formattedToday)
 
             if title == 3 or title == "3":
                 copyright_prompt = f'''
@@ -536,27 +535,23 @@ def generate_template_regen(request: AutoAppRegen):
             insta_copyright = ''
             
             if channel == "3" or channel == "4":
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    {store_name} 업체의 {channel_text}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {detail_category_name}
-                    일시 : {formattedToday}
-                    주요 고객층: {female_text}
-
-                    주소: {road_name}
+                    세부정보: {menu}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
+                    주소: {request.district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
-
-                    3.나이는 표현하지 않는다.
+                    1. '{copyright}' 를 100~150자까지 {channel_text} 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
+                    3. 핵심 고객인 {female_text}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -958,7 +953,9 @@ def generate_template_manual(request : ManualApp):
         except Exception as e:
             print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
 
-
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
 
         # 문구 생성
         try:
@@ -968,10 +965,6 @@ def generate_template_manual(request : ManualApp):
                 마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
-
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            season = service_get_season(formattedToday)
             
             if theme == "이벤트":
                 copyright_prompt = f'''
@@ -1041,27 +1034,23 @@ def generate_template_manual(request : ManualApp):
             insta_copyright = ''
             
             if channel_text == "3" or channel_text == "4":
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 {channel} {sub_channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
-                    업종: {menu}
-                    일시 : {formattedToday}
-                    주요 고객층: {female_text}
-
-                    주소: {road_name}
+                    {store_name} 업체의 {channel} {sub_channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    업종: {detail_category_name}
+                    세부정보: {menu}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
+                    주소: {district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {menu} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
-
-                    3.나이는 표현하지 않는다.
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다
+                    3. 핵심 고객인 {female_text}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -1152,11 +1141,12 @@ def generate_template_event(request : ManualApp):
         except Exception as e:
             print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
 
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
+
         # 문구 생성
         try:
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            season = service_get_season(formattedToday)
 
             copyright_role = '''
                 당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
@@ -1225,23 +1215,21 @@ def generate_template_event(request : ManualApp):
                 formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 인스타그램 피드를 위한 광고 콘텐츠를 제작하려고 합니다. 
-                    업종: {menu}
-                    일시 : {formattedToday}
-                    주요 고객층: {female_text}
-
-                    주소: {road_name}
+                    {store_name} 업체의 {channel} {sub_channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    업종: {detail_category_name}
+                    세부정보: {menu}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
+                    주소: {district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {menu} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
-
-                    3.나이는 표현하지 않는다.
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
+                    3. 핵심 고객인 {female_text}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -1504,12 +1492,18 @@ async def generate_template_manual_camera(
     age: str = Form(...),
     style: str = Form(...),
     category: str = Form(...),
+    custom_menu: str = Form(None),
     store_name: str = Form(...),
     road_name: str = Form(...),
+    district_name: str = Form(...),
     main: str = Form(...),
     temp: float = Form(...),
 ):
     try:
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
+
         # 문구 생성
         try:
             detail_content = ""
@@ -1520,14 +1514,13 @@ async def generate_template_manual_camera(
             '''
             copyright_prompt = ""
 
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
+
             if title == "이벤트" :
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
 
                     - 이벤트 컨셉 : {category}을 주제로 생성
-                    - 주소 : {road_name} 
+                    - 주소 : {district_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
                     - 핵심 고객 연령대 : {age} 
@@ -1542,7 +1535,7 @@ async def generate_template_manual_camera(
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 광고 문구를 제작하려고 합니다.
                     - 홍보 컨셉 : {category}
-                    - 주소 : {road_name} 
+                    - 주소 : {district_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
                     - 핵심 고객 연령대 : {age} 
@@ -1597,27 +1590,23 @@ async def generate_template_manual_camera(
         detail_content = ''
         if channel == "인스타그램" or channel == "블로그":
             try:
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    {store_name} 업체의 {channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {category}
-                    일시 : {formattedToday}
-                    주요 고객층: {age}
-
-                    주소: {road_name}
+                    세부정보: {custom_menu}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
+                    주소: {district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {category} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
-
-                    3.나이는 표현하지 않는다.
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {category}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
+                    3. 핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -1632,7 +1621,8 @@ async def generate_template_manual_camera(
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
-                "store_name": store_name, "road_name": road_name, "insta_copyright" : insta_copyright,
+                "store_name": store_name, "road_name": road_name, "district_name": district_name,
+                "insta_copyright" : insta_copyright,
             })
 
     except HTTPException as http_ex:
@@ -1659,10 +1649,15 @@ async def generate_template_event_camera(
     store_name: str = Form(...),
     store_business_number: str = Form(...),
     road_name: str = Form(...),
+    district_name: str = Form(...),
     main: str = Form(...),
     temp: float = Form(...),
 ):
     try:
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
+
         # custom menu DB 수정
         try : 
             service_update_user_custom_menu(customMenu, store_business_number)
@@ -1679,14 +1674,11 @@ async def generate_template_event_camera(
             '''
             copyright_prompt = ""
 
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-
             if title == "이벤트" : 
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
                         - 이벤트 컨셉 : {detail_content} --> 입력이 없다면 {customMenu}으로 컨셉 생성
-                        - 주소 : {road_name} 
+                        - 주소 : {district_name} 
                         - 날짜 : {formattedToday}
                         - 계절 : 오늘 계절
                         - 핵심 고객 연령대 : {age} 
@@ -1703,7 +1695,7 @@ async def generate_template_event_camera(
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
                     - 홍보 내용 : {customMenu} --> 입력이 없다면 {category}으로 내용 생성
                     - 홍보 컨셉 : {detail_content}
-                    - 주소 : {road_name}
+                    - 주소 : {district_name}
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
                     - 핵심 고객 연령대 : {age} 
@@ -1752,27 +1744,23 @@ async def generate_template_event_camera(
         detail_content = ''
         if channel == "인스타그램" or channel == "블로그":
             try:
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {store_name} 업체의 인스타그램 피드를 위한 광고 콘텐츠를 제작하려고 합니다. 
-                    업종: {customMenu}
-                    일시 : {formattedToday}
-                    주요 고객층: {age}
-
-                    주소: {road_name}
+                    {store_name} 업체의 {channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    업종: {category}
+                    세부정보: {customMenu}
+                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
+                    주소: {district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {customMenu} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
-                    
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
-
-                    3.나이는 표현하지 않는다.
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {category}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
+                    3. 핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
                 insta_copyright = service_generate_content(
@@ -1787,7 +1775,8 @@ async def generate_template_event_camera(
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
-                "store_name": store_name, "road_name": road_name, "insta_copyright" : insta_copyright,
+                "store_name": store_name, "road_name": road_name, "district_name": district_name,
+                "insta_copyright" : insta_copyright,
             })
 
     except HTTPException as http_ex:
