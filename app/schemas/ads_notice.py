@@ -15,6 +15,13 @@ class AdsNoticeCreateRequest(BaseModel):
     notice_title: str
     notice_content: str
 
+class AdsNoticeUpdateRequest(BaseModel):
+    notice_no: int
+    notice_title: str
+    notice_content: str
+
+class AdsNoticeDeleteRequest(BaseModel):
+    notice_no: int
 
 class AdsNoticeReadInsertRequest(BaseModel):
     user_id: str

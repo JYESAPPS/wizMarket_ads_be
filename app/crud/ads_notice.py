@@ -74,6 +74,53 @@ def create_notice(notice_title: str, notice_content: str):
         close_cursor(cursor)
         close_connection(connection)
 
+def update_notice(notice_no: int, notice_title: str, notice_content: str):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        update_query = """
+            UPDATE NOTICE
+            SET NOTICE_TITLE = %s,
+                NOTICE_CONTENT = %s
+            WHERE NOTICE_NO = %s
+        """
+
+        cursor.execute(update_query, (notice_title, notice_content, notice_no))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+def delete_notice(notice_no: int):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        delete_query = """
+            DELETE FROM NOTICE WHERE NOTICE_NO = %s
+        """
+        
+        cursor.execute(delete_query, (notice_no,))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
 
 def get_notice_read(user_id):
     try:

@@ -1,6 +1,8 @@
 from app.crud.ads_notice import (
     get_notice as crud_get_notice,
     create_notice as crud_create_notice,
+    update_notice as crud_update_notice,
+    delete_notice as crud_delete_notice,
     get_notice_read as crud_get_notice_read,
     insert_notice_read as crud_insert_notice_read
 )
@@ -24,6 +26,18 @@ def create_notice(notice_title, notice_content):
     except Exception as e:
         
         return {"success": False, "message": "서버 오류가 발생했습니다."}
+
+def update_notice(notice_no, notice_title, notice_content):
+    try:
+        crud_update_notice(notice_no, notice_title, notice_content)
+    except Exception as e:
+        raise
+
+def delete_notice(notice_no):
+    try:
+        crud_delete_notice(notice_no)
+    except Exception as e:
+        raise
 
 def get_notice_read(user_id):
     data = crud_get_notice_read(user_id)

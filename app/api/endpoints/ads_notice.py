@@ -6,12 +6,16 @@ import logging
 from app.service.ads_notice import (
     get_notice as service_get_notice,
     create_notice as service_create_notice,
+    update_notice as service_update_notice,
+    delete_notice as service_delete_notice,
     get_notice_read as service_get_notice_read,
     insert_notice_read as service_insert_notice_read
 )
 
 from app.schemas.ads_notice import (
     AdsNoticeCreateRequest,
+    AdsNoticeUpdateRequest,
+    AdsNoticeDeleteRequest,
     AdsNoticeReadInsertRequest
 )
 
@@ -40,6 +44,26 @@ def create_notice(request: AdsNoticeCreateRequest):
     try:
         service_create_notice(request.notice_title, request.notice_content)
         return {"success": True, "message": "공지사항이 등록되었습니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+    
+# 공지사항 수정
+@router.post("/edit/notice/{notice_id}", status_code=201)
+def update_notice(request: AdsNoticeUpdateRequest):
+    try:
+        service_update_notice(request.notice_no,  request.notice_title, request.notice_content)
+        return {"success": True, "message": "공지사항이 수정되었습니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+    
+# 공지사항 삭제
+@router.post("/delete/notice/{notice_no}", status_code=201)
+def delete_notice(notice_no: int):
+    try:
+        service_delete_notice(notice_no)
+        return {"success": True, "message": "공지사항이 삭제되었습니다."}
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
