@@ -89,20 +89,19 @@ def generate_template(request: AutoAppMain):
         if title == 1: theme = "매장 홍보"
         elif title ==2: theme = "상품 소개"
 
+        today = datetime.now()
+        formattedToday = today.strftime('%Y-%m-%d')
+        season = service_get_season(formattedToday)
+
         detail_content = ""
         # 문구 생성
         try:
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 년도, 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
-            
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            season = service_get_season(formattedToday)
 
             if title == 3 or title == "3":
 
@@ -190,25 +189,23 @@ def generate_template(request: AutoAppMain):
             insta_copyright = ''
             
             if channel == 3 or channel == 4:
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
-                    {request.store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
+                    {request.store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
-                    일시 : {formattedToday}
-                    주요 고객층:  {age}
-
-                    주소: {request.road_name}
+                    세부정보: {menu}
+                    주요 고객층: {age}
+                    주소: {request.district_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
-                    '\n'으로 문단을 나눠 표현한다
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
+                    "위치는 📍로 표현한다."
+                    "'\n'으로 문단을 나눠 표현한다."
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {request.detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
+                    1. '{copyright}' 를 100~150자까지 {channel_text} 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘.
                     
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
+                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다.
 
                     3.핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
@@ -465,10 +462,9 @@ def generate_template_regen(request: AutoAppRegen):
         # 문구 생성
         try:
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
             today = datetime.now()
@@ -967,10 +963,9 @@ def generate_template_manual(request : ManualApp):
         # 문구 생성
         try:
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
 
@@ -1164,10 +1159,9 @@ def generate_template_event(request : ManualApp):
             season = service_get_season(formattedToday)
 
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
 
             copyright_prompt = f'''
@@ -1520,10 +1514,9 @@ async def generate_template_manual_camera(
         try:
             detail_content = ""
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
 
@@ -1680,10 +1673,9 @@ async def generate_template_event_camera(
         try:
             detail_content = customText or ""
             copyright_role = '''
-                당신은 인스타그램, 유투브 등 소셜미디어 광고 전문가입니다. 
-                광고 카피문구와 디자인, 영상등을 능숙하게 다루며 마케팅에 대한 상당한 지식으로 
-                지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.
-                문구를 작성할 때 특수기호, 이모티콘은 제외해 주세요.
+                당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
+                인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
+                마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
             copyright_prompt = ""
 
