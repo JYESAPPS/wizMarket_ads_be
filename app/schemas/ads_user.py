@@ -26,6 +26,7 @@ class Naver(BaseModel):
 
 class User(BaseModel):
     access_token : str
+    device_token : str = None
 
 
 class UserUpdate(BaseModel):

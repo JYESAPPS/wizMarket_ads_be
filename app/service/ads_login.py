@@ -7,7 +7,8 @@ from app.crud.ads_login import (
     update_user_token as crud_update_user_token,
     get_user_by_id as crud_get_user_by_id,
     update_user as crud_update_user,
-    select_insta_account as crud_select_insta_account
+    select_insta_account as crud_select_insta_account,
+    update_device_token as crud_update_device_token
 )
 import requests
 from datetime import datetime, timedelta
@@ -169,6 +170,11 @@ def token_refresh(refresh_token: str):
         "access_token": new_access,
         "refresh_token": new_refresh,
     }
+
+
+# 디바이스 토큰 항상 업데이트
+def update_device_token(user_id: int, device_token: str):
+    return crud_update_device_token(user_id, device_token)
 
 
 # 유저 ID로 유저 정보 조회

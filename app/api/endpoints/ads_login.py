@@ -20,7 +20,8 @@ from app.service.ads_login import (
     decode_token as service_decode_token,
     get_user_by_id as service_get_user_by_id,
     update_user as service_update_user,
-    token_refresh as service_token_refresh
+    token_refresh as service_token_refresh,
+    update_device_token as service_update_device_token
 )
 
 
@@ -84,6 +85,9 @@ def ads_login_kakao_route(request: KaKao):
     user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email, device_token = request.device_token)
     user_info = service_get_user_by_id(user_id)
 
+    if request.device_token:
+        service_update_device_token(user_id, request.device_token)
+
     # JWT 발급
     access_token = service_create_access_token(data={"sub": str(user_id)})
     refresh_token = service_create_refresh_token({"sub": str(user_id)})
@@ -118,6 +122,9 @@ def ads_login_google_route(request: Google):
     provider = "google"
     user_id = service_get_user_by_provider(provider="google", provider_id=google_id, email=email, device_token = request.device_token)
     user_info = service_get_user_by_id(user_id)
+
+    if request.device_token:
+        service_update_device_token(user_id, request.device_token)
 
     # JWT 발급
     access_token = service_create_access_token(data={"sub": str(user_id)})
@@ -186,8 +193,18 @@ def auto_login(request: User):
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=400, detail="토큰에 user_id(sub)가 없습니다.")
+    user_id = int(user_id)
+    if request.device_token:
+        # 단일 컬럼에 저장하는 간단 버전
+        # service_update_device_token(user_id, request.device_token)
 
-    user = service_get_user_by_id(int(user_id))
+        # 권장: 디바이스별 관리(재설치·멀티디바이스 대비)
+        service_update_device_token(
+            user_id=user_id,
+            device_token=request.device_token,
+        )
+
+    user = service_get_user_by_id(user_id)
 
     return {
         "user_id": user["user_id"],
