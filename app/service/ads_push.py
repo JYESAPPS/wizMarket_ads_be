@@ -31,7 +31,7 @@ def get_access_token():
 
 
 def send_push_fcm_v1(device_token: str, title: str, body: str):
-    print("푸시 실행")
+    # print("푸시 실행")
     try:
         access_token = get_access_token()
         if not access_token:
@@ -57,6 +57,7 @@ def send_push_fcm_v1(device_token: str, title: str, body: str):
             headers=headers,
             data=json.dumps(message)
         )
+        print(response)
 
         return response.status_code, response.json()
     except Exception as e:
