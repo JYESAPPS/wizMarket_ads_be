@@ -193,18 +193,8 @@ def auto_login(request: User):
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=400, detail="토큰에 user_id(sub)가 없습니다.")
-    user_id = int(user_id)
-    if request.device_token:
-        # 단일 컬럼에 저장하는 간단 버전
-        # service_update_device_token(user_id, request.device_token)
 
-        # 권장: 디바이스별 관리(재설치·멀티디바이스 대비)
-        service_update_device_token(
-            user_id=user_id,
-            device_token=request.device_token,
-        )
-
-    user = service_get_user_by_id(user_id)
+    user = service_get_user_by_id(int(user_id))
 
     return {
         "user_id": user["user_id"],
