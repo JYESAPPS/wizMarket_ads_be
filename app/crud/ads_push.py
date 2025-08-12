@@ -111,6 +111,7 @@ def is_user_due_for_push(user_id: int) -> bool:
 
         # 반복 조건 확인
         if reserve.repeat_type == "daily":
+            print("매일 조건")
             return True
 
         elif reserve.repeat_type == "weekly":
