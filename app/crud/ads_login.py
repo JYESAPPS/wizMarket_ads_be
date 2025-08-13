@@ -307,36 +307,72 @@ def select_insta_account(store_business_number: str):
 
 
 
-def update_device_token(user_id: int, device_token: str):
-    connection = get_re_db_connection()
-    cursor = connection.cursor()
+def update_device_token(
+    user_id: int,
+    device_token: str,
+    android_id: str | None,
+    platform: str = "android",
+    app_version: str | None = None,
+    lang: str | None = None,
+    timezone: str | None = None,
+) -> bool:
+    conn = get_re_db_connection()
+    cur = conn.cursor()
     logger = logging.getLogger(__name__)
 
     try:
-        if connection.open:
-            update_query = """
-                UPDATE user
-                SET device_token = %s, updated_at = NOW()
-                WHERE user_id = %s
+        conn.autocommit(False)
+
+        if android_id and android_id.strip():
+            # ✅ 권장 경로: (user_id, platform, device_fingerprint)로 upsert
+            sql = """
+            INSERT INTO user_device (
+                user_id, platform, device_fingerprint, device_token,
+                is_active, last_seen, created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, 1, NOW(), NOW(), NOW())
+            ON DUPLICATE KEY UPDATE
+                device_token = VALUES(device_token),
+                is_active    = 1,
+                last_seen    = NOW(),
+                updated_at   = NOW();
             """
-            cursor.execute(update_query, (device_token, user_id))
+            cur.execute(sql, (user_id, platform, android_id, device_token))
+        else:
+            # ⚠️ ANDROID_ID 없을 때의 완화 처리:
+            # 1) 같은 토큰 레코드가 있으면 갱신
+            sql_update_by_token = """
+                UPDATE user_device
+                   SET is_active = 1,
+                       last_seen = NOW(),
+                       updated_at = NOW()
+                 WHERE user_id = %s AND platform = %s AND device_token = %s
+            """
+            cur.execute(sql_update_by_token, (user_id, platform, device_token))
+            if cur.rowcount == 0:
+                # 2) 없으면 새로 삽입(기기 중복 가능)
+                sql_insert = """
+                    INSERT INTO user_device (
+                        user_id, platform, device_fingerprint, device_token,
+                        is_active, last_seen, created_at, updated_at
+                    ) VALUES (%s, %s, NULL, %s, 1, NOW(), NOW(), NOW())
+                """
+                cur.execute(sql_insert, (user_id, platform, device_token))
 
-        connection.commit()
-
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
-
+        conn.commit()
         return True
 
     except pymysql.MySQLError as e:
+        conn.rollback()
         logger.error(f"MySQL Error: {e}")
         raise HTTPException(status_code=500, detail="DB 오류 발생")
     except Exception as e:
+        conn.rollback()
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
     finally:
-        cursor.close()
-        connection.close()
+        cur.close()
+        conn.close()
+
 
 
 
