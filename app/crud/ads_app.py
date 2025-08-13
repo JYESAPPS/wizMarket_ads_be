@@ -353,29 +353,52 @@ def get_store_info(store_business_number):
 
 
 
-def update_user_custom_menu(menu, store_business_number):
+def update_user_custom_menu(menu: str, store_business_number: str) -> bool:
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
     try:
-        connection = get_re_db_connection()
-        with connection.cursor() as cursor:
-            sql = """
-                UPDATE USER
-                SET CUSTOM_MENU = %s
-                WHERE store_business_number = %s
-            """
-            cursor.execute(sql, (menu, store_business_number,))
+        # 1) store_business_number로 user_id 조회
+        sql_user_id = """
+            SELECT user_id
+            FROM user
+            WHERE store_business_number = %s
+            LIMIT 1
+        """
+        cursor.execute(sql_user_id, (store_business_number,))
+        row = cursor.fetchone()
+        if not row:
+            # 해당 사업자번호의 유저가 없음
+            connection.rollback()
+            return False
 
-            # user_info 테이블 업데이트 (JOIN으로)
-            sql_user_info = """
-                UPDATE user_info ui
-                JOIN user u ON ui.user_id = u.user_id
-                SET ui.custom_menu = %s
-                WHERE u.store_business_number = %s
+        user_id = row[0]  # tuple (user_id,)
+
+        # 2) user_info 업데이트
+        sql_update = """
+            UPDATE user_info
+            SET custom_menu = %s, updated_at = NOW()
+            WHERE user_id = %s
+        """
+        cursor.execute(sql_update, (menu, user_id))
+
+        # user_info가 없을 수도 있으면 upsert 보완 (선택)
+        if cursor.rowcount == 0:
+            sql_insert = """
+                INSERT INTO user_info (user_id, custom_menu, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
             """
-            cursor.execute(sql_user_info, (menu, store_business_number))
+            cursor.execute(sql_insert, (user_id, menu))
+
         connection.commit()
-        return True  # ✅ 성공 시 True 반환
-
+        return True
     except Exception as e:
+        connection.rollback()
         print(f"회원 정보 업데이트 오류: {e}")
         return False
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
 
