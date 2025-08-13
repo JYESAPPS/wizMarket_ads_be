@@ -125,7 +125,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, custom_menu FROM USER_INFO WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, register_tag, custom_menu FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
@@ -204,16 +204,16 @@ def insert_user_info(user_id, request):
     birth_year = request.birth_year
     gender = request.gender
     phone = request.phone
-    custom_menu = request.custom_menu
+    register_tag = request.register_tag
 
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
-                INSERT INTO USER_INFO (user_id, nickname, birth_year, gender, phone, custom_menu)
+                INSERT INTO USER_INFO (user_id, nickname, birth_year, gender, phone, register_tag)
                 VALUES (%s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (user_id, nickname, birth_year, gender, phone, custom_menu))
+            cursor.execute(sql, (user_id, nickname, birth_year, gender, phone, register_tag))
         connection.commit()
         return True  # ✅ 성공 시 True 반환
 
@@ -227,7 +227,7 @@ def update_user_info(user_id, request):
     birth_year = request.birth_year
     gender = request.gender
     phone = request.phone
-    custom_menu = request.custom_menu
+    register_tag = request.register_tag
 
     try:
         connection = get_re_db_connection()
@@ -238,19 +238,11 @@ def update_user_info(user_id, request):
                     birth_year = %s,
                     gender = %s,
                     phone = %s,
-                    custom_menu = %s
+                    register_tag = %s
                 WHERE user_id = %s
             """
-            cursor.execute(sql, (nickname, birth_year, gender, phone, custom_menu, user_id))
+            cursor.execute(sql, (nickname, birth_year, gender, phone, register_tag, user_id))
 
-             # user 테이블도 동기화
-            sql_user = """
-                UPDATE user u
-                JOIN user_info ui ON ui.user_id = u.user_id
-                SET u.custom_menu = %s
-                WHERE u.user_id = %s
-            """
-            cursor.execute(sql_user, (custom_menu, user_id))
         connection.commit()
         return True  # ✅ 성공 시 True 반환
 

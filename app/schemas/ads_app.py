@@ -197,7 +197,7 @@ class UserInfoUpdate(BaseModel):
     nickname: str
     phone: str
     profile_image: str
-    custom_menu: str
+    register_tag: str
 
 
 class UserRecentRecord(BaseModel):
