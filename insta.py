@@ -25,10 +25,13 @@ def get_insta_stats(insta_account: str):
         print(json.dumps(result))  # stdout으로 출력
         browser.close()
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python insta_crawler.py insta_id", file=sys.stderr)
-        sys.exit(1)
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Usage: python insta_crawler.py insta_id", file=sys.stderr)
+#         sys.exit(1)
 
-    insta_id = sys.argv[1]
+#     insta_id = sys.argv[1]
+#     get_insta_stats(insta_id)
+if __name__ == "__main__":
+    insta_id = sys.argv[1] if len(sys.argv) >= 2 else "smjang_1995"
     get_insta_stats(insta_id)

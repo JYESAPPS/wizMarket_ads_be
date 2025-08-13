@@ -215,11 +215,11 @@ def update_user_store_info(request: UserUpdate):
     user_id = request.user_id
     store_business_number = request.store_business_number
     insta_account = request.insta_account
-    custom_menu = request.custom_menu
+    register_tag = request.register_tag
 
-    sucess = service_update_user(user_id, store_business_number, custom_menu, insta_account )
+    success = service_update_user(user_id, store_business_number, register_tag, insta_account )
 
     return {
-        "success": sucess,  # 성공 여부
-        "message": "유저 정보가 업데이트 되었습니다." if sucess else "유저 정보 업데이트에 실패했습니다."
+        "success": success,  # 성공 여부
+        "message": "유저 정보가 업데이트 되었습니다." if success else "유저 정보 업데이트에 실패했습니다."
     }

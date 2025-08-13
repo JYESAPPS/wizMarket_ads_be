@@ -192,50 +192,84 @@ def get_user_by_id(user_id: int):
 
 
 
-def update_user(user_id: int, store_business_number: str, custom_menu: str, insta_account: Optional[str] = None):
+def update_user(
+    user_id: int,
+    store_business_number: str,
+    register_tag: str,
+    insta_account: Optional[str] = None,
+):
     connection = get_re_db_connection()
     cursor = connection.cursor()
     logger = logging.getLogger(__name__)
 
     try:
-        if connection.open:
-            # 🔹 조건에 따라 쿼리 구성
+        # 트랜잭션 시작
+        connection.autocommit(False)
+
+        # 1) user TB: store_business_number만 업데이트
+        sql_user = """
+            UPDATE user
+               SET store_business_number = %s,
+                   updated_at = NOW()
+             WHERE user_id = %s
+        """
+        cursor.execute(sql_user, (store_business_number, user_id))
+        if cursor.rowcount == 0:
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+
+        # 2) user_info TB: register_tag / insta_account 업데이트
+        #    insta_account가 비어있으면 register_tag만 업데이트
+        if insta_account not in (None, ""):
+            sql_info = """
+                UPDATE user_info
+                   SET register_tag = %s,
+                       insta_account = %s,
+                       updated_at = NOW()
+                 WHERE user_id = %s
+            """
+            params_info = (register_tag, insta_account, user_id)
+        else:
+            sql_info = """
+                UPDATE user_info
+                   SET register_tag = %s,
+                       updated_at = NOW()
+                 WHERE user_id = %s
+            """
+            params_info = (register_tag, user_id)
+
+        cursor.execute(sql_info, params_info)
+
+        # user_info에 행이 아직 없다면(신규 유저 등) INSERT로 보완
+        if cursor.rowcount == 0:
             if insta_account not in (None, ""):
-                update_query = """
-                    UPDATE user
-                    SET store_business_number = %s,
-                        insta_account = %s,
-                        custom_menu = %s,
-                        updated_at = NOW()
-                    WHERE user_id = %s
+                sql_insert = """
+                    INSERT INTO user_info (user_id, register_tag, insta_account, created_at, updated_at)
+                    VALUES (%s, %s, %s, NOW(), NOW())
                 """
-                cursor.execute(update_query, (store_business_number, insta_account, custom_menu, user_id))
+                cursor.execute(sql_insert, (user_id, register_tag, insta_account))
             else:
-                update_query = """
-                    UPDATE user
-                    SET store_business_number = %s,
-                        custom_menu = %s,
-                        updated_at = NOW()
-                    WHERE user_id = %s
+                sql_insert = """
+                    INSERT INTO user_info (user_id, register_tag, created_at, updated_at)
+                    VALUES (%s, %s, NOW(), NOW())
                 """
-                cursor.execute(update_query, (store_business_number, custom_menu, user_id))
+                cursor.execute(sql_insert, (user_id, register_tag))
 
-            connection.commit()
-
-            if cursor.rowcount == 0:
-                raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
-
-            return True
+        connection.commit()
+        return True
 
     except pymysql.MySQLError as e:
+        connection.rollback()
         logger.error(f"MySQL Error: {e}")
         raise HTTPException(status_code=500, detail="DB 오류 발생")
     except Exception as e:
+        connection.rollback()
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
     finally:
         cursor.close()
         connection.close()
+
 
 
 
@@ -303,5 +337,39 @@ def update_device_token(user_id: int, device_token: str):
     finally:
         cursor.close()
         connection.close()
+
+
+
+
+def select_user_id(store_business_number):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT user_id
+                FROM user
+                WHERE store_business_number = %s
+            """
+            cursor.execute(query, (store_business_number,))
+            result = cursor.fetchone()
+
+            if not result:
+                return None
+
+            return result['user_id']
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
 
 

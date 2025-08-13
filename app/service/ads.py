@@ -187,10 +187,9 @@ def translate_weather_id_to_main(weather_id: int) -> str:
 
 
 # 유저가 설정한 커스텀 메뉴 가져오기
-def select_custom_menu(store_business_number):
-    custom_menu = crud_select_custom_menu(store_business_number)
-    return custom_menu
-
+def select_custom_menu(user_id):
+    register_tag, custom_menu = crud_select_custom_menu(user_id)
+    return register_tag, custom_menu
 
 
 # 카테고리 별 랜덤 이미지 가져오기

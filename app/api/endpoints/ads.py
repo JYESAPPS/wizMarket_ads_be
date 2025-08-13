@@ -44,7 +44,8 @@ from app.service.ads_app import (
     get_style_image as service_get_style_image,
 )
 from app.service.ads_login import (
-    select_insta_account as service_select_insta_account
+    select_insta_account as service_select_insta_account,
+    select_user_id as service_select_user_id
 )
 
 
@@ -82,10 +83,11 @@ def select_ads_init_info(store_business_number: str):
     # 쿼리 매개변수로 전달된 store_business_number 값 수신
     try:
         init_data = service_select_ads_init_info(store_business_number)
-        custom_menu = service_select_custom_menu(store_business_number)
-        ai_age = service_select_ai_age(init_data, custom_menu)
+        user_id = service_select_user_id(store_business_number)
+        register_tag, custom_menu = service_select_custom_menu(user_id)
+        ai_age = service_select_ai_age(init_data, register_tag)
         # print(init_data)
-        ai_data = service_select_ai_data(init_data, ai_age, custom_menu)
+        ai_data = service_select_ai_data(init_data, ai_age, register_tag)
         random_image_list = service_random_design_style(init_data, ai_data[0])
         all_image_list = service_get_style_image(init_data)
         # insta_info = service_select_insta_account(store_business_number)
@@ -94,6 +96,7 @@ def select_ads_init_info(store_business_number: str):
         # print(ai_age, ai_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
+            register_tag=register_tag,
             custom_menu=custom_menu,
             image_list=random_image_list,
             all_image_list=all_image_list,

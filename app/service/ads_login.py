@@ -8,7 +8,8 @@ from app.crud.ads_login import (
     get_user_by_id as crud_get_user_by_id,
     update_user as crud_update_user,
     select_insta_account as crud_select_insta_account,
-    update_device_token as crud_update_device_token
+    update_device_token as crud_update_device_token,
+    select_user_id as crud_select_user_id
 )
 import requests
 from datetime import datetime, timedelta
@@ -185,12 +186,13 @@ def get_user_by_id(user_id: int):
     return user
 
 
-def update_user(user_id: int, store_business_number: str, custom_menu: str, insta_account: Optional[str] = None, ):
-    sucess = crud_update_user(user_id, store_business_number, custom_menu, insta_account )
+# 회원 가입 로직
+def update_user(user_id: int, store_business_number: str, register_tag: str, insta_account: Optional[str] = None, ):
+    success = crud_update_user(user_id, store_business_number, register_tag, insta_account )
 
-    if not sucess:
+    if not success:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
-    return sucess
+    return success
 
 
 venv_python = os.path.abspath(".venv/Scripts/python.exe")
@@ -218,4 +220,12 @@ def select_insta_account(store_business_number: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"크롤링 실패: {str(e)}")
+
+
+
+# 관리번호로 user_id 가져오기
+def select_user_id(store_business_number):
+    user_id = crud_select_user_id(store_business_number)
+    return user_id
+
 
