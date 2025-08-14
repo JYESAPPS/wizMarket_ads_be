@@ -1500,6 +1500,7 @@ async def generate_template_manual_camera(
     style: str = Form(...),
     category: str = Form(...),
     custom_menu: str = Form(None),
+    register_tag: str = Form(None),
     store_name: str = Form(...),
     road_name: str = Form(...),
     district_name: str = Form(...),
@@ -1510,6 +1511,7 @@ async def generate_template_manual_camera(
         today = datetime.now()
         formattedToday = today.strftime('%Y-%m-%d')
         season = service_get_season(formattedToday)
+        custom_menu = register_tag or custom_menu
 
         # 문구 생성
         try:
@@ -1526,7 +1528,7 @@ async def generate_template_manual_camera(
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
 
-                    - 이벤트 컨셉 : {category}을 주제로 생성
+                    - 이벤트 컨셉 : {custom_menu}을 주제로 생성
                     - 주소 : {district_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1541,7 +1543,7 @@ async def generate_template_manual_camera(
             else:
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 광고 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {category}
+                    - 홍보 컨셉 : {custom_menu}
                     - 주소 : {district_name} 
                     - 날짜 : {formattedToday}
                     - 계절 : 오늘 계절
@@ -1611,7 +1613,7 @@ async def generate_template_manual_camera(
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {category}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {custom_menu}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
                     2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
                     3. 핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
@@ -1627,7 +1629,7 @@ async def generate_template_manual_camera(
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
-                "main": main, "temp" : temp, "detail_category_name" : category,
+                "main": main, "temp" : temp, "detail_category_name" : category, register_tag: register_tag,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
                 "insta_copyright" : insta_copyright,
             })
