@@ -33,6 +33,7 @@ class AutoApp(BaseModel):
 
     store_name: str
     detail_category_name: str
+    register_tag: str
 
     commercial_district_max_sales_day: Optional[List[Optional[Union[str, float]]]] = None
     commercial_district_max_sales_f_age: Optional[List[Optional[Union[str, float]]]] = None
@@ -57,7 +58,8 @@ class AutoAppMain(BaseModel):
     longitude: float
 
     store_name: str
-    custom_menu: Optional[str] = None
+    # custom_menu: Optional[str] = None
+    register_tag: Optional[str] = None
     detail_category_name: str
 
     commercial_district_max_sales_day: Optional[List[Optional[Union[str, float]]]] = None
@@ -82,7 +84,8 @@ class AutoAppRegen(BaseModel):
     store_business_number: str
     store_name: str
     detail_category_name: str
-    custom_menu: str
+    # custom_menu: str
+    register_tag: str
     road_name: str
     district_name: str
 
@@ -138,6 +141,7 @@ class EventGenCopy(BaseModel):
     # age: str
     # channel: str
     # subChannel: Optional[str]
+    resister_tag: str
     theme: str
     store_name : str
     weather: str

@@ -194,7 +194,7 @@ def select_random_image(style):
     return seed_prompt
 
 # 주어진 시드 프롬프트로 해당하는 이미지 생성
-def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_prompt):
+def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_prompt, register_tag):
     try:
         # gpt 영역
         gpt_role = f"""
@@ -203,7 +203,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
 
         gpt_content = f"""
             프롬프트 스타일 : {seed_prompt}
-            주어진 프롬프트 스타일은 유지하며 {copyright}와 {detail_category_name}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
+            주어진 프롬프트 스타일은 유지하며 {copyright}와 {register_tag}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
         """    
         # print(f"시드 프롬프트 : {seed_image_prompt}")
 

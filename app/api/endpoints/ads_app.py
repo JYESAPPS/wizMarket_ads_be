@@ -81,8 +81,10 @@ def generate_template(request: AutoAppMain):
             channel_text = "인스타그램 피드 게시글"
         else: channel_text = "네이버 블로그"
 
-        menu = request.custom_menu 
-        if request.custom_menu == '' : 
+        # menu = request.custom_menu 
+        menu = request.register_tag 
+        # if request.custom_menu == '' : 
+        if request.register_tag == '' :
             menu = request.detail_category_name
 
         theme = ""
@@ -168,6 +170,7 @@ def generate_template(request: AutoAppMain):
             origin_image = service_generate_by_seed_prompt(
                 channel,
                 copyright,
+                request.register_tag,
                 request.detail_category_name,
                 seed_prompt
             )
@@ -235,7 +238,7 @@ def generate_template(request: AutoAppMain):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": str(title), "channel":str(channel), "style": style, "core_f": age,
-            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
+            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name, "register_tag": request.register_tag,
             "store_name": request.store_name, "road_name": request.road_name, "district_name": request.district_name,
             "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
@@ -305,7 +308,7 @@ def generate_template(request: AutoApp):
 
                 copyright_prompt = f'''
                     {request.store_name} 업체를 위한 광고 컨텐츠를 제작하려고 합니다.
-                    {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
+                    {request.register_tag}, {formattedToday}, {request.main}, {request.temp}℃
                     주요 고객층: {female_text} 제목 :, 내용 : 형식으로 작성해주세요
                 '''
             else:
@@ -316,7 +319,7 @@ def generate_template(request: AutoApp):
 
                 copyright_prompt = f'''
                     {request.store_name} 업체를 위한 문구.
-                    {request.detail_category_name}, {formattedToday}, {request.main}, {request.temp}℃
+                    {request.register_tag}, {formattedToday}, {request.main}, {request.temp}℃
                     주요 고객층: {female_text}을 바탕으로 15자 이내로 작성해주세요
                 '''
             copyright = service_generate_content(
@@ -337,7 +340,6 @@ def generate_template(request: AutoApp):
             origin_image = service_generate_by_seed_prompt(
                 channel,
                 copyright,
-                request.detail_category_name,
                 seed_prompt
             )
 
@@ -364,6 +366,7 @@ def generate_template(request: AutoApp):
                 copyright_prompt = f'''
                     {request.store_name} 업체의 {channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
+                    메뉴 : {request.register_tag}
                     일시 : {formattedToday}
                     주요 고객층: {female_text}
 
@@ -374,7 +377,7 @@ def generate_template(request: AutoApp):
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 인플루언서가 {request.detail_category_name} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
+                    1. '{copyright}' 를 100~150자까지 인플루언서가 {request.register_tag} 을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
                     
                     2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 해시태그도 최소 3개에서 6개까지 생성한다
 
@@ -393,7 +396,7 @@ def generate_template(request: AutoApp):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style,  "core_f": female_text,
-            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name,
+            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name, "register_tag": request.register_tag,
             "store_name": request.store_name, "road_name": request.road_name, "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
 
@@ -451,8 +454,10 @@ def generate_template_regen(request: AutoAppRegen):
         if title == "1" : theme = "매장 홍보"
         elif title =="2": theme = "상품 소개"
 
-        menu = request.custom_menu 
-        if request.custom_menu == '' : 
+        # menu = request.custom_menu 
+        menu = request.register_tag
+        # if request.custom_menu == '' : 
+        if request.register_tag == '' : 
             menu = request.detail_category_name
 
         today = datetime.now()
@@ -515,6 +520,7 @@ def generate_template_regen(request: AutoAppRegen):
                 channel,
                 copyright,
                 detail_category_name,
+                request.register_tag,
                 prompt
             )
 
@@ -588,7 +594,7 @@ def generate_template_regen(request: AutoAppRegen):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_f": age,
-            "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
+            "main": main, "temp" : temp, "detail_category_name" : detail_category_name, "register_tag": request.register_tag,
             "store_name": store_name, "road_name": road_name, "district_name": request.district_name,
             "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
         })
@@ -847,6 +853,7 @@ def generate_event(request: EventGenCopy):
 def regenerate_event(request: EventGenCopy):
     try:
         category = request.category
+        resister_tag = request.register_tag
         store_name= request.store_name
         weather= request.weather
         road_name = request.road_name
@@ -865,7 +872,7 @@ def regenerate_event(request: EventGenCopy):
             copyright_prompt = f'''
                     {store_name} 업체의 이벤트 내용을 다른 표현 혹은 말투로 재작성해주세요.
                     이벤트 내용 :  {custom_text}
-                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
+                    주소는 {road_name} 이고 이벤트 상품은 {resister_tag} 입니다.
                     주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
                     날씨, 주소는 표현하지 않도록 합니다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
