@@ -115,7 +115,7 @@ def insert_user_sns(email: str, provider: str, provider_id: str):
         if connection.open:
             insert_query = """
                 INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
             """
             cursor.execute(insert_query, (email, provider, provider_id, 1))
             connection.commit()
