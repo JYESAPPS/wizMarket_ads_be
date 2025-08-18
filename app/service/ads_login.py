@@ -11,6 +11,11 @@ from app.crud.ads_login import (
     update_device_token as crud_update_device_token,
     select_user_id as crud_select_user_id
 )
+from app.crud.ads_ticket import (
+    get_latest_token_onetime as crud_get_latest_token_onetime,
+    get_token_amount as crud_get_token_amount,
+    insert_onetime as crud_insert_onetime,
+)
 import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
@@ -22,6 +27,7 @@ import re
 import subprocess
 import json
 import os
+from datetime import date
 
 
 def ads_login(email, temp_pw):
@@ -192,6 +198,17 @@ def update_user(user_id: int, store_business_number: str, register_tag: str, ins
 
     if not success:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    
+    try:
+        ticket_id = 13
+        token_amount = crud_get_token_amount(ticket_id)
+        grant_date = date.today()
+        token_onetime = crud_get_latest_token_onetime(user_id) + token_amount
+        crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+    except Exception:
+        # logger.exception("update_user: token grant failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="토큰 지급을 실패했습니다.")
+
     return success
 
 
