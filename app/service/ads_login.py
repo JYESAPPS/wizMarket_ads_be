@@ -142,10 +142,7 @@ def get_user_by_provider(provider: str, provider_id: str, email: str, device_tok
         raise
     except Exception as e:
         # 로그에 전체 스택 기록
-        logger.exception(
-            "get_user_by_provider 실패",
-            extra={"provider": provider, "provider_id": provider_id, "installation_id": installation_id}
-        )
+        print.error(f"Unexpected Error: {e}")
     
     
 
