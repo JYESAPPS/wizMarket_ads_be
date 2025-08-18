@@ -25,6 +25,7 @@ from app.crud.ads_app import (
     update_user_reco as crud_update_user_reco,
     delete_user_reco as crud_delete_user_reco,
     get_store_info as crud_get_store_info,
+    update_register_tag as crud_update_register_tag,
     update_user_custom_menu as crud_update_user_custom_menu
 )
 from app.crud.ads import (
@@ -668,9 +669,11 @@ def get_store_info(store_business_number):
     store_info = crud_get_store_info(store_business_number)
     return store_info
 
-
 def update_user_custom_menu(menu, store_business_number):
     crud_update_user_custom_menu(menu, store_business_number)
+
+def update_register_tag(user_id: int, register_tag: str):
+    crud_update_register_tag(user_id, register_tag)
 
 def get_season(date: datetime) -> str:
     month = datetime.strptime(date, "%Y-%m-%d").month

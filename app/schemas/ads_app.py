@@ -76,6 +76,7 @@ class AutoAppMain(BaseModel):
 
     ai_age : str
     ai_data: Optional[List[int]] = None
+    user_id: Optional[int] = None
 
     
 
@@ -184,6 +185,7 @@ class ManualApp(BaseModel):
     
 class UserInfo(BaseModel):
     userId : str
+    register_tag: Optional[str] = None
 
 class UserInfoInsert(BaseModel):
     user_id: str

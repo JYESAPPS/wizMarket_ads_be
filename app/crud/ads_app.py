@@ -400,5 +400,22 @@ def update_user_custom_menu(menu: str, store_business_number: str) -> bool:
         connection.close()
 
 
-
+def update_register_tag(user_id: int, register_tag: str) -> bool:
+    conn = get_db_connection()   # ✅ PRIMARY DB
+    try:
+        with conn.cursor() as cur:
+            sql = """
+                UPDATE user_info
+                SET register_tag = %s,
+                    updated_at = NOW()
+                WHERE user_id = %s
+            """
+            cur.execute(sql, (register_tag, user_id))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 

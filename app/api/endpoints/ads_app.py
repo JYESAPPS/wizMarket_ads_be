@@ -48,6 +48,7 @@ from app.service.ads_app import (
     validation_test as service_validation_test,
     extract_age_group as service_extract_age_group,
     get_store_info as service_get_store_info,
+    update_register_tag as service_update_register_tag,
     update_user_custom_menu as service_update_user_custom_menu,
     get_season as service_get_season,
 )
@@ -82,10 +83,26 @@ def generate_template(request: AutoAppMain):
         else: channel_text = "네이버 블로그"
 
         # menu = request.custom_menu 
-        menu = request.register_tag 
+        # menu = request.register_tag 
         # if request.custom_menu == '' : 
-        if request.register_tag == '' :
-            menu = request.detail_category_name
+        # if request.register_tag == '' :
+        #     menu = request.detail_category_name
+
+        effective_tag = (getattr(request, "register_tag", None) or "").strip()
+        if not effective_tag:
+            try:
+                # 가능하면 user_id로 조회 (스키마에 user_id 없으면 건너뜀)
+                user_id = int(getattr(request, "user_id", 0) or 0)
+                if user_id:
+                    info, _ = service_get_user_info(user_id)
+                    effective_tag = (info or {}).get("register_tag") or ""
+            except Exception:
+                pass
+        if not effective_tag:
+            # 최종 폴백: 업종 세부명
+            effective_tag = request.detail_category_name
+        # menu 통일
+        menu = effective_tag
 
         theme = ""
         if title == 1: theme = "매장 홍보"
@@ -170,7 +187,8 @@ def generate_template(request: AutoAppMain):
             origin_image = service_generate_by_seed_prompt(
                 channel,
                 copyright,
-                request.register_tag,
+                # request.register_tag,
+                menu,
                 request.detail_category_name,
                 seed_prompt
             )
@@ -238,7 +256,7 @@ def generate_template(request: AutoAppMain):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": str(title), "channel":str(channel), "style": style, "core_f": age,
-            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name, "register_tag": request.register_tag,
+            "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name, "register_tag": menu,
             "store_name": request.store_name, "road_name": request.road_name, "district_name": request.district_name,
             "store_business_number":request.store_business_number, "prompt" : seed_prompt
         })
@@ -1293,6 +1311,8 @@ def generate_template_event(request : ManualApp):
 def get_user_info(request : UserInfo):
     try:
         user_id = int(request.userId)
+        if request.register_tag is not None:
+            service_update_register_tag(user_id, request.register_tag)
         info, record = service_get_user_info(user_id)
         ticket_info = service_get_valid_ticket(user_id)
 
