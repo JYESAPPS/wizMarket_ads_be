@@ -119,21 +119,33 @@ def create_refresh_token(data: dict):
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
 def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
-    print(provider)
-    user = crud_get_user_by_provider(provider, provider_id)
+    try:
+        # 1) 사용자 조회
+        user = crud_get_user_by_provider(provider, provider_id)
 
-    if user:
-        user_id =  user["user_id"]
+        # 2) 없으면 SNS 가입
+        if user:
+            user_id = user["user_id"]
+        else:
+            if provider in {"kakao", "google", "naver"}:
+                user_id = crud_insert_user_sns(email=email, provider=provider, provider_id=provider_id)
+            else:
+                raise ValueError(f"지원하지 않는 provider: {provider}")
 
-    if provider in {"kakao", "google", "naver"}:
-        user_id =  crud_insert_user_sns(email, provider, provider_id)
-        
-        raise ValueError(f"지원하지 않는 provider: {provider}")
-    
-    crud_upsert_user_device(user_id, installation_id, device_token)
+        # 3) 기기 업서트 (installation_id + 최신 토큰)
+        crud_upsert_user_device(user_id=user_id, installation_id=installation_id, device_token=device_token)
 
-    
-    return user_id
+        return user_id
+
+    except HTTPException:
+        # 이미 포맷된 예외는 그대로 통과
+        raise
+    except Exception as e:
+        # 로그에 전체 스택 기록
+        logger.exception(
+            "get_user_by_provider 실패",
+            extra={"provider": provider, "provider_id": provider_id, "installation_id": installation_id}
+        )
     
     
 
