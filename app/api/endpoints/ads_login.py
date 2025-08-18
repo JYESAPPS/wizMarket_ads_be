@@ -82,11 +82,11 @@ def ads_login_kakao_route(request: KaKao):
     email = kakao_account.get("email")
 
     provider = "kakao"
-    user_id = service_get_user_by_provider(provider="kakao", provider_id=kakao_id, email=email, device_token = request.device_token)
+    user_id = service_get_user_by_provider(provider, kakao_id, email, request.device_token, request.installation_id)
     user_info = service_get_user_by_id(user_id)
 
-    if request.device_token:
-        service_update_device_token(user_id, request.device_token, request.android_id)
+    # if request.device_token:
+    #     service_update_device_token(user_id, request.device_token, request.android_id)
 
     # JWT 발급
     access_token = service_create_access_token(data={"sub": str(user_id)})

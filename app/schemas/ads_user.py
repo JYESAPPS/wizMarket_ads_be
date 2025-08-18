@@ -14,6 +14,7 @@ class KaKao(BaseModel):
     kakao_access_token : str
     device_token : str = None
     android_id : str = None
+    installation_id : str = None
 
 
 class Google(BaseModel):
