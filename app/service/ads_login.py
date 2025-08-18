@@ -119,6 +119,7 @@ def create_refresh_token(data: dict):
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
 def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
+    print(provider)
     user = crud_get_user_by_provider(provider, provider_id)
 
     if user:
