@@ -4,6 +4,7 @@ from app.crud.ads_login import (
     get_image_list as crud_get_image_list,
     get_user_by_provider as crud_get_user_by_provider,
     insert_user_sns as crud_insert_user_sns,
+    upsert_user_device as crud_upsert_user_device,
     update_user_token as crud_update_user_token,
     get_user_by_id as crud_get_user_by_id,
     update_user as crud_update_user,
@@ -117,16 +118,23 @@ def create_refresh_token(data: dict):
 
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
-def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str):
+def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
     user = crud_get_user_by_provider(provider, provider_id)
 
     if user:
-        return user["user_id"]
+        user_id =  user["user_id"]
 
     if provider in {"kakao", "google", "naver"}:
-        return crud_insert_user_sns(email, provider, provider_id, device_token)
+        user_id =  crud_insert_user_sns(email, provider, provider_id, device_token)
+        
+        raise ValueError(f"지원하지 않는 provider: {provider}")
     
-    raise ValueError(f"지원하지 않는 provider: {provider}")
+    crud_upsert_user_device(user_id, installation_id, device_token)
+
+    
+    return user_id
+    
+    
 
 
 # 해당 유저 토큰 정보 DB 업데이트

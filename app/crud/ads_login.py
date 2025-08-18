@@ -106,7 +106,7 @@ def get_user_by_provider(login_provider: str, provider_id: str):
         connection.close()
 
 
-def insert_user_sns(email: str, provider: str, provider_id: str, device_token : str):
+def insert_user_sns(email: str, provider: str, provider_id: str):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
@@ -114,10 +114,10 @@ def insert_user_sns(email: str, provider: str, provider_id: str, device_token : 
     try:
         if connection.open:
             insert_query = """
-                INSERT INTO user (email, login_provider, provider_id, is_active, device_token, created_at, updated_at)
+                INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
             """
-            cursor.execute(insert_query, (email, provider, provider_id, 1, device_token))
+            cursor.execute(insert_query, (email, provider, provider_id, 1))
             connection.commit()
 
             # ✅ 방금 삽입한 user_id 가져오기
@@ -133,6 +133,48 @@ def insert_user_sns(email: str, provider: str, provider_id: str, device_token : 
     finally:
         cursor.close()
         connection.close()
+
+
+
+# 다중 기기 처리
+def upsert_user_device(
+    user_id: int,
+    installation_id: str,
+    device_token: str | None = None,
+):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        sql = """
+        INSERT INTO user_device
+            (user_id, platform, installation_id, device_token, is_active, last_seen, created_at, updated_at)
+        VALUES
+            (%s, 'android', %s, %s, 1, NOW(), NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            user_id      = VALUES(user_id),        -- 계정 전환 시 소유자 재귀속
+            platform     = 'android',
+            device_token = COALESCE(VALUES(device_token), device_token),  -- None이면 기존 유지
+            is_active    = 1,
+            last_seen    = NOW(),
+            updated_at   = NOW()
+        """
+        cursor.execute(sql, (user_id, installation_id, device_token))
+        connection.commit()
+        return True
+    except pymysql.MySQLError as e:
+        connection.rollback()
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="디바이스 업서트 실패")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
+
+
 
 
 def update_user_token(user_id: int, access_token: str, refresh_token: str):
