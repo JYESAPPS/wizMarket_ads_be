@@ -24,7 +24,7 @@ def select_user_id_token():
                 SELECT 
                     USER_ID,
                     DEVICE_TOKEN
-                FROM USER;
+                FROM USER_DEVICE;
             """
             cursor.execute(select_query)
             rows = cursor.fetchall()
