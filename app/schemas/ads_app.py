@@ -85,8 +85,8 @@ class AutoAppRegen(BaseModel):
     store_business_number: str
     store_name: str
     detail_category_name: str
-    # custom_menu: str
-    register_tag: str
+    custom_menu: Optional[str] = None
+    register_tag: Optional[str] = None
     road_name: str
     district_name: str
 

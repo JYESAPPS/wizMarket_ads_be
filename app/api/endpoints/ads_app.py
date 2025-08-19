@@ -51,6 +51,7 @@ from app.service.ads_app import (
     update_register_tag as service_update_register_tag,
     update_user_custom_menu as service_update_user_custom_menu,
     get_season as service_get_season,
+    pick_effective_menu as service_pick_effective_menu,
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -473,10 +474,11 @@ def generate_template_regen(request: AutoAppRegen):
         elif title =="2": theme = "상품 소개"
 
         # menu = request.custom_menu 
-        menu = request.register_tag
+        # menu = request.register_tag
         # if request.custom_menu == '' : 
-        if request.register_tag == '' : 
-            menu = request.detail_category_name
+        # if request.register_tag == '' : 
+        #     menu = request.detail_category_name
+        menu = service_pick_effective_menu(request)
 
         today = datetime.now()
         formattedToday = today.strftime('%Y-%m-%d')
@@ -538,7 +540,7 @@ def generate_template_regen(request: AutoAppRegen):
                 channel,
                 copyright,
                 detail_category_name,
-                request.register_tag,
+                menu,
                 prompt
             )
 
@@ -612,7 +614,8 @@ def generate_template_regen(request: AutoAppRegen):
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel, "style": style, "core_f": age,
-            "main": main, "temp" : temp, "detail_category_name" : detail_category_name, "register_tag": request.register_tag,
+            "main": main, "temp" : temp, "detail_category_name" : detail_category_name,
+            "menu": menu, "register_tag": request.register_tag, "custom_menu": request.custom_menu,
             "store_name": store_name, "road_name": road_name, "district_name": request.district_name,
             "store_business_number": store_business_number, "prompt":prompt, "ad_text" : request.ad_text
         })

@@ -195,7 +195,7 @@ def select_random_image(style):
     return seed_prompt
 
 # 주어진 시드 프롬프트로 해당하는 이미지 생성
-def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_prompt, register_tag):
+def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_prompt, register_tag: str | None = None):
     try:
         # gpt 영역
         gpt_role = f"""
@@ -686,3 +686,36 @@ def get_season(date: datetime) -> str:
         return "가을"
     else:
         return "겨울"
+
+# 메뉴 텍스트 우선순위에 따라 결정
+def pick_effective_menu(request) -> str:
+    def _clean(v):
+        return (v or "").strip()
+
+    # 1) custom_menu
+    menu = _clean(getattr(request, "custom_menu", None))
+    if menu:
+        return menu
+
+    # 2) register_tag
+    tag = _clean(getattr(request, "register_tag", None))
+    if tag:
+        return tag
+
+    # 3) DB 보강 (있으면)
+    # try:
+    #     user_id = int(getattr(request, "user_id", 0) or 0)
+    #     if user_id:
+    #         info, _ = get_user_info(user_id)   # 기존 함수 재사용
+    #         # DB의 custom_menu 우선, 없으면 DB의 register_tag
+    #         menu = _clean((info or {}).get("custom_menu"))
+    #         if menu:
+    #             return menu
+    #         tag = _clean((info or {}).get("register_tag"))
+    #         if tag:
+    #             return tag
+    # except Exception:
+    #     pass
+
+    # 4) 최종 폴백
+    return _clean(getattr(request, "detail_category_name", None)) or "메뉴"
