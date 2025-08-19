@@ -871,7 +871,7 @@ def generate_event(request: EventGenCopy):
 def regenerate_event(request: EventGenCopy):
     try:
         category = request.category
-        resister_tag = request.register_tag
+        # resister_tag = request.register_tag
         store_name= request.store_name
         weather= request.weather
         road_name = request.road_name
@@ -890,7 +890,7 @@ def regenerate_event(request: EventGenCopy):
             copyright_prompt = f'''
                     {store_name} 업체의 이벤트 내용을 다른 표현 혹은 말투로 재작성해주세요.
                     이벤트 내용 :  {custom_text}
-                    주소는 {road_name} 이고 이벤트 상품은 {resister_tag} 입니다.
+                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
                     주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
                     날씨, 주소는 표현하지 않도록 합니다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스

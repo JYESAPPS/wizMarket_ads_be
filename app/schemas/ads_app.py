@@ -142,7 +142,7 @@ class EventGenCopy(BaseModel):
     # age: str
     # channel: str
     # subChannel: Optional[str]
-    resister_tag: str
+    # resister_tag: str
     theme: str
     store_name : str
     weather: str
