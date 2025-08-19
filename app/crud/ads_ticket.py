@@ -22,7 +22,7 @@ def get_cycle(ticket_id: int):
                 FROM TICKET
                 WHERE TICKET_ID=%s;
             """
-            cursor.execute(select_query, (ticket_id))
+            cursor.execute(select_query, (ticket_id,))
             row = cursor.fetchone()
 
             if not row:
@@ -76,7 +76,7 @@ def get_token_amount(ticket_id: int):
                 FROM TICKET
                 WHERE TICKET_ID=%s;
             """
-            cursor.execute(select_query, (ticket_id))
+            cursor.execute(select_query, (ticket_id,))
             row = cursor.fetchone()
 
             if not row:
@@ -110,7 +110,7 @@ def get_latest_token_onetime(user_id: int):
             ORDER BY GRANT_ID DESC
             LIMIT 1
         """
-        cursor.execute(query, (user_id))
+        cursor.execute(query, (user_id,))
         result = cursor.fetchone()
 
         if result is None:
@@ -376,5 +376,38 @@ def get_token_deduction_history(user_id: int):
                 ORDER BY GRANT_DATE DESC
             """, (user_id,))
             return cursor.fetchall()
+    finally:
+        connection.close()
+
+# 사용자의 결제 이력이 있는지 확인
+def has_any_payment(user_id: int) -> bool:
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT 1
+                FROM ticket_payment
+                WHERE USER_ID = %s AND PAYMENT_METHOD = 'bonus'
+                LIMIT 1
+            """, (user_id,))
+            return cursor.fetchone() is not None
+    finally:
+        connection.close()
+
+# 첫 결제 보너스 지급
+def insert_first_payment_bonus(user_id: int, ticket_id: int, memo: str = "첫 결제 보너스 토큰 지급") -> None:
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""            
+                    INSERT INTO ticket_payment
+                        (USER_ID, TICKET_ID, PAYMENT_METHOD, PAYMENT_DATE, EXPIRE_DATE)
+                    VALUES
+                        (%s, %s, %s, %s, %s)
+                """, (user_id, ticket_id, 'bonus', datetime.now(), None))
+            connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
     finally:
         connection.close()
