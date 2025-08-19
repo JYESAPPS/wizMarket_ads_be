@@ -14,7 +14,7 @@ class ReserveCreate(BaseModel):
     monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 
@@ -56,4 +56,4 @@ class ReserveUpdate(BaseModel):
     monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
