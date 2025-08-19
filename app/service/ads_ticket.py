@@ -10,11 +10,15 @@ from app.crud.ads_ticket import (
     get_valid_ticket as crud_get_valid_ticket,
     insert_payment_history as crud_insert_token_deduction_history,
     insert_token_deduction_history as crud_insert_token_deduction_history,
-    get_token_deduction_history as crud_get_token_deduction_history
+    get_token_deduction_history as crud_get_token_deduction_history,
+    has_any_payment as crud_has_any_payment,
+    insert_first_payment_bonus as crud_insert_first_payment_bonus
 )
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from datetime import date
+from fastapi import HTTPException
 
 
 # ticket_payment에 추가
@@ -167,3 +171,40 @@ def get_token_deduction_history(user_id: int):
         })
 
     return result
+
+FIRST_PURCHASE_BONUS_TICKET_ID = 14
+
+# 첫 결제 보너스 지급 여부 확인
+def is_first_purchase(user_id: int) -> bool:
+    return not crud_has_any_payment(user_id)
+
+# 첫 결제 보너스 지급
+def grant_first_purchase_bonus_if_needed(user_id: int, is_first: bool) -> bool:
+    if not is_first:
+        return False
+    
+    bonus_amount = crud_get_token_amount(FIRST_PURCHASE_BONUS_TICKET_ID)
+    if not bonus_amount or bonus_amount <= 0:
+        # 정책상 잘못된 구성
+        raise ValueError("ticket_id=13의 TOKEN_AMOUNT가 유효하지 않습니다.")
+    current_onetime = crud_get_latest_token_onetime(user_id) or 0
+
+    try:
+        # 1) 토큰 지급(ticket_token)
+        crud_insert_onetime(
+            user_id=user_id,
+            ticket_id=FIRST_PURCHASE_BONUS_TICKET_ID,
+            token_grant=bonus_amount,
+            token_onetime=current_onetime + bonus_amount,
+            grant_date=date.today(),
+        )
+
+        # 2) 결제내역에 0원 bonus 행 기록(ticket_payment)
+        crud_insert_first_payment_bonus(
+            user_id=user_id,
+            ticket_id=FIRST_PURCHASE_BONUS_TICKET_ID,
+            memo="첫 결제 보너스 토큰 지급"
+        )
+        return True
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"첫 결제 보너스 지급 실패: {e}")
