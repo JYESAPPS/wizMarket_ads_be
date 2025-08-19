@@ -15,9 +15,7 @@ from app.service.ads_ticket import (
     get_token as service_get_token,
     get_valid_ticket as service_get_valid_ticket,
     deduct_token as service_deduct_token,
-    get_token_deduction_history as service_get_token_deduction_history,
-    is_first_purchase as service_is_first_purchase,
-    grant_first_purchase_bonus_if_needed as service_grant_first_purchase_bonus_if_needed
+    get_token_deduction_history as service_get_token_deduction_history
 )
 
 
@@ -28,10 +26,6 @@ logger = logging.getLogger(__name__)
 # 결제
 @router.post("/payment")
 def insert_payment(request: List[InsertPayRequest]):  
-    user_id = request[0].user_id
-
-    # 결제 시작 전에 '첫 결제 예정' 여부 저장
-    _is_first = service_is_first_purchase(user_id)
     # 토큰 구매 100개 제한
     try:
         is_exist = service_get_history_100(request[0].user_id)
@@ -69,13 +63,11 @@ def insert_payment(request: List[InsertPayRequest]):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
         )
-    bonus_granted = service_grant_first_purchase_bonus_if_needed(user_id, _is_first)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
             "success": True,
-            "bonus_granted": bonus_granted,
             "message": "결제가 성공적으로 처리되었습니다.",
             "count": sum(each.qty for each in request),
         }
