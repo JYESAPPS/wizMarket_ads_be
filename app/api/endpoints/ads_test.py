@@ -1,5 +1,5 @@
 from fastapi import (
-    APIRouter, UploadFile, File, Form, HTTPException
+    APIRouter, UploadFile, File, Form, HTTPException, Query
 )
 from app.schemas.ads import (
     AdsGenerateContentOutPut, AdsContentRequest,
@@ -24,6 +24,7 @@ from app.service.ads_generate_test import (
     generate_test_generate_bg as service_generate_test_generate_bg,
     generate_test_generate_music as service_generate_test_generate_music,
     generate_test_generate_lyrics as service_generate_test_generate_lyrics,
+    generate_test_vertex as service_generate_test_vertex_bg,
 )
 
 
@@ -34,7 +35,7 @@ from app.service.ads_image_treat import (
     extend_bg as service_extend_bg
 )
 from typing import Optional
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from fastapi import Request, Body
 from PIL import Image
 import logging
@@ -261,10 +262,29 @@ def generate_test_generate_bg(request : AdsContentRequest):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
 
+# 배경 생성2 (vertex ai)
+@router.post("/test/background", response_class=Response)
+async def generate_test_vertex_bg(
+    file: UploadFile = File(..., description="원본 이미지 파일"),
+    prompt: str = Form(..., description="배경 프롬프트"),
+    steps: int = Query(75, ge=10, le=200, description="샘플링 단계 수(editSteps)")
+):
+    try:
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="이미지 파일만 업로드하세요.")
+        content = await file.read()
 
+        # (선택) 용량 가드: 10MB 권장
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="이미지 용량이 큽니다(<=10MB 권장).")
 
-
-
+        out_bytes = service_generate_test_vertex_bg(content, prompt, edit_steps=steps)
+        return Response(content=out_bytes, media_type="image/png")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 ##### 음악 생성 로직 #####
 

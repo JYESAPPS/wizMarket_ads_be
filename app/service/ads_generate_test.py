@@ -21,6 +21,8 @@ from email.mime.base import MIMEBase
 from email import encoders
 import http.client
 import smtplib
+import google.auth 
+from google.auth.transport.requests import Request
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -375,6 +377,73 @@ def generate_test_generate_bg(url, type, prompt):
 
     return requests.post(api_url, headers=headers, data=json.dumps(payload_data)).json().get("result_url")
 
+# vertex ai(google) 토큰
+def get_access_token() -> str:
+    SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+    creds, _ = google.auth.default(scopes=SCOPES)
+    if not creds.valid:
+        creds.refresh(Request())
+    return creds.token
+
+# vertex ai로 배경 재생성 (url -> bytes)
+def generate_test_vertex(content_bytes: bytes, prompt: str, edit_steps: int = 75) -> bytes:
+    
+    PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+    LOCATION   = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+    MODEL_ID   = "imagen-3.0-capability-001"
+    ENDPOINT   = (
+        f"https://{LOCATION}-aiplatform.googleapis.com/v1/"
+        f"projects/{PROJECT_ID}/locations/{LOCATION}/publishers/google/models/{MODEL_ID}:predict"
+    )
+
+    b64_in = base64.b64encode(content_bytes).decode("utf-8")
+    body = {
+        "instances": [
+            {
+                "prompt": prompt,
+                "referenceImages": [
+                    {
+                        "referenceType": "REFERENCE_TYPE_RAW",
+                        "referenceId": 1, 
+                        "referenceImage": {
+                            "bytesBase64Encoded": b64_in
+                        }
+                    },
+                    {
+                        "referenceType": "REFERENCE_TYPE_MASK",
+                        "referenceId": 2,
+                        "maskImageConfig": {
+                            "maskMode": "MASK_MODE_BACKGROUND",
+                            "dilation": 0.0
+                        }
+                    }
+                ]
+            }
+        ],
+        "parameters": {
+            "editConfig": {"baseSteps": edit_steps},
+            "editMode": "EDIT_MODE_BGSWAP",
+            "sampleCount": 1
+            
+        }
+    }
+
+    headers = {
+        "Authorization": f"Bearer {get_access_token()}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    res = requests.post(ENDPOINT, headers=headers, data=json.dumps(body), timeout=60)
+    if res.status_code != 200:
+        raise RuntimeError(f"Vertex error {res.status_code}: {res.text}")
+
+    data = res.json()
+    try:
+        b64_out = data["predictions"][0]["bytesBase64Encoded"]
+    except Exception:
+        raise RuntimeError(f"Unexpected response: {data}")
+    return base64.b64decode(b64_out)
 
 
 #### 음악 생성 ####
