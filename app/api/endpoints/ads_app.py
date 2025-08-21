@@ -1521,6 +1521,7 @@ async def generate_template_manual_camera(
     title: str = Form(...),
     age: str = Form(...),
     style: str = Form(...),
+    bg_prompt: str = Form(None),
     category: str = Form(...),
     custom_menu: str = Form(None),
     register_tag: str = Form(None),
