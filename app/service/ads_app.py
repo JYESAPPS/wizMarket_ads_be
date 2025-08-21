@@ -10,6 +10,8 @@ from runwayml import RunwayML
 from moviepy import *
 from google import genai
 from google.genai import types
+import google.auth 
+from google.auth.transport.requests import Request
 from io import BytesIO
 from app.crud.ads_app import (
     select_random_image as crud_select_random_image,
@@ -41,6 +43,7 @@ from rembg import remove
 import requests
 import json
 import random
+from typing import List
 
 
 logger = logging.getLogger(__name__)
@@ -570,7 +573,7 @@ def generate_bg(image_url):
             "y_center": 0.5
         }
     }
-    prompt_options = ["marble", "wood", "industrial", "linen", "brick", "counter"]
+    # prompt_options = ["marble", "wood", "industrial", "linen", "brick", "counter"]
     # selected_prompt = random.choice(prompt_options)
     selected_prompt = "brick"
     payload_data["scene"] = selected_prompt
@@ -586,6 +589,79 @@ def generate_bg(image_url):
     response.raise_for_status()
     img = Image.open(BytesIO(response.content))
     return [img]
+
+# vertex ai(google) 토큰
+def get_vertex_token() -> str:
+    SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+    creds, _ = google.auth.default(scopes=SCOPES)
+    if not creds.valid:
+        creds.refresh(Request())
+    return creds.token
+
+# vertex ai로 배경 재생성
+def generate_vertex_bg(image: bytes, prompt: str) -> bytes:
+    
+    PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+    LOCATION   = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+    MODEL_ID   = "imagen-3.0-capability-001"
+    ENDPOINT   = (
+        f"https://{LOCATION}-aiplatform.googleapis.com/v1/"
+        f"projects/{PROJECT_ID}/locations/{LOCATION}/publishers/google/models/{MODEL_ID}:predict"
+    )
+
+    b64_im = base64.b64encode(image).decode("utf-8")
+    body = {
+        "instances": [
+            {
+                "prompt": prompt,
+                "referenceImages": [
+                    {
+                        "referenceType": "REFERENCE_TYPE_RAW",
+                        "referenceId": 1, 
+                        "referenceImage": {
+                            "bytesBase64Encoded": b64_im
+                        }
+                    },
+                    {
+                        "referenceType": "REFERENCE_TYPE_MASK",
+                        "referenceId": 2,
+                        "maskImageConfig": {
+                            "maskMode": "MASK_MODE_BACKGROUND",
+                            "dilation": 0.0
+                        }
+                    }
+                ]
+            }
+        ],
+        "parameters": {
+            "editConfig": {"baseSteps": 75},
+            "editMode": "EDIT_MODE_BGSWAP",
+            "sampleCount": 1
+            
+        }
+    }
+
+    headers = {
+        "Authorization": f"Bearer {get_vertex_token()}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    res = requests.post(ENDPOINT, headers=headers, data=json.dumps(body), timeout=60)
+    if res.status_code != 200:
+        raise RuntimeError(f"Vertex error {res.status_code}: {res.text}")
+
+    data = res.json()
+    preds = data.get("predictions")
+    out_list: List[str] = []
+    for p in preds:
+        b64_out = p.get("bytesBase64Encoded")
+        if not b64_out:
+            continue
+        # 순수 base64만 부여 
+        out_list.append(b64_out)
+
+    return out_list
 
 #유효성 검사
 def validation_test(title, channel, female_text, style):

@@ -385,7 +385,7 @@ def get_access_token() -> str:
         creds.refresh(Request())
     return creds.token
 
-# vertex ai로 배경 재생성 (url -> bytes)
+# vertex ai로 배경 재생성 (bytes)
 def generate_test_vertex(content_bytes: bytes, prompt: str, edit_steps: int = 75) -> bytes:
     
     PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
