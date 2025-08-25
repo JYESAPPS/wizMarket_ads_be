@@ -140,8 +140,8 @@ def get_user_info(user_id):
 def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path FROM user_record WHERE user_id = %s and upload_check = 1", (user_id,))
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용 # and upload_check = 1 삭제
+            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path FROM user_record WHERE user_id = %s", (user_id,))
             rows = cursor.fetchall()
 
         if not rows:
