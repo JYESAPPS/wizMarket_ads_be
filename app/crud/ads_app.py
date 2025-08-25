@@ -211,7 +211,7 @@ def insert_user_info(user_id, request):
         with connection.cursor() as cursor:
             sql = """
                 INSERT INTO USER_INFO (user_id, nickname, birth_year, gender, phone, register_tag)
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (user_id, nickname, birth_year, gender, phone, register_tag))
         connection.commit()
