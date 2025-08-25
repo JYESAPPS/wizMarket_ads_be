@@ -1525,7 +1525,7 @@ async def generate_template_manual_camera(
     title: str = Form(...),
     age: str = Form(...),
     style: str = Form(...),
-    bg_prompt: str = Form(None),
+    bg_prompt: str = Form(None),  
     category: str = Form(...),
     custom_menu: str = Form(None),
     register_tag: str = Form(None),
@@ -1686,6 +1686,7 @@ async def generate_template_event_camera(
     title: str = Form(...),
     age: str = Form(...),
     style: str = Form(...),
+    bg_prompt: str = Form(None),
     customMenu: str = Form(None),
     customText:str = Form(None),
     category: str = Form(...),
@@ -1756,31 +1757,39 @@ async def generate_template_event_camera(
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
-        # 이미지 처리 우선순위: image_url > image
-        if image_url:
-            origin_images = service_generate_bg(image_url)
+
+        output_images = []
+
+        # 이미지 처리 우선순위: bg_prompt > image_url > image
+        if bg_prompt:
+            content = image.file.read()
+            origin_images = service_generate_vertex_bg(content, bg_prompt)
+            output_images.extend(origin_images)
 
         elif image:
-            input_image = Image.open(BytesIO(await image.read()))
-            input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
+            if image_url:
+                origin_images = service_generate_bg(image_url)
 
-            # 예: 스타일에 따라 분기
-            if style == "배경만 제거":
-                origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
-            else:
-                origin_images = [input_image]
+            else: 
+                input_image = Image.open(BytesIO(await image.read()))
+                input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
+
+                # 예: 스타일에 따라 분기
+                if style == "배경만 제거":
+                    origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+                else:
+                    origin_images = [input_image]
+
+            # base64 리스트 변환
+            for img in origin_images:
+                buffer = BytesIO()
+                img.save(buffer, format="PNG")
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                output_images.append(img_base64)
         else:
             raise HTTPException(status_code=400, detail="이미지 또는 이미지 URL이 제공되지 않았습니다.")
 
-
-        # base64 리스트 변환
-        output_images = []
-        for img in origin_images:
-            buffer = BytesIO()
-            img.save(buffer, format="PNG")
-            buffer.seek(0)
-            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-            output_images.append(img_base64)
 
         # 인스타 문구 처리
         insta_copyright = ''
