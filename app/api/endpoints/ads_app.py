@@ -189,10 +189,9 @@ def generate_template(request: AutoAppMain):
             origin_image = service_generate_by_seed_prompt(
                 channel,
                 copyright,
-                # request.register_tag,
-                menu,
                 request.detail_category_name,
-                seed_prompt
+                seed_prompt,
+                request.register_tag
             )
 
             output_images = []
@@ -360,7 +359,9 @@ def generate_template(request: AutoApp):
             origin_image = service_generate_by_seed_prompt(
                 channel,
                 copyright,
-                seed_prompt
+                request.detail_category_name,
+                seed_prompt,
+                request.register_tag
             )
 
             output_images = []
@@ -541,8 +542,8 @@ def generate_template_regen(request: AutoAppRegen):
                 channel,
                 copyright,
                 detail_category_name,
-                menu,
-                prompt
+                prompt,
+                request.register_tag
             )
 
             output_images = []
@@ -1042,8 +1043,9 @@ def generate_template_manual(request : ManualApp):
             origin_image = service_generate_by_seed_prompt(
                 channel_text,
                 copyright,
-                menu,
-                prompt
+                detail_category_name,
+                prompt,
+                request.register_tag
             )
 
             output_images = []
@@ -1219,8 +1221,9 @@ def generate_template_event(request : ManualApp):
             origin_image = service_generate_by_seed_prompt(
                 channel_text,
                 copyright,
-                menu,
-                prompt
+                detail_category_name,
+                prompt,
+                request.register_tag
             )
 
             output_images = []
