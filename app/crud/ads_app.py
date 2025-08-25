@@ -351,53 +351,78 @@ def get_store_info(store_business_number):
         print(f"매장 정보 오류: {e}")
         return None
 
-
+# 유저 정보가 존재하는지 확인
+def user_info_exists_by_sbn(store_business_number: str) -> bool:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM wiz_report.`user` u
+                JOIN wiz_report.user_info ui ON ui.user_id = u.user_id
+                WHERE u.store_business_number = %s
+                LIMIT 1
+                """,
+                (store_business_number,)
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
 
 def update_user_custom_menu(menu: str, store_business_number: str) -> bool:
-    connection = get_re_db_connection()
-    cursor = connection.cursor()
+    connection = get_db_connection()
     try:
-        # 1) store_business_number로 user_id 조회
-        sql_user_id = """
-            SELECT user_id
-            FROM user
-            WHERE store_business_number = %s
-            LIMIT 1
-        """
-        cursor.execute(sql_user_id, (store_business_number,))
-        row = cursor.fetchone()
-        if not row:
-            # 해당 사업자번호의 유저가 없음
-            connection.rollback()
-            return False
-
-        user_id = row[0]  # tuple (user_id,)
-
-        # 2) user_info 업데이트
-        sql_update = """
-            UPDATE user_info
-            SET custom_menu = %s, updated_at = NOW()
-            WHERE user_id = %s
-        """
-        cursor.execute(sql_update, (menu, user_id))
-
-        # user_info가 없을 수도 있으면 upsert 보완 (선택)
-        if cursor.rowcount == 0:
-            sql_insert = """
-                INSERT INTO user_info (user_id, custom_menu, created_at, updated_at)
-                VALUES (%s, %s, NOW(), NOW())
-            """
-            cursor.execute(sql_insert, (user_id, menu))
-
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE wiz_report.user_info ui
+                JOIN wiz_report.`user` u ON ui.user_id = u.user_id
+                SET ui.custom_menu = %s,
+                    ui.updated_at = NOW()
+                WHERE u.store_business_number = %s
+                """,
+                (menu, store_business_number)
+            )
+            affected = cur.rowcount
         connection.commit()
-        return True
+        # print(f"유저 커스텀 메뉴 업데이트 성공: {affected}개")
+        return affected
     except Exception as e:
         connection.rollback()
-        print(f"회원 정보 업데이트 오류: {e}")
+        print(f"유저 커스텀 메뉴 업데이트 오류: {e}")
         return False
     finally:
-        cursor.close()
+        cur.close()
         connection.close()
+
+def insert_user_custom_menu(menu: str, store_business_number: str) -> int:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("USE `wiz_report`")
+            cur.execute("SELECT DATABASE(), @@hostname, CURRENT_USER(), @@read_only")
+            print("[DBCTX]", cur.fetchone())
+            cur.execute(
+                """
+                INSERT INTO user_info (user_id, custom_menu)
+                SELECT u.user_id, %s
+                FROM user u
+                LEFT JOIN user_info ui ON ui.user_id = u.user_id
+                WHERE u.store_business_number = %s;
+                """,
+                (menu, store_business_number)
+            )
+            inserted = cur.rowcount
+        conn.commit()
+        # print(f"유저 커스텀 메뉴 삽입 성공: {inserted}개")
+        return inserted
+    except Exception:
+        conn.rollback()
+        print("유저 커스텀 메뉴 삽입 오류")
+        raise
+    finally:
+        conn.close()
 
 
 def update_register_tag(user_id: int, register_tag: str) -> bool:

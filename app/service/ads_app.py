@@ -28,7 +28,9 @@ from app.crud.ads_app import (
     delete_user_reco as crud_delete_user_reco,
     get_store_info as crud_get_store_info,
     update_register_tag as crud_update_register_tag,
-    update_user_custom_menu as crud_update_user_custom_menu
+    update_user_custom_menu as crud_update_user_custom_menu,
+    insert_user_custom_menu as crud_insert_user_custom_menu,
+    user_info_exists_by_sbn as crud_user_info_exists_by_sbn,
 )
 from app.crud.ads import (
     get_category_id as crud_get_category_id
@@ -745,8 +747,11 @@ def get_store_info(store_business_number):
     store_info = crud_get_store_info(store_business_number)
     return store_info
 
-def update_user_custom_menu(menu, store_business_number):
-    crud_update_user_custom_menu(menu, store_business_number)
+def update_user_custom_menu(custom_menu, store_business_number):
+    if crud_user_info_exists_by_sbn(store_business_number):
+        crud_update_user_custom_menu(custom_menu, store_business_number)
+    else:
+        crud_insert_user_custom_menu(custom_menu, store_business_number)
 
 def update_register_tag(user_id: int, register_tag: str):
     crud_update_register_tag(user_id, register_tag)
