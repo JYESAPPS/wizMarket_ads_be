@@ -543,7 +543,7 @@ def generate_template_regen(request: AutoAppRegen):
                 copyright,
                 detail_category_name,
                 prompt,
-                request.register_tag
+                menu
             )
 
             output_images = []
@@ -1045,7 +1045,7 @@ def generate_template_manual(request : ManualApp):
                 copyright,
                 detail_category_name,
                 prompt,
-                request.register_tag
+                menu
             )
 
             output_images = []
@@ -1223,7 +1223,7 @@ def generate_template_event(request : ManualApp):
                 copyright,
                 detail_category_name,
                 prompt,
-                request.register_tag
+                menu
             )
 
             output_images = []
