@@ -7,6 +7,7 @@ class AdsFaqList(BaseModel):
     faq_id: int
     question: str
     answer: str
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
