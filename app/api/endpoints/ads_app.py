@@ -1520,7 +1520,6 @@ def get_manual_ai_reco(request: AutoApp):
 @router.post("/manual/app/camera")
 async def generate_template_manual_camera(
     image: UploadFile = File(None),
-    image_url : str = File(None),
     channel: str = Form(...),
     title: str = Form(...),
     age: str = Form(...),
@@ -1598,25 +1597,21 @@ async def generate_template_manual_camera(
 
         output_images = []
 
-        # 이미지 처리 우선순위: image_url > image
+        # 이미지 처리 우선순위: bg_prompt > image
         if bg_prompt:
             content = image.file.read()
             origin_images = service_generate_vertex_bg(content, bg_prompt)
             output_images.extend(origin_images)
 
-        elif image:
-            if image_url:
-                origin_images = service_generate_bg(image_url)
-                
-            else:
-                input_image = Image.open(BytesIO(await image.read()))
-                input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
+        elif image:                
+            input_image = Image.open(BytesIO(await image.read()))
+            input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
-                # 예: 스타일에 따라 분기
-                if style == "배경만 제거":
-                    origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
-                else:
-                    origin_images = [input_image]
+            # 스타일에 따라 분기
+            if style == "배경만 제거":
+                origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+            else:
+                origin_images = [input_image]
 
             # base64 리스트 변환
             for img in origin_images:
@@ -1665,7 +1660,7 @@ async def generate_template_manual_camera(
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category, register_tag: register_tag,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright,
+                "insta_copyright" : insta_copyright, "prompt" : bg_prompt,
             })
 
     except HTTPException as http_ex:
@@ -1681,7 +1676,6 @@ async def generate_template_manual_camera(
 @router.post("/event/app/camera")
 async def generate_template_event_camera(
     image: UploadFile = File(None),
-    image_url : str = File(None),
     channel: str = Form(...),
     title: str = Form(...),
     age: str = Form(...),
@@ -1760,25 +1754,21 @@ async def generate_template_event_camera(
 
         output_images = []
 
-        # 이미지 처리 우선순위: bg_prompt > image_url > image
+        # 이미지 처리 우선순위: bg_prompt > image
         if bg_prompt:
             content = image.file.read()
             origin_images = service_generate_vertex_bg(content, bg_prompt)
             output_images.extend(origin_images)
 
         elif image:
-            if image_url:
-                origin_images = service_generate_bg(image_url)
+            input_image = Image.open(BytesIO(await image.read()))
+            input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
-            else: 
-                input_image = Image.open(BytesIO(await image.read()))
-                input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
-
-                # 예: 스타일에 따라 분기
-                if style == "배경만 제거":
-                    origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
-                else:
-                    origin_images = [input_image]
+            # 스타일에 따라 분기
+            if style == "배경만 제거":
+                origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+            else:
+                origin_images = [input_image]
 
             # base64 리스트 변환
             for img in origin_images:
@@ -1828,7 +1818,7 @@ async def generate_template_event_camera(
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright,
+                "insta_copyright" : insta_copyright, "prompt": bg_prompt,
             })
 
     except HTTPException as http_ex:
