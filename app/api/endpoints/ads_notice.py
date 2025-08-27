@@ -47,7 +47,20 @@ def create_notice(request: AdsNoticeCreateRequest):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
-    
+
+# 공지사항 단건 가져오기
+@router.get("/get/notice/{notice_no}")
+def get_notice_by_id(notice_no: int):
+    try:
+        items = service_get_notice()
+        for n in items:
+            if n.get("notice_no") == notice_no:
+                return n
+        raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}  
+        
 # 공지사항 수정
 @router.post("/edit/notice/{notice_id}", status_code=201)
 def update_notice(request: AdsNoticeUpdateRequest):
