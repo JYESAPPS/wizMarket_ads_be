@@ -1526,6 +1526,7 @@ async def generate_template_manual_camera(
     age: str = Form(...),
     style: str = Form(...),
     bg_prompt: str = Form(None),  
+    filter: int = Form(None),  
     category: str = Form(...),
     custom_menu: str = Form(None),
     register_tag: str = Form(None),
@@ -1613,11 +1614,10 @@ async def generate_template_manual_camera(
                 origin_images = service_generate_image_remove_bg(input_image)  # List[PIL.Image]
 
             elif style == "필터":
-                idx = 0
                 buf = BytesIO()
                 input_image.save(buf, format="PNG")
                 buf.seek(0)
-                cartooned = await service_cartoon_image(buf.getvalue(), idx)  # PIL.Image
+                cartooned = await service_cartoon_image(buf.getvalue(), filter)  # PIL.Image
                 origin_images = [cartooned]
 
             else:
