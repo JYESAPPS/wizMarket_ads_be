@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-import os
+import os, asyncio, httpx
 import re
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -40,6 +40,7 @@ from datetime import datetime
 from io import BytesIO
 import traceback
 import io
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from rembg import remove
 import requests
@@ -664,6 +665,59 @@ def generate_vertex_bg(image: bytes, prompt: str) -> bytes:
         out_list.append(b64_out)
 
     return out_list
+
+# 필터 API (AI lab tools)
+async def cartoon_image(image_bytes: bytes, index: int = 0,
+                        poll_interval: float = 2.0, max_attempts: int = 15) -> Image.Image:
+    import os, asyncio, httpx
+    AILABTOOLS_API_KEY = os.getenv("AILABTOOLS_API_KEY")
+    API_BASE = "https://www.ailabapi.com"
+    GEN_URL = f"{API_BASE}/api/image/effects/ai-anime-generator"
+    ASYNC_URL = f"{API_BASE}/api/image/asyn-task-results"
+
+    headers = {"ailabapi-api-key": AILABTOOLS_API_KEY}
+    files = {
+        "task_type": (None, "async"),
+        "index": (None, str(index)),
+        "image": ("input.png", image_bytes, "image/png"),
+    }
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        # 1) 비동기 작업 생성
+        create_resp = await client.post(GEN_URL, headers=headers, files=files)
+        create_resp.raise_for_status()
+        payload = create_resp.json()
+
+        job_id = payload.get("request_id") or payload.get("task_id")
+        if not job_id:
+             raise HTTPException(status_code=502, detail=f"Invalid response from AILabTools: {payload}")
+
+        # 2) 결과 폴링
+        params = {"job_id": job_id, "type": "GENERATE_CARTOONIZED_IMAGE"}
+        for _ in range(max_attempts):
+            result_resp = await client.get(ASYNC_URL, headers=headers, params=params)
+            result_resp.raise_for_status()
+            result = result_resp.json()
+            data = result.get("data") or {}
+            status = (data.get("status") or "").upper()
+
+            if status == "PROCESS_SUCCESS":
+                result_url = data.get("result_url")
+                if not result_url:
+                    raise HTTPException(status_code=502, detail="AILabTools 결과 URL 누락")
+                img_resp = await client.get(result_url)
+                img_resp.raise_for_status()
+
+                # ✅ bytes → PIL.Image 변환
+                return Image.open(BytesIO(img_resp.content))
+
+            if status in {"PROCESS_FAILED", "TIMEOUT_FAILED", "LIMIT_RETRY_FAILED"}:
+                raise HTTPException(status_code=502, detail=f"AILabTools 실패: {result}")
+
+            await asyncio.sleep(poll_interval)
+
+        raise HTTPException(status_code=504, detail="시간 초과")
+
 
 #유효성 검사
 def validation_test(title, channel, female_text, style):

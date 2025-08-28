@@ -53,6 +53,7 @@ from app.service.ads_app import (
     get_season as service_get_season,
     pick_effective_menu as service_pick_effective_menu,
     generate_vertex_bg as service_generate_vertex_bg,
+    cartoon_image as service_cartoon_image,
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -1609,7 +1610,16 @@ async def generate_template_manual_camera(
 
             # 스타일에 따라 분기
             if style == "배경만 제거":
-                origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+                origin_images = service_generate_image_remove_bg(input_image)  # List[PIL.Image]
+
+            elif style == "필터":
+                idx = 0
+                buf = BytesIO()
+                input_image.save(buf, format="PNG")
+                buf.seek(0)
+                cartooned = await service_cartoon_image(buf.getvalue(), idx)  # PIL.Image
+                origin_images = [cartooned]
+
             else:
                 origin_images = [input_image]
 
