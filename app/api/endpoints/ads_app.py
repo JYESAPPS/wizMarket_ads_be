@@ -1518,7 +1518,7 @@ def get_manual_ai_reco(request: AutoApp):
     
 
 # AI 생성 수동 카메라 - 선택 한 값들로 이미지 처리
-@router.post("/manual/app/camera")
+@router.post("/manual/app/camera") 
 async def generate_template_manual_camera(
     image: UploadFile = File(None),
     channel: str = Form(...),
@@ -1617,8 +1617,8 @@ async def generate_template_manual_camera(
                 buf = BytesIO()
                 input_image.save(buf, format="PNG")
                 buf.seek(0)
-                cartooned = await service_cartoon_image(buf.getvalue(), filter)  # PIL.Image
-                origin_images = [cartooned]
+                filtered = await service_cartoon_image(buf.getvalue(), filter)  # PIL.Image
+                origin_images = [filtered]
 
             else:
                 origin_images = [input_image]
@@ -1668,9 +1668,9 @@ async def generate_template_manual_camera(
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
-                "main": main, "temp" : temp, "detail_category_name" : category, register_tag: register_tag,
+                "main": main, "temp" : temp, "detail_category_name" : category, "register_tag": register_tag,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright, "prompt" : bg_prompt,
+                "insta_copyright" : insta_copyright, "prompt" : bg_prompt, "filter_idx": filter
             })
 
     except HTTPException as http_ex:
@@ -1691,6 +1691,7 @@ async def generate_template_event_camera(
     age: str = Form(...),
     style: str = Form(...),
     bg_prompt: str = Form(None),
+    filter: int = Form(None),
     customMenu: str = Form(None),
     customText:str = Form(None),
     category: str = Form(...),
@@ -1777,6 +1778,14 @@ async def generate_template_event_camera(
             # 스타일에 따라 분기
             if style == "배경만 제거":
                 origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
+
+            elif style == "필터":
+                buf = BytesIO()
+                input_image.save(buf, format="PNG")
+                buf.seek(0)
+                filtered = await service_cartoon_image(buf.getvalue(), filter)
+                origin_images = [filtered]
+
             else:
                 origin_images = [input_image]
 
@@ -1828,7 +1837,7 @@ async def generate_template_event_camera(
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright, "prompt": bg_prompt,
+                "insta_copyright" : insta_copyright, "prompt": bg_prompt, "filter_idx": filter
             })
 
     except HTTPException as http_ex:
