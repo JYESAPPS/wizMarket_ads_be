@@ -13,6 +13,8 @@ def insert_business_verification(
         dest_path,    
         content_type,
         size_bytes,
+        bs_name,
+        bs_number
 ):
     crud_insert_business_verification(
         user_id,
@@ -20,7 +22,9 @@ def insert_business_verification(
         saved_name,
         dest_path,    
         content_type,
-        size_bytes
+        size_bytes,
+        bs_name,
+        bs_number
     )
 
 

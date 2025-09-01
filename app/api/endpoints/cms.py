@@ -29,6 +29,8 @@ def sanitize_filename(name: str) -> str:
 async def check_business_regist(
     file: UploadFile = File(...),
     user_id: int = Form(...), 
+    bs_name: str = Form(...),
+    bs_number: int = Form(...),
 ):
     # (선택) 타입 체크
     if file.content_type not in {
@@ -65,6 +67,8 @@ async def check_business_regist(
         str(dest_path),      # 가능하면 상대경로로 바꾸는 걸 권장
         file.content_type,
         size_bytes,
+        bs_name,
+        bs_number
     )
 
     return {"status": "pending"}

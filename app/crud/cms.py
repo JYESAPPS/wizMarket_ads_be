@@ -17,22 +17,27 @@ def insert_business_verification(
     saved_filename,
     saved_path,    
     content_type,
-    size_bytes
+    size_bytes,
+    bs_name,
+    bs_number
 ) -> int:
     conn = None
     cursor = None
+    bs_number = str(bs_number)
     try:
         conn = get_re_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         sql = """
         INSERT INTO business_verification
-            (user_id, original_filename, saved_filename, saved_path, content_type, size_bytes, status, created_at)
+            (user_id, bs_name, bs_number, original_filename, saved_filename, saved_path, content_type, size_bytes, status, created_at)
         VALUES
-            (%s, %s, %s, %s, %s, %s, 'pending', NOW())
+            (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', NOW())
         """
         cursor.execute(sql, (
             user_id,
+            bs_name,
+            bs_number,
             original_filename,
             saved_filename,
             saved_path,          # 가능하면 상대경로를 권장
