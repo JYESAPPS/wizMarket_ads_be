@@ -450,4 +450,58 @@ def select_user_id(store_business_number):
         connection.close()
 
 
+# user_info에 성명, 생년월일 삽입
+def insert_init_info(user_id, name, birth):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO USER_INFO (user_id, name, birth_year)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, name, birth))
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
 
+    except Exception as e:
+        print(f"회원 정보 삽입 오류: {e}")
+        return False
+
+# user_info: 성명, 생년월일 수정
+def update_init_info(user_id, name, birth):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER_INFO
+                SET name = %s,
+                    birth_year = %s
+                WHERE user_id = %s
+            """
+            cursor.execute(sql, (name, birth, user_id))
+
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
+
+    except Exception as e:
+        print(f"회원 정보 업데이트 오류: {e}")
+        return False
+    
+# 인증 성공
+def update_verified(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER_INFO
+                SET verified = 1
+                WHERE user_id = %s
+            """
+            cursor.execute(sql, (user_id))
+
+        connection.commit()
+        return True 
+
+    except Exception as e:
+        print(f"회원 정보 업데이트 오류: {e}")
+        return False

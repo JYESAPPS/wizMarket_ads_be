@@ -10,7 +10,10 @@ from app.crud.ads_login import (
     update_user as crud_update_user,
     select_insta_account as crud_select_insta_account,
     update_device_token as crud_update_device_token,
-    select_user_id as crud_select_user_id
+    select_user_id as crud_select_user_id,
+    insert_init_info as crud_insert_init_info,
+    update_init_info as crud_update_init_info,
+    update_verified as crud_update_verified,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -264,3 +267,18 @@ def select_user_id(store_business_number):
     return user_id
 
 
+def update_init_info(user_id, name, birth):
+    try:
+        verified = crud_update_verified(user_id)
+        user_info = crud_update_init_info(user_id, name, birth)
+        return bool(verified) and bool(user_info)
+    except Exception:
+        return False
+ 
+def insert_init_info(user_id, name, birth):
+    try:
+        verified = crud_update_verified(user_id)
+        user_info = crud_insert_init_info(user_id, name, birth)
+        return bool(verified) and bool(user_info)
+    except Exception:
+        return False

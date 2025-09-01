@@ -38,7 +38,10 @@ class UserUpdate(BaseModel):
     register_tag : str
     insta_account: Optional[str] = None
     
-
+class InitUserInfo(BaseModel):
+    user_id : int
+    name: str
+    birth: str
 
 
 class TokenRefreshRequest(BaseModel):

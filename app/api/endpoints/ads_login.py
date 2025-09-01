@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
-    TokenRefreshRequest, TokenRefreshResponse
+    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo
 )
 from jose import jwt, ExpiredSignatureError, JWTError
 
@@ -21,7 +22,14 @@ from app.service.ads_login import (
     get_user_by_id as service_get_user_by_id,
     update_user as service_update_user,
     token_refresh as service_token_refresh,
-    update_device_token as service_update_device_token
+    update_device_token as service_update_device_token,
+    insert_init_info as service_insert_init_info,
+    update_init_info as service_update_init_info,
+
+)
+
+from app.service.ads_app import (
+    get_user_profile as service_get_user_profile,
 )
 
 
@@ -223,3 +231,27 @@ def update_user_store_info(request: UserUpdate):
         "success": success,  # 성공 여부
         "message": "유저 정보가 업데이트 되었습니다." if success else "유저 정보 업데이트에 실패했습니다."
     }
+
+# 본인인증 후 user_info 저장/수정
+@router.post("/update/init/info")
+def update_init_info(request: InitUserInfo):
+    user_id = request.user_id
+    name = request.name
+    birth = request.birth
+
+    try:
+        exists = service_get_user_profile(user_id)
+
+        if exists:
+            success = service_update_init_info(user_id, name, birth)
+        else:
+            success = service_insert_init_info(user_id, name, birth)
+        return JSONResponse(content={
+            "success": success
+        })
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_msg)
