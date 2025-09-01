@@ -205,7 +205,11 @@ def generate_template(request: AutoAppMain):
                 output_images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
 
         except Exception as e:
-            print(f"Error occurred: {e}, 이미지 생성 오류")
+            # print(f"Error occurred: {e}, 이미지 생성 오류")
+            raise HTTPException(
+                status_code=500,
+                detail=f"이미지 생성 오류: {str(e)}"
+            )
 
         # 인스타 문구 테스트
         try:
@@ -557,7 +561,10 @@ def generate_template_regen(request: AutoAppRegen):
                 output_images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
 
         except Exception as e:
-            print(f"Error occurred: {e}, 이미지 생성 오류")
+            raise HTTPException(
+                status_code=500,
+                detail=f"이미지 생성 오류: {str(e)}"
+            )
 
         # 인스타 문구 테스트
         try:
@@ -1059,7 +1066,10 @@ def generate_template_manual(request : ManualApp):
                 output_images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
 
         except Exception as e:
-            print(f"Error occurred: {e}, 이미지 생성 오류")
+            raise HTTPException(
+                status_code=500,
+                detail=f"이미지 생성 오류: {str(e)}"
+            )
 
         # 인스타 문구 테스트
         try:
@@ -1237,7 +1247,10 @@ def generate_template_event(request : ManualApp):
                 output_images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
 
         except Exception as e:
-            print(f"Error occurred: {e}, 이미지 생성 오류")
+            raise HTTPException(
+                status_code=500,
+                detail=f"이미지 생성 오류: {str(e)}"
+            )
 
         # 인스타 문구 테스트
         try:
