@@ -30,7 +30,7 @@ async def check_business_regist(
     file: UploadFile = File(...),
     user_id: int = Form(...), 
     bs_name: str = Form(...),
-    bs_number: int = Form(...),
+    bs_number: str = Form(...),
 ):
     # (선택) 타입 체크
     if file.content_type not in {

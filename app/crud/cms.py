@@ -23,14 +23,13 @@ def insert_business_verification(
 ) -> int:
     conn = None
     cursor = None
-    bs_number = str(bs_number)
     try:
         conn = get_re_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         sql = """
         INSERT INTO business_verification
-            (user_id, bs_name, bs_number, original_filename, saved_filename, saved_path, content_type, size_bytes, status, created_at)
+            (user_id, business_name, business_number, original_filename, saved_filename, saved_path, content_type, size_bytes, status, created_at)
         VALUES
             (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', NOW())
         """
@@ -106,7 +105,7 @@ def cms_list_verifications(
 
         # total
         sql_total = f"SELECT COUNT(*) AS cnt FROM business_verification bv WHERE {where_sql}"
-        print("SQL TOTAL:", cur.mogrify(sql_total, params))
+        # print("SQL TOTAL:", cur.mogrify(sql_total, params))
         cur.execute(sql_total, params)
         total = cur.fetchone()["cnt"]
 
