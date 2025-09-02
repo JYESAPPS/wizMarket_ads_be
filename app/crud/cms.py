@@ -112,7 +112,7 @@ def cms_list_verifications(
         # items
         sql_items = f"""
             SELECT
-              bv.id, bv.user_id, bv.original_filename, bv.saved_filename, bv.saved_path,
+              bv.id, bv.user_id, bv.business_name, bv.business_number, bv.original_filename, bv.saved_filename, bv.saved_path,
               bv.content_type, bv.size_bytes, bv.status, bv.notes, bv.reviewer_id,
               DATE_FORMAT(bv.created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS created_at,
               IFNULL(DATE_FORMAT(bv.reviewed_at, '%%Y-%%m-%%d %%H:%%i:%%s'), NULL) AS reviewed_at

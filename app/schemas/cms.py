@@ -5,6 +5,8 @@ from pydantic import BaseModel
 class BVItem(BaseModel):
     id: int
     user_id: int
+    business_name: str
+    business_number: str
     original_filename: str
     saved_filename: str
     saved_path: str
