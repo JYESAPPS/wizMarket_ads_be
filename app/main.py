@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import (
-    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms
+    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms, help
 )
 from app.api.endpoints import webhook
 
@@ -77,6 +77,7 @@ app.include_router(ads_reserve.router, prefix="/reserve")
 app.include_router(ads_faq.router, prefix="/faq")
 app.include_router(cms.router, prefix="/cms")
 app.include_router(webhook.router, prefix="/ad")
+app.include_router(help.router, prefix="/help")
 
 if __name__ == "__main__":
     import uvicorn
