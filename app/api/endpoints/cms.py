@@ -5,16 +5,18 @@ from datetime import datetime
 import mimetypes
 from typing import Optional, Dict, Any, List
 from fastapi import Form, Response
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request, status
 from pathlib import Path
 from uuid import uuid4
 from fastapi.responses import FileResponse
-from app.schemas.cms import BVItem, BVListResponse
+from app.schemas.cms import BVItem, BVListResponse, BVApproveResponse, BVRejectRequest
 from fastapi import Query
 
 from app.service.cms import (
     insert_business_verification as service_insert_business_verification,
-    cms_list_verifications as service_cms_list_verifications
+    cms_list_verifications as service_cms_list_verifications,
+    cms_approve_verification as service_cms_approve_verification,
+    cms_reject_verification as service_cms_reject_verification,
 )
 
 router = APIRouter()
@@ -99,18 +101,33 @@ def cms_list_verifications(
         page_size=page_size,
     )
 
-@router.get("/check/business/file/{saved_name}")
-def get_business_file(saved_name: str):
-    # 경로 역참조 방지
-    name = Path(saved_name).name
-    path = UPLOAD_DIR / name
-    if not path.exists() or not path.is_file():
-        raise HTTPException(status_code=404, detail="파일이 없습니다.")
-    content_type, _ = mimetypes.guess_type(path.name)
-    return FileResponse(
-        path,
-        media_type=content_type or "application/octet-stream",
-        filename=path.name
-    )
+
+
+
+@router.post("/verification/approve/{verification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cms_approve_verification(
+    request: Request,
+    verification_id: int,
+):
+    """
+    관리자 전용 사업자등록증 승인
+    """
+    service_cms_approve_verification(verification_id)
+
+
+
+@router.post("/verification/reject/{verification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cms_reject_verification(
+    request: Request,
+    verification_id: int,
+    body: BVRejectRequest,
+):
+    """
+    관리자 전용 사업자등록증 반려
+    """
+    service_cms_reject_verification(verification_id, body.notes)
+
+
+
 
 

@@ -6,6 +6,7 @@ from typing import List
 import pymysql
 import logging
 from typing import Optional, Tuple, List, Dict, Any
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +128,65 @@ def cms_list_verifications(
 
         return total, items
 
+    finally:
+        close_cursor(cur)
+        close_connection(conn)
+
+def cms_approve_verification(id: int) -> int:
+    """
+    returns: affected row count (1이면 승인 성공, 0이면 이미 처리되었거나 없음)
+    """
+    conn = get_re_db_connection()
+    cur = conn.cursor()  # DictCursor 불필요: 반환 안 씀
+    try:
+        now = datetime.utcnow()
+        sql = """
+            UPDATE business_verification
+               SET status='approved',
+                   reviewer_id=1,
+                   reviewed_at=%s
+             WHERE id=%s
+               AND status='pending'
+        """
+        cur.execute(sql, (now, id))
+        affected = cur.rowcount
+        commit(conn)
+        return affected
+    except Exception:
+        rollback(conn)
+        raise
+    finally:
+        close_cursor(cur)
+        close_connection(conn)
+
+
+def cms_reject_verification(id : int, notes: Optional[str]) -> int:
+    """
+    returns: affected row count (1=성공, 0=이미 처리/없음)
+    """
+    conn = get_re_db_connection()
+    cur = conn.cursor()  # DictCursor 불필요(반환값 안 씀)
+    try:
+        now = datetime.utcnow()
+        reason = (notes or "").strip() or None
+        if reason and len(reason) > 255:
+            reason = reason[:255]
+
+        sql = """
+            UPDATE business_verification
+               SET status='rejected',
+                   notes=%s,
+                   reviewed_at=%s
+             WHERE id=%s
+               AND status='pending'
+        """
+        cur.execute(sql, (reason, now, id))
+        affected = cur.rowcount
+        commit(conn)
+        return affected
+    except Exception:
+        rollback(conn)
+        raise
     finally:
         close_cursor(cur)
         close_connection(conn)

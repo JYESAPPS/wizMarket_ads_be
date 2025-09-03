@@ -1,9 +1,11 @@
 from app.crud.cms import (
     insert_business_verification as crud_insert_business_verification,
-    cms_list_verifications as crud_cms_list_verifications
+    cms_list_verifications as crud_cms_list_verifications,
+    cms_approve_verification as crud_cms_approve_verification,
+    cms_reject_verification as crud_cms_reject_verification,
 )
 from typing import Optional, Dict, Any
-
+from fastapi import HTTPException, status
 
 # 사업자 등록증 제출
 def insert_business_verification(
@@ -60,3 +62,28 @@ def cms_list_verifications(
         "total": total,
         "items": items,
     }
+
+
+def cms_approve_verification(id : int) -> None:
+    affected = crud_cms_approve_verification(id)
+    if affected == 0:
+        # 이미 approved/rejected이거나 id가 없음 — 프론트는 alert(detail) 사용
+        # 필요 시 404/409를 구분하고 싶다면 여기서 한번 더 SELECT 하거나 메시지 바꾸기
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="이미 처리되었거나 존재하지 않는 항목입니다."
+        )
+    # 성공 시 반환 없음 (204)
+
+
+
+def cms_reject_verification(id: int, notes: str | None) -> None:
+    affected = crud_cms_reject_verification(id, notes)
+    if affected == 0:
+        # 이미 처리됐거나 없는 항목
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="이미 처리되었거나 존재하지 않는 항목입니다."
+        )
+    # 성공 시 바디 없이 204
+
