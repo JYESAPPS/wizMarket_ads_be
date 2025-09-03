@@ -30,9 +30,11 @@ def get_help_detail(help_id: int):
 # 상태 변경
 @router.patch("/{help_id}/status", response_model=HelpOut)
 def patch_help_status(help_id: int, payload: HelpStatusUpdate = Body(...)):
-    if payload.status not in ("pending", "answered", "closed"):
+    answer = (payload.answer or "").strip()
+    status = "answered" if answer else payload.status
+    if status not in ("pending", "answered", "closed"):
         raise HTTPException(status_code=400, detail="invalid status")
-    row = crud_update_help_status(help_id, payload.status)
+    row = crud_update_help_status(help_id, status, answer)
     if not row:
         raise HTTPException(status_code=404, detail="not found")
     return row

@@ -9,20 +9,22 @@ from app.schemas.help import HelpCreate, HelpOut, HelpStatusUpdate
 def list_help(status: Optional[str], limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
     sql_all = """
         SELECT id, user_id, name, email, phone, category, content,
-               attachment1, attachment2, attachment3,
-               status, consent_personal, created_at, updated_at
-          FROM help
-         ORDER BY created_at DESC
-         LIMIT %s OFFSET %s
+                attachment1, attachment2, attachment3,
+                status, consent_personal, answer, answered_at,
+                created_at, updated_at
+        FROM help
+        ORDER BY created_at DESC
+        LIMIT %s OFFSET %s
     """
     sql_by_status = """
         SELECT id, user_id, name, email, phone, category, content,
-               attachment1, attachment2, attachment3,
-               status, consent_personal, created_at, updated_at
-          FROM help
-         WHERE status = %s
-         ORDER BY created_at DESC
-         LIMIT %s OFFSET %s
+                attachment1, attachment2, attachment3,
+                status, consent_personal, answer, answered_at,
+                created_at, updated_at
+        FROM help
+        WHERE status = %s
+        ORDER BY created_at DESC
+        LIMIT %s OFFSET %s
     """
     conn = get_re_db_connection()  # ← 통일
     cur = None
@@ -43,7 +45,8 @@ def get_help(help_id: int) -> Optional[Dict[str, Any]]:
     sql = """
         SELECT id, user_id, name, email, phone, category, content,
                attachment1, attachment2, attachment3,
-               status, consent_personal, created_at, updated_at
+               status, consent_personal, answer, answered_at,
+               created_at, updated_at
           FROM help
          WHERE id = %s
          LIMIT 1
@@ -74,7 +77,8 @@ def insert_help(
     sql_sel = """
         SELECT id, user_id, name, email, phone, category, content,
                attachment1, attachment2, attachment3,
-               status, created_at, updated_at
+               status, consent_personal, answer, answered_at,
+               created_at, updated_at
           FROM help
          WHERE id = %s
          LIMIT 1
@@ -117,13 +121,25 @@ def insert_help(
         close_connection(conn)
 
 # 상태 변경
-def update_help_status(help_id: int, status: str) -> Optional[Dict[str, Any]]:
-    sql_upd = "UPDATE help SET status = %s WHERE id = %s"
-    conn = get_re_db_connection()  # ← 통일
+def update_help_status(help_id: int, status: str, answer: Optional[str] = None):
+    conn = get_re_db_connection()
     cur = None
+    sql = """
+    UPDATE help
+    SET
+        status = %s,
+        answer = CASE WHEN %s = 'answered' THEN %s
+                      WHEN %s = 'pending'  THEN NULL
+                      ELSE answer END,
+        answered_at = CASE WHEN %s = 'answered' THEN NOW()
+                           WHEN %s = 'pending'  THEN NULL
+                           ELSE answered_at END,
+        updated_at = NOW()
+    WHERE id = %s
+    """
     try:
         cur = conn.cursor()
-        cur.execute(sql_upd, (status, help_id))
+        cur.execute(sql, (status, status, answer, status, status, status, help_id))
         if cur.rowcount == 0:
             rollback(conn)
             return None

@@ -13,6 +13,7 @@ class HelpCreate(BaseModel):
 
 class HelpStatusUpdate(BaseModel):
     status: Literal["pending", "answered", "closed"]
+    answer: Optional[str] = None
 
 class HelpOut(BaseModel):
     id: int
@@ -22,6 +23,8 @@ class HelpOut(BaseModel):
     phone: Optional[str] = None        # DB가 NULL일 수 있으므로 Optional
     category: str
     content: str
+    answer: Optional[str] = None
+    answered_at: Optional[datetime] = None
     attachment1: Optional[str] = None
     attachment2: Optional[str] = None
     attachment3: Optional[str] = None
