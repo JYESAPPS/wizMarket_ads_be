@@ -5,6 +5,9 @@ class UserRegisterRequest(BaseModel):
     email: str
     temp_pw: str
 
+class StoreMatch(BaseModel):
+    store_name: str
+    road_name: str
 
 class ImageListRequest(BaseModel):
     categoryId : int
