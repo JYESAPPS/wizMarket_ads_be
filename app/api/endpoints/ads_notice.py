@@ -1,9 +1,10 @@
 from fastapi import (
-    APIRouter, UploadFile, File, Form, HTTPException, status
+    APIRouter, UploadFile, File, Form, HTTPException, status, Query, Request
 )
 import logging
 
 from app.service.ads_notice import (
+    save_notice_image as service_save_notice_image,
     get_notice as service_get_notice,
     create_notice as service_create_notice,
     update_notice as service_update_notice,
@@ -26,27 +27,8 @@ logger = logging.getLogger(__name__)
 
 # 공지사항 목록 가져오기
 @router.get("/get/notice")
-def get_notice():
-    try:
-        notice = service_get_notice()
-
-        # JSON 형태로 반환
-        return notice
-
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-    
-
-# 공지사항 등록
-@router.post("/create/notice", status_code=201)
-def create_notice(request: AdsNoticeCreateRequest):
-    try:
-        service_create_notice(request.notice_title, request.notice_content)
-        return {"success": True, "message": "공지사항이 등록되었습니다."}
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
+def get_notice(request: Request):
+    return service_get_notice(request=request)    
 
 # 공지사항 단건 가져오기
 @router.get("/get/notice/{notice_no}")
@@ -60,17 +42,54 @@ def get_notice_by_id(notice_no: int):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}  
+
+# 공지사항 등록
+@router.post("/create/notice", status_code=201)
+async def create_notice(
+    notice_post: str = Form("Y"),
+    notice_title: str = Form(...),
+    notice_content: str = Form(...),
+    notice_file: UploadFile | None = File(None),
+):
+    try:
+        path = await service_save_notice_image(notice_file)
+        service_create_notice(notice_post, notice_title, notice_content, path)
+        return {"success": True, "message": "공지사항이 등록되었습니다."}
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
         
 # 공지사항 수정
-@router.post("/edit/notice/{notice_id}", status_code=201)
-def update_notice(request: AdsNoticeUpdateRequest):
+@router.post("/edit/notice/{notice_no}", status_code=200)
+async def update_notice(
+    notice_no: int,
+    notice_post: str = Form("Y"),
+    notice_title: str = Form(...),
+    notice_content: str = Form(...),
+    notice_file: UploadFile | None = File(None),
+    remove_file: bool = Form(False),
+):
     try:
-        service_update_notice(request.notice_no,  request.notice_title, request.notice_content)
+        path = await service_save_notice_image(notice_file)
+        service_update_notice(notice_no, notice_post, notice_title, notice_content, new_path=path, remove_file=remove_file)
         return {"success": True, "message": "공지사항이 수정되었습니다."}
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
-    
+
+# 파일 교체 — 업로드하면 기존 파일은 서버에서 안전 삭제 후 교체
+# @router.post("/edit/notice/{notice_no}/file", status_code=200)
+# async def replace_notice_file(notice_no: int, notice_file: UploadFile = File(...)):
+#     new_path = await service_save_notice_image(notice_file)  # 안전 저장(확장/용량/검증)
+#     service_replace_notice_file(notice_no, new_path) # DB 업데이트 + 기존 파일 삭제
+#     return {"success": True, "path": new_path}
+
+# # 파일 삭제 — DB NOTICE_FILE = NULL + 기존 파일 삭제
+# @router.delete("/edit/notice/{notice_no}/file", status_code=200)
+# def delete_notice_file(notice_no: int):
+#     service_delete_notice_file(notice_no)
+#     return {"success": True, "message": "첨부파일이 삭제되었습니다."}
+
 # 공지사항 삭제
 @router.post("/delete/notice/{notice_no}", status_code=201)
 def delete_notice(notice_no: int):

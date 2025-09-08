@@ -3,67 +3,60 @@ from app.db.connect import (
 )
 from fastapi import HTTPException
 from app.schemas.ads_notice import AdsNotice
-from typing import List
+from typing import List, Optional
 import pymysql
 import logging
 
 logger = logging.getLogger(__name__)
 
-def get_notice() -> List[AdsNotice]:
+def get_notice(include_hidden: bool = False):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
 
     try:
-        if connection.open:
-            select_query = """
-                SELECT 
-                    NOTICE_NO, 
-                    NOTICE_TITLE,
-                    NOTICE_CONTENT,
-                    CREATED_AT
-                FROM NOTICE
-                ORDER BY CREATED_AT DESC;
-            """
-            cursor.execute(select_query)
-            rows = cursor.fetchall()
+        where = "" if include_hidden else "WHERE NOTICE_POST = 'Y'"
+        select_query = f"""
+            SELECT 
+                NOTICE_NO, NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT,
+                NOTICE_FILE, CREATED_AT, UPDATED_AT
+            FROM NOTICE
+            {where}
+            ORDER BY CREATED_AT DESC;
+        """
+        cursor.execute(select_query)
+        rows = cursor.fetchall()
 
-            if not rows:
-                return []
-
-            return [
-                AdsNotice(
-                    notice_no=row["NOTICE_NO"],
-                    notice_title=row["NOTICE_TITLE"],
-                    notice_content=row["NOTICE_CONTENT"],
-                    created_at=row["CREATED_AT"],
-                ) for row in rows
-            ]
+        return [
+            AdsNotice(
+                notice_no=row["NOTICE_NO"],
+                notice_post=row["NOTICE_POST"],
+                notice_title=row["NOTICE_TITLE"],
+                notice_content=row["NOTICE_CONTENT"],
+                notice_file=row["NOTICE_FILE"],
+                created_at=row["CREATED_AT"],
+                updated_at=row["UPDATED_AT"],
+            ) for row in rows
+        ]
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
         raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
-    except Exception as e:
-        logger.error(f"Unexpected Error in get_notice: {e}")
-        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
     finally:
         if cursor:
             cursor.close()
-        if connection:
-            connection.close()
 
-
-def create_notice(notice_title: str, notice_content: str):
+def create_notice(notice_post: str, notice_title: str, notice_content: str, notice_file: Optional[str] = None):
     connection = get_re_db_connection()
 
     try:
         cursor = connection.cursor()
 
         insert_query = """
-            INSERT INTO NOTICE (NOTICE_TITLE, NOTICE_CONTENT)
-            VALUES (%s, %s)
+            INSERT INTO NOTICE (NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE)
+            VALUES (%s, %s, %s, %s)
         """
 
-        cursor.execute(insert_query, (notice_title, notice_content))
+        cursor.execute(insert_query, (notice_post or "Y", notice_title, notice_content, notice_file))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:
@@ -75,7 +68,35 @@ def create_notice(notice_title: str, notice_content: str):
         close_cursor(cursor)
         close_connection(connection)
 
-def update_notice(notice_no: int, notice_title: str, notice_content: str):
+def update_notice_set_file(notice_no, path: str):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE NOTICE
+                SET NOTICE_FILE=%s, UPDATED_AT=NOW()
+                WHERE NOTICE_NO=%s
+            """
+            cursor.execute(sql, (path, notice_no))
+        commit(connection)
+    finally:
+        close_connection(connection)
+
+def update_notice_clear_file(notice_no):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE NOTICE
+                SET NOTICE_FILE=NULL, UPDATED_AT=NOW()
+                WHERE NOTICE_NO=%s
+            """
+            cursor.execute(sql, (notice_no,))
+        commit(connection)
+    finally:
+        close_connection(connection)
+
+def update_notice(notice_no, notice_post, notice_title, notice_content):
     connection = get_re_db_connection()
 
     try:
@@ -83,12 +104,14 @@ def update_notice(notice_no: int, notice_title: str, notice_content: str):
 
         update_query = """
             UPDATE NOTICE
-            SET NOTICE_TITLE = %s,
-                NOTICE_CONTENT = %s
+            SET NOTICE_POST = %s,
+                NOTICE_TITLE = %s,
+                NOTICE_CONTENT = %s,
+                UPDATED_AT = NOW()
             WHERE NOTICE_NO = %s
         """
 
-        cursor.execute(update_query, (notice_title, notice_content, notice_no))
+        cursor.execute(update_query, (notice_post or "Y", notice_title, notice_content, notice_no))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:

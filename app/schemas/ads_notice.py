@@ -1,24 +1,32 @@
+from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
 
 class AdsNotice(BaseModel):
     notice_no: int
+    notice_post: str = "Y"
     notice_title: str
     notice_content: str
-    created_at: datetime  
+    notice_file: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
 
 
 class AdsNoticeCreateRequest(BaseModel):
+    notice_post: str = "Y"
     notice_title: str
     notice_content: str
 
 class AdsNoticeUpdateRequest(BaseModel):
     notice_no: int
+    notice_post: str = "Y"
     notice_title: str
     notice_content: str
+    notice_file: Optional[str] = None
+    updated_at: datetime
 
 class AdsNoticeDeleteRequest(BaseModel):
     notice_no: int
