@@ -425,7 +425,7 @@ def insert_user_custom_menu(menu: str, store_business_number: str) -> int:
 
 
 def update_register_tag(user_id: int, register_tag: str) -> bool:
-    conn = get_db_connection()   # ✅ PRIMARY DB
+    conn = get_re_db_connection()   # ✅ PRIMARY DB
     try:
         with conn.cursor() as cur:
             sql = """

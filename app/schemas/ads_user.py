@@ -9,6 +9,13 @@ class StoreMatch(BaseModel):
     store_name: str
     road_name: str
 
+class StoreAddInfo(BaseModel):
+    user_id: int
+    business_name: str
+    business_number: str
+    register_tag: str
+    store_business_number: str
+
 class ImageListRequest(BaseModel):
     categoryId : int
 

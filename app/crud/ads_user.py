@@ -1,8 +1,11 @@
 import pymysql
+import logging
+from fastapi import HTTPException
 from app.db.connect import (
     get_db_connection, commit, close_connection, rollback, close_cursor, get_re_db_connection
 )
 
+logger = logging.getLogger(__name__)
 
 def check_user_id(user_id: str):
     try:
@@ -67,8 +70,8 @@ def get_store(store_name, road_name):
 
         select_query = f"""
             SELECT
-                STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME, BIZ_MAIN_CATEGORY_ID, 
-                BIZ_SUB_CATEGORY_ID, BIZ_DETAIL_CATEGORY_REP_NAME
+                STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME, FLOOR_INFO, 
+                BIZ_MAIN_CATEGORY_ID, BIZ_SUB_CATEGORY_ID, BIZ_DETAIL_CATEGORY_REP_NAME
             FROM REPORT
             WHERE {" AND ".join(where)}
             ORDER BY STORE_NAME ASC
@@ -81,4 +84,72 @@ def get_store(store_name, road_name):
     finally:
         if cursor:
             cursor.close()
+        connection.close()
+
+
+# business_verification에 대표자, 사업자등록번호 추가
+def insert_business_info(
+        user_id,
+        business_name,
+        business_number
+) -> int:
+    conn = get_re_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    try:
+        sql = """
+        INSERT INTO business_verification
+            (user_id, business_name, business_number, status, created_at)
+        VALUES
+            (%s, %s, %s, 'pending', NOW())
+        """
+        cursor.execute(sql, (
+            user_id,
+            business_name,
+            business_number,
+        ))
+
+        commit(conn)
+        return True
+
+    except Exception as e:
+        if conn:
+            rollback(conn)
+        logger.error(f"insert_business_verification error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        if cursor:
+            close_cursor(cursor)
+        if conn:
+            close_connection(conn)
+
+# user TB에 store_business_number 업데이트
+def update_user(user_id, store_business_number):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        connection.autocommit(False)
+
+        sql_user = """
+            UPDATE user
+               SET store_business_number = %s,
+                   updated_at = NOW()
+             WHERE user_id = %s
+        """
+        cursor.execute(sql_user, (store_business_number, user_id))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+        
+        connection.commit()
+        return True
+    
+    except Exception as e:
+        connection.rollback()
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
         connection.close()

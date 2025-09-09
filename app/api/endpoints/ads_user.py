@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Request
 from app.schemas.ads_user import (
-    UserRegisterRequest, StoreMatch,
+    UserRegisterRequest, StoreMatch, StoreAddInfo,
 )
 
 from app.service.ads_user import (
     check_user_id as service_check_user_id,
     register_user as service_register_user,
     get_store as service_get_store,
+    register_store_info as service_register_store_info
 )
 
 
@@ -51,4 +52,16 @@ def match_store(request: StoreMatch):
         return store_info
     except Exception as e:
         print(f"중복 검사 오류: {e}")
+        return {"available": False}
+
+
+# 기존 매장 추가 정보 처리
+@router.post("/store/register")
+def register_store_info(request: StoreAddInfo):
+    try: 
+        success = service_register_store_info(request)
+
+        return success
+    except Exception as e:
+        print(f"매장 정보 등록 오류: {e}")
         return {"available": False}
