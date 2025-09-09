@@ -7,6 +7,7 @@ from app.crud.ads_notice import (
     insert_notice_read as crud_insert_notice_read,
     update_notice_set_file as crud_update_notice_set_file,
     update_notice_clear_file as crud_update_notice_clear_file,
+    notice_views as crud_notice_views,
 )
 
 from pathlib import Path
@@ -129,3 +130,15 @@ def insert_notice_read(user_id, notice_no):
     except Exception as e:
         print(f"서비스 오류: {e}")
         return False
+
+class NoticeNotFoundError(Exception):
+    pass
+
+def notice_views(notice_no: int) -> None:
+    """
+    조회수 +1 비즈니스 규칙 적용 지점
+    - 존재하지 않는 notice면 예외
+    """
+    affected = crud_notice_views(notice_no)
+    if affected == 0:
+        raise NoticeNotFoundError()

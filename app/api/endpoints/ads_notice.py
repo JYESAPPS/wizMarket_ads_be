@@ -1,5 +1,5 @@
 from fastapi import (
-    APIRouter, UploadFile, File, Form, HTTPException, status, Query, Request
+    APIRouter, UploadFile, File, Form, HTTPException, status, Query, Request, Response
 )
 import logging
 
@@ -10,7 +10,9 @@ from app.service.ads_notice import (
     update_notice as service_update_notice,
     delete_notice as service_delete_notice,
     get_notice_read as service_get_notice_read,
-    insert_notice_read as service_insert_notice_read
+    insert_notice_read as service_insert_notice_read,
+    notice_views as service_notice_views,
+    NoticeNotFoundError,
 )
 
 from app.schemas.ads_notice import (
@@ -77,19 +79,6 @@ async def update_notice(
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
 
-# 파일 교체 — 업로드하면 기존 파일은 서버에서 안전 삭제 후 교체
-# @router.post("/edit/notice/{notice_no}/file", status_code=200)
-# async def replace_notice_file(notice_no: int, notice_file: UploadFile = File(...)):
-#     new_path = await service_save_notice_image(notice_file)  # 안전 저장(확장/용량/검증)
-#     service_replace_notice_file(notice_no, new_path) # DB 업데이트 + 기존 파일 삭제
-#     return {"success": True, "path": new_path}
-
-# # 파일 삭제 — DB NOTICE_FILE = NULL + 기존 파일 삭제
-# @router.delete("/edit/notice/{notice_no}/file", status_code=200)
-# def delete_notice_file(notice_no: int):
-#     service_delete_notice_file(notice_no)
-#     return {"success": True, "message": "첨부파일이 삭제되었습니다."}
-
 # 공지사항 삭제
 @router.post("/delete/notice/{notice_no}", status_code=201)
 def delete_notice(notice_no: int):
@@ -121,3 +110,13 @@ def insert_notice_read(request: AdsNoticeReadInsertRequest):
     except Exception as e:
         print(f"읽음 처리 오류: {e}")
         return {"success": False, "message": "읽음 처리 중 오류 발생"}
+
+# 공지사항 조회수
+@router.post("/notice/view/{notice_no}", status_code=status.HTTP_204_NO_CONTENT)
+async def notice_views(notice_no: int):
+    try:
+        service_notice_views(notice_no)
+    except NoticeNotFoundError:
+        raise HTTPException(status_code=404, detail="Notice not found")
+    # 데코레이터에 204를 지정했어도, 안전하게 명시 반환
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

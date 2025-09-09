@@ -8,6 +8,7 @@ class AdsNotice(BaseModel):
     notice_title: str
     notice_content: str
     notice_file: Optional[str] = None
+    views: int = 0
     created_at: datetime
     updated_at: datetime | None = None
 

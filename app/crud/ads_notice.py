@@ -18,7 +18,7 @@ def get_notice(include_hidden: bool = False):
         select_query = f"""
             SELECT 
                 NOTICE_NO, NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT,
-                NOTICE_FILE, CREATED_AT, UPDATED_AT
+                NOTICE_FILE, VIEWS, CREATED_AT, UPDATED_AT
             FROM NOTICE
             {where}
             ORDER BY CREATED_AT DESC;
@@ -33,6 +33,7 @@ def get_notice(include_hidden: bool = False):
                 notice_title=row["NOTICE_TITLE"],
                 notice_content=row["NOTICE_CONTENT"],
                 notice_file=row["NOTICE_FILE"],
+                views=row["VIEWS"],
                 created_at=row["CREATED_AT"],
                 updated_at=row["UPDATED_AT"],
             ) for row in rows
@@ -194,3 +195,22 @@ def insert_notice_read(user_id: str, notice_no: int):
                 VALUES (%s, %s, NOW())
             """, (user_id, notice_no))
             connection.commit()
+
+
+def notice_views(notice_no: int) -> int:
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
+        sql = "UPDATE notice SET views = views + 1 WHERE notice_no = %s"
+        cur.execute(sql, (notice_no,))
+        affected = cur.rowcount
+        commit(conn)  # 없다면 conn.commit()
+        return affected
+    except Exception:
+        rollback(conn)  # 없다면 conn.rollback()
+        raise
+    finally:
+        if cur:
+            close_cursor(cur)  # 없다면 cur.close()
+        close_connection(conn)  # 없다면 conn.close()
