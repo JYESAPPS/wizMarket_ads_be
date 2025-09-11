@@ -354,6 +354,16 @@ def select_ai_data(init_info, ai_age, custom_menu):
 
     if not selected:
         selected = [4, 4, 1, 1, 6, 4]
+    
+    if selected[0] > 6 or selected[0] < 1:
+        selected[0] = 1
+
+    if not 1 <= selected[2] <= 3:
+        selected[2] = 1
+    
+    if not 1 <= selected[3] <= 3:
+        selected[3] = 1
+
     init_ai_reco = selected
 
     # design_text = design_map.get(init_ai_reco[0])
