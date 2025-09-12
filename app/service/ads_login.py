@@ -32,7 +32,9 @@ import subprocess
 import json
 import os
 from datetime import date
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def ads_login(email, temp_pw):
     user = crud_ads_login(email, temp_pw)
@@ -97,8 +99,7 @@ def get_naver_user_info(access_token: str) -> dict | None:
     return None
 
 
-
-SECRET_KEY = "your-secret-key"
+secret_key = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # 예: 30일
@@ -109,7 +110,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
 
     
 
@@ -117,7 +118,7 @@ def create_refresh_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
 
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
@@ -158,7 +159,7 @@ def update_user_token(user_id: str, access_token: str, refresh_token: str):
 # JWT 토큰 디코딩
 def decode_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
@@ -171,7 +172,7 @@ def decode_token(token: str):
 # 토큰 갱신
 def token_refresh(refresh_token: str):
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(refresh_token, secret_key, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="토큰에 사용자 정보가 없습니다.")
