@@ -473,6 +473,14 @@ def generate_template_regen(request: AutoAppRegen):
             channel_text = "인스타그램 스토리"
         elif channel == "3":
             channel_text = "인스타그램 피드 게시글"
+        elif channel == "4":
+            channel_text = "블로그"
+        elif channel == "5":
+            channel_text = "문자메시지"
+        elif channel == "6":
+            channel_text = "네이버밴드"
+        elif channel == "7":
+            channel_text = "X(트위터)"
         else :
             channel_text = "네이버 블로그"
 
@@ -570,7 +578,7 @@ def generate_template_regen(request: AutoAppRegen):
         try:
             insta_copyright = ''
             
-            if channel == "3" or channel == "4":
+            if channel == "3" or channel == "4" or channel == "6" or channel == "7":
 
                 copyright_prompt = f'''
                     {store_name} 업체의 {channel_text}을 위한 광고 콘텐츠를 제작하려고 합니다. 
@@ -978,6 +986,15 @@ def generate_template_manual(request : ManualApp):
         elif channel == "블로그":
             channel_text = "4"
             sub_channel = ""
+        elif channel == "문자메시지":
+            channel_text = "5"
+            sub_channel = ""
+        elif channel == "네이버밴드":
+            channel_text = "6"
+            sub_channel = ""
+        elif channel == "X(트위터)":
+            channel_text = "7"
+            sub_channel = ""
         elif sub_channel == "스토리":
             channel_text = "2"
         else:
@@ -1075,7 +1092,7 @@ def generate_template_manual(request : ManualApp):
         try:
             insta_copyright = ''
             
-            if channel_text == "3" or channel_text == "4":
+            if channel_text == "3" or channel_text == "4" or channel_text == "6" or channel_text == "7":
 
                 copyright_prompt = f'''
                     {store_name} 업체의 {channel} {sub_channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 

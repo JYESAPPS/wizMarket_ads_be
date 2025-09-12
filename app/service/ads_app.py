@@ -231,7 +231,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
     try:
         channel = int(channel) 
 
-        if channel in [1, 2]:
+        if channel in [1, 2, 5]:  # 카카오톡, 인스타그램 피드, SMS
             size = "9:16"
             resize_size = (1024, 1792)
         else :
