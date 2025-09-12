@@ -1666,7 +1666,7 @@ async def generate_template_manual_camera(
         # 인스타 문구 처리
         insta_copyright = ''
         detail_content = ''
-        if channel == "인스타그램" or channel == "블로그":
+        if channel == "인스타그램" or channel == "블로그" or channel == "네이버밴드" or channel == "X(트위터)":
             try:
 
                 copyright_prompt = f'''
