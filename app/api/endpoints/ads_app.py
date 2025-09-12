@@ -1184,11 +1184,20 @@ def generate_template_event(request : ManualApp):
         if channel =="카카오톡":
             channel_text = "1"
             sub_channel = ""
-        elif sub_channel == "스토리":
-            channel_text = "2"
         elif channel == "블로그":
             channel_text = "4"
             sub_channel = ""
+        elif channel == "문자메시지":
+            channel_text = "5"
+            sub_channel = ""
+        elif channel == "네이버밴드":
+            channel_text = "6"
+            sub_channel = ""
+        elif channel == "X(트위터)":
+            channel_text = "7"
+            sub_channel = ""
+        elif sub_channel == "스토리":
+            channel_text = "2"
         else:
             channel_text = "3"
 
@@ -1273,7 +1282,7 @@ def generate_template_event(request : ManualApp):
         try:
             insta_copyright = ''
             
-            if channel_text == "3" or channel_text == "4":
+            if channel_text == "3" or channel_text == "4" or channel_text == "6" or channel_text == "7":
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
@@ -1833,7 +1842,7 @@ async def generate_template_event_camera(
         # 인스타 문구 처리
         insta_copyright = ''
         detail_content = ''
-        if channel == "인스타그램" or channel == "블로그":
+        if channel == "인스타그램" or channel == "블로그" or channel == "네이버밴드" or channel == "X(트위터)":
             try:
 
                 copyright_prompt = f'''
