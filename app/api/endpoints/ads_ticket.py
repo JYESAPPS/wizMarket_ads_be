@@ -27,21 +27,21 @@ logger = logging.getLogger(__name__)
 @router.post("/payment")
 def insert_payment(request: List[InsertPayRequest]):  
     # 토큰 구매 100개 제한
-    try:
-        is_exist = service_get_history_100(request[0].user_id)
-        if not is_exist:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "success": False,
-                    "message": "이미 구매하셨습니다.",
-                }
-            )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
-        )  
+    # try:
+    #     is_exist = service_get_history_100(request[0].user_id)
+    #     if not is_exist:
+    #         return JSONResponse(
+    #             status_code=status.HTTP_400_BAD_REQUEST,
+    #             content={
+    #                 "success": False,
+    #                 "message": "이미 구매하셨습니다.",
+    #             }
+    #         )
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
+    #     )  
     # 결제 내역에 추가 로직
     try:
         for each in request:
