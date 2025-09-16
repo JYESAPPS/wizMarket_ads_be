@@ -1,4 +1,4 @@
-from crud.ads_user import (
+from app.crud.ads_user import (
     check_user_id as crud_check_user_id,
     register_user as crud_register_user,
     get_store as crud_get_store,
@@ -6,7 +6,7 @@ from crud.ads_user import (
     update_user as crud_update_user
 )
 
-from crud.ads_app import (
+from app.crud.ads_app import (
     update_register_tag as crud_update_register_tag,
 )
 
