@@ -651,10 +651,8 @@ def generate_template_regen(request: AutoAppRegen):
 @router.post("/auto/app/save")
 def insert_upload_record(request: AutoAppSave):
     try:
-        success = service_insert_upload_record(request)
-        return JSONResponse(content={
-            "success": success
-        })
+        result  = service_insert_upload_record(request)
+        return JSONResponse(content=result)
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex

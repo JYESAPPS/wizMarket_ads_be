@@ -298,12 +298,10 @@ def insert_upload_record(request):
         image_path,
         upload_type
     )
-    return success
+    return {"success": bool(success), "imageUrl": image_path}
 
 # 이미지 파일 저장 및 경로 설정
 def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app/uploads/image/user"):
-    from datetime import datetime
-    import os, base64
 
     # 채널 매핑
     channel_map = {
@@ -333,7 +331,7 @@ def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app
 
     # 리턴용 URL 생성 (로컬 저장 경로 → URL 경로 변환)
     relative_path = file_path.replace("app/", "")  # ex) uploads/image/user/user_1/xxx.png
-    url_path = f"http://221.151.48.225:58002/{relative_path.replace(os.sep, '/')}"
+    url_path = f"http://wizmarket.ai:8000/{relative_path.replace(os.sep, '/')}"
     
     return url_path
 
