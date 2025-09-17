@@ -92,7 +92,7 @@ def insert_business_info(
         user_id,
         business_name,
         business_number
-) -> int:
+):
     conn = get_re_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     

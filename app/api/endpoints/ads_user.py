@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Request
+import os, shutil, tempfile
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi.responses import JSONResponse
+from pathlib import Path
 from app.schemas.ads_user import (
     UserRegisterRequest, StoreMatch, StoreAddInfo,
 )
@@ -7,7 +10,9 @@ from app.service.ads_user import (
     check_user_id as service_check_user_id,
     register_user as service_register_user,
     get_store as service_get_store,
-    register_store_info as service_register_store_info
+    register_store_info as service_register_store_info,
+    read_ocr as service_read_ocr,
+    _extract_biz_fields as service_extract_biz_fields,
 )
 
 
@@ -65,3 +70,34 @@ def register_store_info(request: StoreAddInfo):
     except Exception as e:
         print(f"매장 정보 등록 오류: {e}")
         return {"available": False}
+
+
+# OCR로 사업자등록증에서 정보 뽑기
+@router.post("/store/ocr")
+async def get_ocr(file: UploadFile = File(...)):
+    content = await file.read()
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".pdf"}:
+        raise HTTPException(status_code=400, detail="PDF 또는 이미지 파일만 업로드 가능합니다.")
+        
+    api_key = os.getenv("GOOGLE_OCR_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Missing env GOOGLE_OCR_KEY")
+        
+    try:
+        text = service_read_ocr(
+            file_bytes=content,
+            filename=file.filename or "",
+            api_key=api_key,
+        )
+
+        fields = service_extract_biz_fields(text)
+
+        return JSONResponse(status_code=200, content=fields)
+
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR failed: {e}")
