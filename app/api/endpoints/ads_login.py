@@ -130,6 +130,7 @@ def ads_login_google_route(request: Google):
     provider = "google"
     email = request.email
     google_id = email.split("@", 1)[0]
+    print(email, google_id)
     # user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
     user_id = service_get_user_by_provider(provider, google_id, email)
     user_info = service_get_user_by_id(user_id)
