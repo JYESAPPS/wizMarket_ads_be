@@ -29,6 +29,7 @@ class KaKao(BaseModel):
 
 class Google(BaseModel):
     google_access_token : str
+    email : str
     # device_token : str = None
     # installation_id : str = None
 
