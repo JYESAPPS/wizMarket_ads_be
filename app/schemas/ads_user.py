@@ -36,6 +36,10 @@ class Naver(BaseModel):
     naver_access_token : str
     device_token : str = None
 
+class NaverExchange(BaseModel):
+    code: str = None
+    state: str  = None
+    redirect_uri: str = None
 
 class User(BaseModel):
     access_token : str

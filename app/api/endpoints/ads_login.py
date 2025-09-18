@@ -1,8 +1,9 @@
+import os, requests
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
-    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo
+    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange
 )
 from jose import jwt, ExpiredSignatureError, JWTError
 
@@ -187,6 +188,48 @@ def ads_login_naver_route(request: Naver):
         }
     }
 
+# 네이버 로그인 콜백
+@router.post("/naver/exchange")
+def naver_exchange(request: NaverExchange):
+    print(request)
+    NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
+    NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
+    print("in")
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+        raise HTTPException(500, "naver client env missing")
+
+    # 1) 코드 -> 토큰
+    token_res = requests.post(
+        "https://nid.naver.com/oauth2.0/token",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        data={
+            "grant_type": "authorization_code",
+            "client_id": NAVER_CLIENT_ID,
+            "client_secret": NAVER_CLIENT_SECRET,
+            "code": request.code,
+            "state": request.state or "",
+            "redirect_uri": request.redirect_uri,
+        },
+        timeout=10,
+    )
+    token_json = token_res.json() if token_res.content else {}
+    if token_res.status_code != 200 or "access_token" not in token_json:
+        raise HTTPException(400, f"token_fail_{token_res.status_code}:{token_json.get('error','')}")
+
+    # 2) 프로필 조회
+    me_res = requests.get(
+        "https://openapi.naver.com/v1/nid/me",
+        headers={"Authorization": f"Bearer {token_json['access_token']}"},
+        timeout=10,
+    )
+    me_json = me_res.json() if me_res.content else {}
+    if me_res.status_code != 200 or me_json.get("resultcode") != "00":
+        raise HTTPException(400, f"me_fail_{me_res.status_code}:{me_json.get('message','')}")
+
+    profile = me_json.get("response", {})
+    print(profile)
+    # TODO: 여기서 회원 매핑/가입/로그인 처리 후 JWT 발급 등
+    return {"success": True, "profile": profile}
 
 
 # 자동 로그인 API 엔드포인트
