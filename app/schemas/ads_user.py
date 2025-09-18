@@ -29,8 +29,8 @@ class KaKao(BaseModel):
 
 class Google(BaseModel):
     google_access_token : str
-    device_token : str = None
-    installation_id : str = None
+    # device_token : str = None
+    # installation_id : str = None
 
 class Naver(BaseModel):
     naver_access_token : str

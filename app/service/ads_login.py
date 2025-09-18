@@ -122,7 +122,8 @@ def create_refresh_token(data: dict):
 
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
-def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
+# def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
+def get_user_by_provider(provider: str, provider_id: str, email: str):
     try:
         # 1) 사용자 조회
         user = crud_get_user_by_provider(provider, provider_id)
@@ -137,7 +138,7 @@ def get_user_by_provider(provider: str, provider_id: str, email: str, device_tok
                 raise ValueError(f"지원하지 않는 provider: {provider}")
 
         # 3) 기기 업서트 (installation_id + 최신 토큰)
-        crud_upsert_user_device(user_id=user_id, installation_id=installation_id, device_token=device_token)
+        # crud_upsert_user_device(user_id=user_id, installation_id=installation_id, device_token=device_token)
 
         return user_id
 

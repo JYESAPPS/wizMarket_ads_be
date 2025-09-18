@@ -120,8 +120,9 @@ def ads_login_kakao_route(request: KaKao):
 # 구글 로그인 API 엔드포인트
 @router.post("/login/google")
 def ads_login_google_route(request: Google):
+    print(Google)
     google_info = service_get_google_user_info(request.google_access_token)
-
+    print(google_info)
     if not google_info or "sub" not in google_info:
         raise HTTPException(status_code=401, detail="구글 토큰이 유효하지 않습니다.")
 
@@ -129,7 +130,8 @@ def ads_login_google_route(request: Google):
     email = google_info.get("email")
 
     provider = "google"
-    user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
+    # user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
+    user_id = service_get_user_by_provider(provider, google_id, email)
     user_info = service_get_user_by_id(user_id)
 
     # if request.device_token:
