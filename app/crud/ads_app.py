@@ -125,7 +125,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, register_tag, custom_menu FROM USER_INFO WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, register_tag, custom_menu, insta_account, kakao_account, blog_account, band_account, x_account FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
@@ -228,6 +228,12 @@ def update_user_info(user_id, request):
     gender = request.gender
     phone = request.phone
     register_tag = request.register_tag
+    insta_account = request.insta_account
+    kakao_account = request.kakao_account
+    blog_account = request.blog_account
+    band_account = request.band_account
+    x_account = request.x_account
+    updated_at = datetime.now()
 
     try:
         connection = get_re_db_connection()
@@ -238,10 +244,16 @@ def update_user_info(user_id, request):
                     birth_year = %s,
                     gender = %s,
                     phone = %s,
-                    register_tag = %s
+                    register_tag = %s,
+                    insta_account = %s,
+                    kakao_account = %s,
+                    blog_account = %s,
+                    band_account = %s,
+                    x_account = %s,
+                    updated_at = %s
                 WHERE user_id = %s
             """
-            cursor.execute(sql, (nickname, birth_year, gender, phone, register_tag, user_id))
+            cursor.execute(sql, (nickname, birth_year, gender, phone, register_tag, insta_account, kakao_account, blog_account, band_account, x_account, updated_at, user_id))
 
         connection.commit()
         return True  # ✅ 성공 시 True 반환

@@ -195,6 +195,11 @@ class UserInfoInsert(BaseModel):
     phone: str
     profile_image: str
     custom_menu: str
+    insta_account: Optional[str] = None
+    kakao_account: Optional[str] = None
+    blog_account: Optional[str] = None
+    band_account: Optional[str] = None
+    x_account: Optional[str] = None
 
 class UserInfoUpdate(BaseModel):
     user_id: str
@@ -204,6 +209,11 @@ class UserInfoUpdate(BaseModel):
     phone: str
     profile_image: str
     register_tag: str
+    insta_account: Optional[str] = None
+    kakao_account: Optional[str] = None
+    blog_account: Optional[str] = None
+    band_account: Optional[str] = None
+    x_account: Optional[str] = None
 
 
 class UserRecentRecord(BaseModel):

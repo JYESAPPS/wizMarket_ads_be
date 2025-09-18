@@ -181,20 +181,52 @@ def get_notice_read(user_id):
 
 def insert_notice_read(user_id: str, notice_no: int):
     connection = get_re_db_connection()
-    with connection.cursor() as cursor:
-        # 중복 방지: 이미 존재하면 insert 안 함
-        cursor.execute("""
-            SELECT COUNT(*) FROM NOTICE_READ
-            WHERE user_id = %s AND notice_no = %s
-        """, (user_id, notice_no))
-        count = cursor.fetchone()[0]
+    try:
+        with connection.cursor() as cursor:
+            # 1) 공지 노출 여부 확인
+            cursor.execute("SELECT notice_post FROM NOTICE WHERE notice_no = %s", (notice_no,))
+            row = cursor.fetchone()
+            if not row:
+                return False # 공지 없음
+            if row[0] != 'Y':
+                return True   # 숨김 공지는 기록하지 않음(배지 영향 없음)
 
-        if count == 0:
+            # 2) 중복/경쟁조건 방지: UPSERT
             cursor.execute("""
                 INSERT INTO NOTICE_READ (user_id, notice_no, read_at)
                 VALUES (%s, %s, NOW())
+                ON DUPLICATE KEY UPDATE read_at = NOW()
             """, (user_id, notice_no))
-            connection.commit()
+
+        connection.commit()
+        return True
+    except Exception as e:
+        try:
+            connection.rollback()
+        except:
+            pass
+        print(f"insert_notice_read error: {e}")
+        return False
+    finally:
+        try:
+            connection.close()
+        except:
+            pass
+    # with connection.cursor() as cursor:
+    #     # 중복 방지: 이미 존재하면 insert 안 함
+    #     cursor.execute("""
+    #         SELECT COUNT(*) FROM NOTICE_READ
+    #         WHERE user_id = %s AND notice_no = %s
+    #     """, (user_id, notice_no))
+    #     count = cursor.fetchone()[0]
+
+    #     if count == 0:
+    #         cursor.execute("""
+    #             INSERT INTO NOTICE_READ (user_id, notice_no, read_at)
+    #             VALUES (%s, %s, NOW())
+    #         """, (user_id, notice_no))
+    #         connection.commit()
+
 
 
 def notice_views(notice_no: int) -> int:
