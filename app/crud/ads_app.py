@@ -437,19 +437,20 @@ def insert_user_custom_menu(menu: str, store_business_number: str) -> int:
 
 
 def update_register_tag(user_id: int, register_tag: str) -> bool:
-    conn = get_re_db_connection()   # ✅ PRIMARY DB
+    conn = get_re_db_connection()  # PRIMARY DB
     try:
         with conn.cursor() as cur:
             sql = """
-                UPDATE user_info
-                SET register_tag = %s,
-                    updated_at = NOW()
-                WHERE user_id = %s
+                INSERT INTO user_info (user_id, register_tag, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    register_tag = VALUES(register_tag),
+                    updated_at = VALUES(updated_at)
             """
-            cur.execute(sql, (register_tag, user_id))
+            cur.execute(sql, (user_id, register_tag))
         conn.commit()
         return True
-    except:
+    except Exception:
         conn.rollback()
         raise
     finally:
