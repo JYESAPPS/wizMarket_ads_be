@@ -14,6 +14,8 @@ from app.crud.ads_login import (
     insert_init_info as crud_insert_init_info,
     update_init_info as crud_update_init_info,
     update_verified as crud_update_verified,
+    get_permission_confirmed as crud_get_permission_confirmed,
+    update_permission_confirmed as crud_update_permission_confirmed,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -284,3 +286,10 @@ def insert_init_info(user_id, name, birth):
         return bool(verified) and bool(user_info)
     except Exception:
         return False
+
+
+def get_permission_confirmed(user_id: int):
+    return crud_get_permission_confirmed(user_id)
+
+def update_permission_confirmed(user_id: int):
+    return crud_update_permission_confirmed(user_id)
