@@ -26,6 +26,8 @@ from app.service.ads_login import (
     update_device_token as service_update_device_token,
     insert_init_info as service_insert_init_info,
     update_init_info as service_update_init_info,
+    get_permission_confirmed as service_get_permission_confirmed,
+    update_permission_confirmed as service_update_permission_confirmed,
 
 )
 
@@ -301,3 +303,17 @@ def update_init_info(request: InitUserInfo):
     except Exception as e:
         error_msg = f"Unexpected error while processing request: {str(e)}"
         raise HTTPException(status_code=500, detail=error_msg)
+
+# AdsPermission 페이지 진입 시 호출
+@router.get("/login/permission")
+def get_permission(user_id):
+    val = service_get_permission_confirmed(user_id)
+    return {"permission_confirmed": val}
+
+# AdsPermission 페이지에서 '확인' 눌렀을 때 호출.
+@router.post("/login/permission/confirm")
+def confirm_permission_once(user_id):
+    success = service_update_permission_confirmed(user_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
+    return {"success": success}
