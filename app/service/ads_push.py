@@ -30,38 +30,25 @@ def get_access_token():
         return None
 
 
+FN_BASE = "https://asia-northeast1-wizad-b69ee.cloudfunctions.net"  # 외주 제공
+
 def send_push_fcm_v1(device_token: str, title: str, body: str):
-    # print("푸시 실행")
     try:
-        access_token = get_access_token()
-        if not access_token:
-            return 401, {"error": "Access token is missing"}
+        url = f"{FN_BASE}/sendPush"   # 외주 코드의 path와 동일하게
+        payload = {"token": device_token, "title": title, "body": body}
+        headers = {"Content-Type": "application/json"}
+        # 필요 시 보안 헤더도 추가:
+        # headers["x-webpush-secret"] = os.getenv("WEBPUSH_SECRET", "")
 
-        message = {
-            "message": {
-                "token": device_token,
-                "notification": {
-                    "title": title,
-                    "body": body
-                }
-            }
-        }
+        resp = requests.post(url, json=payload, headers=headers, timeout=10)
+        text = resp.text or ""
+        try:
+            data = resp.json()
+        except Exception:
+            data = {"raw": text[:500]}
 
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json; UTF-8",
-        }
-
-        response = requests.post(
-            FCM_ENDPOINT,
-            headers=headers,
-            data=json.dumps(message)
-        )
-        print(response)
-
-        return response.status_code, response.json()
+        return resp.status_code, data
     except Exception as e:
-        print("❌ FCM 전송 실패:", e)
         return 500, {"error": str(e)}
 
 
