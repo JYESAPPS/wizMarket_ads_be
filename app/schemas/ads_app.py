@@ -111,7 +111,7 @@ class AutoAppSave(BaseModel):
     upload_time : Optional[str]
     user_id : int
     date_range: List[str] 
-    image: str
+    image: str | None = None
     type: str
 
 

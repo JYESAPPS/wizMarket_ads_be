@@ -1,7 +1,8 @@
 from datetime import datetime
 import logging
-import os, asyncio, httpx
+import os, asyncio, httpx, uuid, shutil
 import re
+from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
@@ -13,6 +14,7 @@ from google.genai import types
 import google.auth 
 from google.auth.transport.requests import Request
 from io import BytesIO
+from fastapi import UploadFile, HTTPException
 from app.crud.ads_app import (
     select_random_image as crud_select_random_image,
     get_style_image as crud_get_style_image,
@@ -271,7 +273,7 @@ def get_style_image(request):
     return image_list
 
 # AI 생성 자동 - 저장
-def insert_upload_record(request):
+async def insert_upload_record(request, file: UploadFile | None):
     user_id = request.user_id
     age = request.age
     alert_check = request.alert_check
@@ -283,8 +285,13 @@ def insert_upload_record(request):
     upload_time = request.upload_time
     upload_type = request.type
 
-    image_path = save_base64_image(request.image, request.user_id, request.channel)
+    # 여기서만 분기
+    if file is not None:
+        image_path = save_blob_image(file, user_id, channel)
+    else:
+        image_path = save_base64_image(request.image, user_id, channel)
 
+    # 이후 로직은 그대로
     success = crud_insert_upload_record(
         user_id,
         age,
@@ -300,17 +307,13 @@ def insert_upload_record(request):
     )
     return {"success": bool(success), "imageUrl": image_path}
 
-# 이미지 파일 저장 및 경로 설정
+# 채널 코드 → 이름 매핑 (내부 포함)
+CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog"}
+
+# base64 이미지 파일 저장 및 경로 설정
 def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app/uploads/image/user"):
 
-    # 채널 매핑
-    channel_map = {
-        "1": "kakao",
-        "2": "story",
-        "3": "feed",
-        "4": "blog"
-    }
-    channel_name = channel_map.get(channel_code, "unknown")
+    channel_name = CHANNEL_MAP.get(channel_code, "unknown")
 
     # 저장 디렉토리 생성
     user_folder = f"user_{user_id}"
@@ -335,6 +338,62 @@ def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="app
     
     return url_path
 
+# blob 저장 경로
+def save_blob_image(
+    file: UploadFile,
+    user_id: int,
+    channel_code: str,
+    save_dir: str = "app/uploads/image/user",
+    base_url: str = "http://wizmarket.ai:8000",
+) -> str:
+    if not file:
+        raise HTTPException(status_code=400, detail="file이 없습니다.")
+
+    # 허용 타입/확장자 결정
+    allow = {"image/jpeg": ".jpg", "image/png": ".png"}
+    ext = allow.get(file.content_type)
+    if not ext:
+        # content_type이 비어있으면 파일명 확장자로 보정 시도
+        name = (file.filename or "").lower()
+        if name.endswith(".jpg") or name.endswith(".jpeg"):
+            ext = ".jpg"
+        elif name.endswith(".png"):
+            ext = ".png"
+        else:
+            raise HTTPException(status_code=400, detail="jpeg/png만 허용")
+
+    channel_name = CHANNEL_MAP.get(str(channel_code), "unknown")
+
+    # 저장 경로 준비
+    user_folder = f"user_{user_id}"
+    full_dir = os.path.join(save_dir, user_folder)
+    os.makedirs(full_dir, exist_ok=True)
+
+    # 파일명 생성
+    ts = datetime.now().strftime("%Y%m%d%H%M%S")
+    # unique = uuid.uuid4().hex
+    filename = f"{user_id}_{channel_name}_{ts}{ext}"
+    file_path = os.path.join(full_dir, filename)
+
+    # 스트리밍 저장
+    try:
+        with open(file_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+    finally:
+        try:
+            # UploadFile 닫기 (에러 나도 무시)
+            if hasattr(file, "close"):
+                # FastAPI UploadFile.close는 코루틴일 수도 있음
+                close = file.close()
+                if hasattr(close, "__await__"):
+                    import asyncio
+                    asyncio.create_task(close)  # fire-and-forget
+        except Exception:
+            pass
+
+    # 퍼블릭 URL 생성 (로컬 경로 → URL)
+    relative_path = file_path.replace("app/", "").replace(os.sep, "/")
+    return f"{base_url}/{relative_path}"
 
 # AI 생성 수동 - 이미지 리스트와 추천 값 가져오기
 def get_style_image_ai_reco(request):

@@ -10,16 +10,18 @@ from app.schemas.ads_app import (
 )
 import io
 from fastapi import Request, Body
-from PIL import ImageOps
+from PIL import ImageOps, Image
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ValidationError
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
 from io import BytesIO
+from types import SimpleNamespace
 import base64
-from PIL import Image
 import logging
 import re
+import json
 from app.service.ads_generate import (
     generate_content as service_generate_content,
 )
@@ -649,17 +651,44 @@ def generate_template_regen(request: AutoAppRegen):
 
 # AI 생성 자동 - 저장
 @router.post("/auto/app/save")
-def insert_upload_record(request: AutoAppSave):
+async def insert_upload_record_endpoint(req: Request):
+    ctype = req.headers.get("content-type", "")
     try:
-        result  = service_insert_upload_record(request)
-        return JSONResponse(content=result)
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
+        if ctype.startswith("multipart/form-data"):
+            # Blob 업로드
+            form = await req.form()
+            file = form.get("image")
+            if file is None:
+                raise HTTPException(status_code=400, detail="file 필드가 필요합니다.")
+
+            # 서비스가 기대하는 필드만 만들어 전달 (image=None)
+            data = SimpleNamespace(
+                age=form.get("age"),
+                alert_check=json.loads(form.get("alert_check", "false")),
+                channel=form.get("channel"),
+                repeat=form.get("repeat"),
+                style=form.get("style"),
+                title=form.get("title"),
+                upload_time=form.get("upload_time"),
+                user_id=int(form.get("user_id")),
+                date_range=json.loads(form.get("date_range") or "[]"),
+                image=None,
+                type=form.get("type"),
+            )
+            result = await service_insert_upload_record(data, file=file)
+            return JSONResponse(content=result)
+
+        else:
+            # JSON(Base64) 업로드 (레거시)
+            body = await req.json()
+            data = AutoAppSave(**body)
+            result = await service_insert_upload_record(data, file=None)
+            return JSONResponse(content=result)
+
+    except HTTPException:
+        raise
     except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
 
