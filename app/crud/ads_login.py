@@ -352,11 +352,7 @@ def select_insta_account(store_business_number: str):
 def update_device_token(
     user_id: int,
     device_token: str,
-    android_id: str | None,
     platform: str = "android",
-    app_version: str | None = None,
-    lang: str | None = None,
-    timezone: str | None = None,
 ) -> bool:
     conn = get_re_db_connection()
     cur = conn.cursor()
@@ -365,40 +361,21 @@ def update_device_token(
     try:
         conn.autocommit(False)
 
-        if android_id and android_id.strip():
+
             # ✅ 권장 경로: (user_id, platform, device_fingerprint)로 upsert
-            sql = """
+        sql = """
             INSERT INTO user_device (
-                user_id, platform, device_fingerprint, device_token,
+                user_id, platform, device_token,
                 is_active, last_seen, created_at, updated_at
-            ) VALUES (%s, %s, %s, %s, 1, NOW(), NOW(), NOW())
+            ) VALUES (%s, %s, %s, 1, NOW(), NOW(), NOW())
             ON DUPLICATE KEY UPDATE
                 device_token = VALUES(device_token),
                 is_active    = 1,
                 last_seen    = NOW(),
                 updated_at   = NOW();
             """
-            cur.execute(sql, (user_id, platform, android_id, device_token))
-        else:
-            # ⚠️ ANDROID_ID 없을 때의 완화 처리:
-            # 1) 같은 토큰 레코드가 있으면 갱신
-            sql_update_by_token = """
-                UPDATE user_device
-                   SET is_active = 1,
-                       last_seen = NOW(),
-                       updated_at = NOW()
-                 WHERE user_id = %s AND platform = %s AND device_token = %s
-            """
-            cur.execute(sql_update_by_token, (user_id, platform, device_token))
-            if cur.rowcount == 0:
-                # 2) 없으면 새로 삽입(기기 중복 가능)
-                sql_insert = """
-                    INSERT INTO user_device (
-                        user_id, platform, device_fingerprint, device_token,
-                        is_active, last_seen, created_at, updated_at
-                    ) VALUES (%s, %s, NULL, %s, 1, NOW(), NOW(), NOW())
-                """
-                cur.execute(sql_insert, (user_id, platform, device_token))
+        cur.execute(sql, (user_id, platform, device_token))
+
 
         conn.commit()
         return True

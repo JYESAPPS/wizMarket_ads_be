@@ -205,8 +205,8 @@ def token_refresh(refresh_token: str):
 
 
 # 디바이스 토큰 항상 업데이트
-def update_device_token(user_id: int, device_token: str, android_id: str):
-    return crud_update_device_token(user_id, device_token, android_id)
+def update_device_token(user_id: int, device_token: str):
+    return crud_update_device_token(user_id, device_token)
 
 
 # 유저 ID로 유저 정보 조회

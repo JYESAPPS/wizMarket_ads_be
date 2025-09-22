@@ -15,6 +15,7 @@ class StoreAddInfo(BaseModel):
     business_number: str
     register_tag: str
     store_business_number: str
+    road_name: str
 
 class ImageListRequest(BaseModel):
     categoryId : int
@@ -30,7 +31,7 @@ class KaKao(BaseModel):
 class Google(BaseModel):
     google_access_token : str
     email : str
-    # device_token : str = None
+    device_token : str = None
     # installation_id : str = None
 
 class Naver(BaseModel):
