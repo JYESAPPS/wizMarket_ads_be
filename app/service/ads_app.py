@@ -33,6 +33,7 @@ from app.crud.ads_app import (
     update_user_custom_menu as crud_update_user_custom_menu,
     insert_user_custom_menu as crud_insert_user_custom_menu,
     user_info_exists_by_sbn as crud_user_info_exists_by_sbn,
+    upsert_user_info as crud_upsert_user_info,
 )
 from app.crud.ads import (
     get_category_id as crud_get_category_id
@@ -485,7 +486,8 @@ def update_user_info(user_id, request):
                 f.write(image_data)
 
         # ✅ 사용자 정보 DB 업데이트
-        success = crud_update_user_info(user_id, request)
+        # success = crud_update_user_info(user_id, request)
+        success = crud_upsert_user_info(user_id, request)
         return success
 
     except Exception:

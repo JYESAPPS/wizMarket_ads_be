@@ -1447,27 +1447,29 @@ def get_user_info(request : UserInfo):
 # 유저 정보 업데이트
 @router.post("/update/user/info")
 def update_user_info(request : UserInfoUpdate):
-    try:
-        user_id = int(request.user_id)
+    ok = service_update_user_info(request.user_id, request)
+    return JSONResponse({"success": ok}, status_code=200 if ok else 500)
+    # try:
+    #     user_id = int(request.user_id)
 
-        exists = service_get_user_profile(user_id)
+    #     exists = service_get_user_profile(user_id)
 
-        if exists:
-            success = service_update_user_info(user_id, request)
-        else:
-            success = service_insert_user_info(user_id, request)
+    #     if exists:
+    #         success = service_update_user_info(user_id, request)
+    #     else:
+    #         success = service_insert_user_info(user_id, request)
 
-        return JSONResponse(content={
-            "success": success
-        })
+    #     return JSONResponse(content={
+    #         "success": success
+    #     })
 
-    except HTTPException as http_ex:
-        logger.error(f"HTTP error occurred: {http_ex.detail}")
-        raise http_ex
-    except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
+    # except HTTPException as http_ex:
+    #     logger.error(f"HTTP error occurred: {http_ex.detail}")
+    #     raise http_ex
+    # except Exception as e:
+    #     error_msg = f"Unexpected error while processing request: {str(e)}"
+    #     logger.error(error_msg)
+    #     raise HTTPException(status_code=500, detail=error_msg)
     
 
 # 유저 최근 포스팅 기록 3개 가져오기

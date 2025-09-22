@@ -125,7 +125,7 @@ def get_user_info(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용
-            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, register_tag, custom_menu, insta_account, kakao_account, blog_account, band_account, x_account FROM USER_INFO WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT nickname, phone, gender, birth_year, profile_image, register_tag, custom_menu, insta_account, kakao_account, blog_account, band_account, x_account, address FROM USER_INFO WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
 
         if not row:
@@ -456,3 +456,81 @@ def update_register_tag(user_id: int, register_tag: str) -> bool:
     finally:
         conn.close()
 
+def upsert_user_info(user_id, request):
+    # user_id가 str이어도 캐스팅만 해주면 됨
+    uid = int(request.user_id)
+
+    # 필요 필드만 꺼냄 (없으면 None)
+    g = lambda k: getattr(request, k, None)
+    nickname, phone, gender, birth_year = g("nickname"), g("phone"), g("gender"), g("birth_year")
+    register_tag = g("register_tag")
+    insta, kakao, blog, band, xacc = g("insta_account"), g("kakao_account"), g("blog_account"), g("band_account"), g("x_account")
+    marketing_agree = g("marketing_agree")
+    if marketing_agree in (None, "", " "):
+        marketing_agree = 0
+
+    verified = g("verified")
+    if verified in (None, "", " "):
+        verified = 0
+
+    name = g("name")
+
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            sql = """
+            INSERT INTO wiz_report.USER_INFO (
+              user_id, nickname, phone, gender, birth_year,
+              profile_image, marketing_agree, created_at, updated_at,
+              register_tag, custom_menu, insta_account, kakao_account,
+              blog_account, band_account, x_account, verified, name, address
+            )
+            VALUES (
+              %s, %s, %s, %s, %s,
+              NULL, %s, NOW(), NULL,
+              %s, NULL, %s, %s,
+              %s, %s, %s, %s, %s,
+              (SELECT ls.ROAD_NAME_ADDRESS
+                 FROM test.local_store ls
+                WHERE ls.STORE_BUSINESS_NUMBER = (
+                      SELECT u.STORE_BUSINESS_NUMBER
+                        FROM wiz_report.user u
+                       WHERE u.user_id = %s
+                       LIMIT 1
+                )
+                LIMIT 1
+              )
+            )
+            ON DUPLICATE KEY UPDATE
+              nickname        = VALUES(nickname),
+              phone           = VALUES(phone),
+              gender          = VALUES(gender),
+              birth_year      = VALUES(birth_year),
+              register_tag    = VALUES(register_tag),
+              custom_menu     = VALUES(custom_menu),
+              insta_account   = VALUES(insta_account),
+              kakao_account   = VALUES(kakao_account),
+              blog_account    = VALUES(blog_account),
+              band_account    = VALUES(band_account),
+              x_account       = VALUES(x_account),
+              verified        = VALUES(verified),
+              name            = VALUES(name),
+              marketing_agree = VALUES(marketing_agree),
+              updated_at      = NOW(),
+              address         = COALESCE(NULLIF(address, ''), VALUES(address))
+            """
+            cur.execute(sql, (
+                uid, nickname, phone, gender,
+                int(birth_year) if birth_year not in (None, "", " ") else None,
+                marketing_agree, register_tag,
+                insta, kakao, blog, band, xacc, verified, name,
+                uid  # 서브쿼리용
+            ))
+        conn.commit()
+        return True, "upserted"
+    except Exception as e:
+        rollback(conn)
+        print(f"[upsert_user_info] {e}")
+        return False, "error"
+    finally:
+        close_connection(conn)
