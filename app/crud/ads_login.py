@@ -131,10 +131,10 @@ def insert_user_sns(email: str | None, provider: str, provider_id: str):
             if not user_id:
                 # ✅ 기존 레코드 id 조회 (email 우선, 없으면 provider+provider_id)
                 if email:
-                    cursor.execute("SELECT id FROM user WHERE email = %s LIMIT 1", (email,))
+                    cursor.execute("SELECT user_id FROM user WHERE email = %s LIMIT 1", (email,))
                 else:
                     cursor.execute(
-                        "SELECT id FROM user WHERE login_provider = %s AND provider_id = %s LIMIT 1",
+                        "SELECT user_id FROM user WHERE login_provider = %s AND provider_id = %s LIMIT 1",
                         (provider, provider_id),
                     )
                 row = cursor.fetchone()
