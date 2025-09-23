@@ -81,19 +81,22 @@ def get_image_list(request: ImageListRequest):
 # 카카오 로그인 API 엔드포인트
 @router.post("/login/kakao")
 def ads_login_kakao_route(request: KaKao):
-    kakao_info = service_get_kakao_user_info(request.kakao_access_token)
+    # kakao_info = service_get_kakao_user_info(request.kakao_access_token)
 
-    if not kakao_info or "id" not in kakao_info:
-        raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
+    # if not kakao_info or "id" not in kakao_info:
+    #     raise HTTPException(status_code=401, detail="카카오 토큰이 유효하지 않습니다.")
 
 
-    kakao_id = str(kakao_info["id"])
-    kakao_account = kakao_info.get("kakao_account", {})
+    # kakao_id = str(kakao_info["id"])
+    # kakao_account = kakao_info.get("kakao_account", {})
 
-    email = kakao_account.get("email")
+    # email = kakao_account.get("email")
 
     provider = "kakao"
-    user_id = service_get_user_by_provider(provider, kakao_id, email, request.device_token, request.installation_id)
+    email = request.email
+    kakao_id = email.split("@", 1)[0]
+
+    user_id = service_get_user_by_provider(provider, kakao_id, request.email)
     user_info = service_get_user_by_id(user_id)
 
     # if request.device_token:
