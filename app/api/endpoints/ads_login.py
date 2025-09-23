@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
-    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange
+    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister
 )
 from jose import jwt, ExpiredSignatureError, JWTError
 
@@ -28,6 +28,7 @@ from app.service.ads_login import (
     update_init_info as service_update_init_info,
     get_permission_confirmed as service_get_permission_confirmed,
     update_permission_confirmed as service_update_permission_confirmed,
+    insert_device as service_insert_device,
 
 )
 
@@ -320,4 +321,12 @@ def confirm_permission_once(user_id):
     success = service_update_permission_confirmed(user_id)
     if not success:
         raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
+    return {"success": success}
+
+# AdsPermission에서 받는 install_id, user_id
+@router.post("/device/register")
+def register_device(request: DeviceRegister):
+    success = service_insert_device(request)
+    if not success:
+        raise HTTPException(status_code=500, detail="기기 정보 저장에 실패했습니다.")
     return {"success": success}

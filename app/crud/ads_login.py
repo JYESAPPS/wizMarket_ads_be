@@ -537,3 +537,31 @@ def update_permission_confirmed(user_id: int):
     except Exception as e:
         print(f"permission_confirmed 조회 오류: {e}")
         return False
+    
+# 권한
+def insert_device(
+    platform: str,
+    install_id: str,
+    push_token: str | None = None,
+):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        sql = """
+        INSERT INTO user_device
+            (platform, installation_id, device_token, is_active, last_seen, created_at, updated_at)
+        VALUES
+            (%s, %s, %s, 1, NOW(), NOW(), NOW())
+        """
+        cursor.execute(sql, (platform, install_id, push_token))
+        connection.commit()
+        return True
+    except pymysql.MySQLError as e:
+        connection.rollback()
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="기기 저장 실패")
+    finally:
+        cursor.close()
+        connection.close()

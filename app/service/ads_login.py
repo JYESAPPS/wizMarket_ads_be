@@ -16,6 +16,7 @@ from app.crud.ads_login import (
     update_verified as crud_update_verified,
     get_permission_confirmed as crud_get_permission_confirmed,
     update_permission_confirmed as crud_update_permission_confirmed,
+    insert_device as crud_insert_device,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -293,3 +294,12 @@ def get_permission_confirmed(user_id: int):
 
 def update_permission_confirmed(user_id: int):
     return crud_update_permission_confirmed(user_id)
+
+# install_id, push_token, platform 인서트
+def insert_device(request):
+    try:
+        inserted = crud_insert_device(request.platform, request.install_id, request.push_token)
+        return bool(inserted)
+
+    except Exception:
+        return False

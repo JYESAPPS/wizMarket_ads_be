@@ -68,3 +68,8 @@ class TokenRefreshRequest(BaseModel):
 class TokenRefreshResponse(BaseModel):
     access_token: str
     refresh_token: str
+
+class DeviceRegister(BaseModel):
+    install_id: str
+    push_token: str
+    platform: str
