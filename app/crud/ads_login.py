@@ -376,30 +376,33 @@ def select_insta_account(store_business_number: str):
 def update_device_token(
     user_id: int,
     device_token: str,
-    platform: str = "android",
+    installation_id: str,  # 설치 ID(고유)
 ) -> bool:
     conn = get_re_db_connection()
     cur = conn.cursor()
     logger = logging.getLogger(__name__)
+    platform: str = "android"
 
     try:
         conn.autocommit(False)
 
-
-            # ✅ 권장 경로: (user_id, platform, device_fingerprint)로 upsert
+        # installation_id 매칭되는 행만 갱신 (무조건 UPDATE, INSERT 없음)
         sql = """
-            INSERT INTO user_device (
-                user_id, platform, device_token,
-                is_active, last_seen, created_at, updated_at
-            ) VALUES (%s, %s, %s, 1, NOW(), NOW(), NOW())
-            ON DUPLICATE KEY UPDATE
-                device_token = VALUES(device_token),
-                is_active    = 1,
-                last_seen    = NOW(),
-                updated_at   = NOW();
-            """
-        cur.execute(sql, (user_id, platform, device_token))
+            UPDATE user_device
+               SET user_id     = %s,
+                   platform    = %s,
+                   device_token= %s,
+                   is_active   = 1,
+                   last_seen   = NOW(),
+                   updated_at  = NOW()
+             WHERE installation_id = %s
+        """
+        cur.execute(sql, (user_id, platform, device_token, installation_id))
 
+        # 영향받은 행이 0이면 매칭 대상 없음 → False
+        if cur.rowcount == 0:
+            conn.rollback()
+            return False
 
         conn.commit()
         return True
@@ -413,10 +416,10 @@ def update_device_token(
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
     finally:
-        cur.close()
-        conn.close()
-
-
+        try:
+            cur.close()
+        finally:
+            conn.close()
 
 
 
@@ -540,7 +543,6 @@ def update_permission_confirmed(user_id: int):
     
 # 권한
 def insert_device(
-    platform: str,
     install_id: str,
     push_token: str | None = None,
 ):
@@ -551,11 +553,11 @@ def insert_device(
     try:
         sql = """
         INSERT INTO user_device
-            (platform, installation_id, device_token, is_active, last_seen, created_at, updated_at)
+            (installation_id, device_token, is_active, last_seen, created_at, updated_at)
         VALUES
-            (%s, %s, %s, 1, NOW(), NOW(), NOW())
+            (%s, %s, 1, NOW(), NOW(), NOW())
         """
-        cursor.execute(sql, (platform, install_id, push_token))
+        cursor.execute(sql, (install_id, push_token))
         connection.commit()
         return True
     except pymysql.MySQLError as e:

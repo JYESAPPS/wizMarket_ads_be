@@ -72,4 +72,3 @@ class TokenRefreshResponse(BaseModel):
 class DeviceRegister(BaseModel):
     install_id: str
     push_token: str
-    platform: str
