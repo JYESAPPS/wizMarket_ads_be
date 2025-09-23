@@ -259,7 +259,8 @@ def auto_login(request: User):
         "user_id": user["user_id"],
         "email": user["email"],
         "type": user["type"],
-        "store_business_number": user.get("store_business_number", None)
+        "store_business_number": user.get("store_business_number", None),
+        "status": user["status"]
     }
 
 

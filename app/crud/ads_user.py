@@ -124,7 +124,7 @@ def insert_business_info(
             close_connection(conn)
 
 # user TB에 store_business_number 업데이트
-def update_user(user_id, store_business_number):
+def update_user(user_id, store_business_number, status):
     connection = get_re_db_connection()
     cursor = connection.cursor()
 
@@ -133,11 +133,12 @@ def update_user(user_id, store_business_number):
 
         sql_user = """
             UPDATE user
-               SET store_business_number = %s,
-                   updated_at = NOW()
+               SET  store_business_number = %s,
+                    status = %s,
+                    updated_at = NOW()
              WHERE user_id = %s
         """
-        cursor.execute(sql_user, (store_business_number, user_id))
+        cursor.execute(sql_user, (store_business_number, status, user_id))
 
         if cursor.rowcount == 0:
             connection.rollback()

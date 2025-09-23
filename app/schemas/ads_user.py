@@ -16,6 +16,7 @@ class StoreAddInfo(BaseModel):
     register_tag: str
     store_business_number: str
     road_name: str
+    status: str  
 
 class ImageListRequest(BaseModel):
     categoryId : int

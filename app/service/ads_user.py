@@ -36,7 +36,7 @@ def register_store_info(request):
     success1 = crud_insert_business_info(user_id, request.business_name, request.business_number)
 
     # store_business_number를 userTB에 업데이트
-    success2 = crud_update_user(user_id, request.store_business_number)
+    success2 = crud_update_user(user_id, request.store_business_number, request.status)
 
     # register_tag를 user_info TB에 업데이트
     success3 = crud_update_register_tag(user_id, request.register_tag)

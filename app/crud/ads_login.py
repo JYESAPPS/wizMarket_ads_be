@@ -106,22 +106,43 @@ def get_user_by_provider(login_provider: str, provider_id: str):
         connection.close()
 
 
-def insert_user_sns(email: str, provider: str, provider_id: str):
+def insert_user_sns(email: str | None, provider: str, provider_id: str):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
 
     try:
         if connection.open:
-            insert_query = """
+            # ✅ 업서트: email 또는 (login_provider, provider_id) UNIQUE에 걸리면 업데이트
+            upsert_sql = """
                 INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, NOW(), NOW())
+                VALUES (%s, %s, %s, 1, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    login_provider = VALUES(login_provider),
+                    provider_id    = VALUES(provider_id),
+                    is_active      = VALUES(is_active),
+                    updated_at     = NOW()
             """
-            cursor.execute(insert_query, (email, provider, provider_id, 1))
+            cursor.execute(upsert_sql, (email, provider, provider_id))
             connection.commit()
 
-            # ✅ 방금 삽입한 user_id 가져오기
+            # 새로 삽입이면 lastrowid 존재, 기존행 업데이트면 0 또는 None
             user_id = cursor.lastrowid
+            if not user_id:
+                # ✅ 기존 레코드 id 조회 (email 우선, 없으면 provider+provider_id)
+                if email:
+                    cursor.execute("SELECT id FROM user WHERE email = %s LIMIT 1", (email,))
+                else:
+                    cursor.execute(
+                        "SELECT id FROM user WHERE login_provider = %s AND provider_id = %s LIMIT 1",
+                        (provider, provider_id),
+                    )
+                row = cursor.fetchone()
+                user_id = row["id"] if row else None
+
+            if not user_id:
+                raise HTTPException(status_code=500, detail="사용자 식별 실패")
+
             return user_id
 
     except pymysql.MySQLError as e:
@@ -131,8 +152,11 @@ def insert_user_sns(email: str, provider: str, provider_id: str):
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
     finally:
-        cursor.close()
-        connection.close()
+        try: cursor.close()
+        except: pass
+        try: connection.close()
+        except: pass
+
 
 
 
