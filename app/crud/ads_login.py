@@ -554,7 +554,7 @@ def get_permission_confirmed(user_id: int):
         return False
 
 # permission_confirmed 업데이트
-def update_permission_confirmed(install_id: int):
+def update_permission_confirmed(install_id: str):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
@@ -565,7 +565,7 @@ def update_permission_confirmed(install_id: int):
         connection.commit()
         return True
     except Exception as e:
-        print(f"permission_confirmed 조회 오류: {e}")
+        print(f"permission_confirmed 삽입 오류: {e}")
         return False
     
 # 권한
