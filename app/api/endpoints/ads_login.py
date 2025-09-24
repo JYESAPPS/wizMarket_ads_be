@@ -29,7 +29,6 @@ from app.service.ads_login import (
     update_init_info as service_update_init_info,
     get_permission_confirmed as service_get_permission_confirmed,
     update_permission_confirmed as service_update_permission_confirmed,
-    insert_device as service_insert_device,
     check_install_id as service_check_install_id,
 )
 
@@ -337,10 +336,3 @@ def confirm_permission_once(install_id):
         raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
     return {"success": success}
 
-# AdsPermission에서 받는 install_id, user_id
-@router.post("/device/register")
-def register_device(request: DeviceRegister):
-    success = service_insert_device(request)
-    if not success:
-        raise HTTPException(status_code=500, detail="기기 정보 저장에 실패했습니다.")
-    return {"success": success}
