@@ -14,42 +14,42 @@ logger = logging.getLogger(__name__)
 
 
 
-def select_user_id_token():
-    connection = get_re_db_connection()
-    cursor = connection.cursor(pymysql.cursors.DictCursor)
-
+def select_user_id_token() -> List[AllUserDeviceToken]:
+    conn = get_re_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        if connection.open:
-            select_query = """
-                SELECT 
-                    USER_ID,
-                    DEVICE_TOKEN
-                FROM USER_DEVICE;
-            """
-            cursor.execute(select_query)
-            rows = cursor.fetchall()
-
-            if not rows:
-                return []
-
-            return [
-                AllUserDeviceToken(
-                    user_id=row["USER_ID"],
-                    device_token=row["DEVICE_TOKEN"],
-                ) for row in rows
-            ]
-
+        sql = """
+            SELECT
+                USER_ID,
+                TRIM(DEVICE_TOKEN) AS DEVICE_TOKEN
+            FROM USER_DEVICE
+            WHERE USER_ID IS NOT NULL
+              AND DEVICE_TOKEN IS NOT NULL
+              AND DEVICE_TOKEN <> '';
+        """
+        cur.execute(sql)
+        rows = cur.fetchall() or []
+        # None-safe 추가 방어막 (이중 안전)
+        result = []
+        for r in rows:
+            uid = r.get("USER_ID")
+            tok = r.get("DEVICE_TOKEN")
+            if uid is None or tok is None or tok == "":
+                continue
+            result.append(AllUserDeviceToken(user_id=int(uid), device_token=str(tok)))
+        return result
     except pymysql.MySQLError as e:
-        logger.error(f"MySQL Error: {e}")
-        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+        # 스케줄러에서 터지지 않게: 로그만 남기고 빈 리스트
+        print(f"[select_user_id_token] MySQL Error: {e}")
+        return []
     except Exception as e:
-        logger.error(f"Unexpected Error in get_notice: {e}")
-        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+        print(f"[select_user_id_token] Unexpected Error: {e}")
+        return []
     finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        try: cur.close()
+        except: pass
+        try: conn.close()
+        except: pass
 
 
 
