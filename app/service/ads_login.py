@@ -304,8 +304,8 @@ def insert_init_info(user_id, name, birth):
 def get_permission_confirmed(user_id: int):
     return crud_get_permission_confirmed(user_id)
 
-def update_permission_confirmed(user_id: int):
-    return crud_update_permission_confirmed(user_id)
+def update_permission_confirmed(install_id: int):
+    return crud_update_permission_confirmed(install_id)
 
 # install_id, push_token, platform 인서트
 def insert_device(request):

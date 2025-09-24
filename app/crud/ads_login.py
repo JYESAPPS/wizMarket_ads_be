@@ -554,12 +554,14 @@ def get_permission_confirmed(user_id: int):
         return False
 
 # permission_confirmed 업데이트
-def update_permission_confirmed(user_id: int):
+def update_permission_confirmed(install_id: int):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
-            sql = """UPDATE `user` SET permission_confirmed = 1 WHERE user_id = %s"""
-            cursor.execute(sql, (user_id,))
+            sql = """
+                INSERT INTO USER_DEVICE (installation_id, created_at, updated_at)
+                """
+            cursor.execute(sql, (install_id,))
         connection.commit()
         return True
     except Exception as e:
