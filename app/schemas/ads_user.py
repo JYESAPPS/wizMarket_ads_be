@@ -32,14 +32,14 @@ class KaKao(BaseModel):
     email : str = None
     device_token : str = None
     # android_id : str = None
-    # installation_id : str = None
+    installation_id : str = None
 
 
 class Google(BaseModel):
     google_access_token : str
     email : str
     device_token : str = None
-    # installation_id : str = None
+    installation_id : str = None
 
 class Naver(BaseModel):
     naver_access_token : str
