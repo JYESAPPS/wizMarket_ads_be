@@ -42,7 +42,7 @@ router = APIRouter()
 
 
 # install_id 값 조회
-@router.get("install/check", response_model=InstallCheckResponse)
+@router.get("/install/check", response_model=InstallCheckResponse)
 def check_install_id(install_id: str):
     # install_id 값이 DB에 존재하는지 확인하는 로직을 여기에 작성합니다.
     exists = service_check_install_id(install_id)
