@@ -9,6 +9,31 @@ from app.schemas.ads import AdsInitInfo, RandomImage
 import random
 from typing import List, Optional
 
+
+
+def check_install_id(install_id: str) -> bool:
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            sql = """
+                SELECT COUNT(*) AS cnt
+                FROM user_device
+                WHERE installation_id = %s
+                LIMIT 1
+            """
+            cur.execute(sql, (install_id,))
+            row = cur.fetchone()
+            cnt = (row[0] if row and isinstance(row, tuple) else row.get("cnt", 0))
+            return (cnt or 0) > 0
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+
+
+
 def ads_login(email: str, temp_pw: str):
     try:
         connection = get_re_db_connection()

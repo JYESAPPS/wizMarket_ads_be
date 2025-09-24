@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
-    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister
+    TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister,
+    InstallCheckResponse
 )
 from jose import jwt, ExpiredSignatureError, JWTError
 
@@ -29,7 +30,7 @@ from app.service.ads_login import (
     get_permission_confirmed as service_get_permission_confirmed,
     update_permission_confirmed as service_update_permission_confirmed,
     insert_device as service_insert_device,
-
+    check_install_id as service_check_install_id,
 )
 
 from app.service.ads_app import (
@@ -38,6 +39,19 @@ from app.service.ads_app import (
 
 
 router = APIRouter()
+
+
+# install_id 값 조회
+@router.get("install/check", response_model=InstallCheckResponse)
+def check_install_id(install_id: str):
+    # install_id 값이 DB에 존재하는지 확인하는 로직을 여기에 작성합니다.
+    exists = service_check_install_id(install_id)
+
+    return {"exists": bool(exists)}
+
+
+
+
 
 
 # 로그인 API 엔드포인트

@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
+class InstallCheckResponse(BaseModel):
+    exists: bool
+
+
 class UserRegisterRequest(BaseModel):
     email: str
     temp_pw: str

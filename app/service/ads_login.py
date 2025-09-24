@@ -17,6 +17,7 @@ from app.crud.ads_login import (
     get_permission_confirmed as crud_get_permission_confirmed,
     update_permission_confirmed as crud_update_permission_confirmed,
     insert_device as crud_insert_device,
+    check_install_id as crud_check_install_id,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -38,6 +39,17 @@ from datetime import date
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+
+
+def check_install_id(install_id: str):
+    install_id = install_id.strip()
+    if not install_id:
+        return False
+    return crud_check_install_id(install_id)
+
+
 
 def ads_login(email, temp_pw):
     user = crud_ads_login(email, temp_pw)
