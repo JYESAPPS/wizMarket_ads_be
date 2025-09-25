@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from app.schemas.ads_user import (
-    UserRegisterRequest, StoreMatch, StoreAddInfo,
+    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest
 )
 
 from app.service.ads_user import (
@@ -13,6 +13,7 @@ from app.service.ads_user import (
     register_store_info as service_register_store_info,
     read_ocr as service_read_ocr,
     _extract_biz_fields as service_extract_biz_fields,
+    register_sns as service_register_sns,
 )
 
 
@@ -72,6 +73,18 @@ def register_store_info(request: StoreAddInfo):
         return {"available": False}
 
 
+@router.post("/register/sns")
+def register_sns(request: SNSRegisterRequest):
+    """
+    Step8: 저장/넘어가기 요청 처리
+    - 저장: { user_id, status: 'active', accounts: [...] }
+    - 넘어가기: { user_id, status: 'active' } (accounts 없음)
+    ※ 토큰 디코드/인증 미사용 (요청 그대로 수신)
+    """
+    return service_register_sns(request)
+
+
+
 # OCR로 사업자등록증에서 정보 뽑기
 @router.post("/store/ocr")
 async def get_ocr(file: UploadFile = File(...)):
@@ -101,3 +114,7 @@ async def get_ocr(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR failed: {e}")
+    
+
+
+    

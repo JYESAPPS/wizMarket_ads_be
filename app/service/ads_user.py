@@ -1,6 +1,7 @@
 import os
 import base64
 import requests
+from fastapi import HTTPException
 import re
 from typing import Optional, Dict, Any, List
 from app.crud.ads_user import (
@@ -8,11 +9,14 @@ from app.crud.ads_user import (
     register_user as crud_register_user,
     get_store as crud_get_store,
     insert_business_info as crud_insert_business_info,
-    update_user as crud_update_user
+    update_user as crud_update_user,
+
 )
 
 from app.crud.ads_app import (
     update_register_tag as crud_update_register_tag,
+    update_user_status_only as crud_update_user_status_only,
+    upsert_social_accounts as crud_upsert_social_accounts,
 )
 
 
@@ -42,6 +46,35 @@ def register_store_info(request):
     success3 = crud_update_register_tag(user_id, request.register_tag)
 
     return success1 and success2 and success3
+
+
+
+def register_sns(req):
+    user_id = req.user_id
+    status = (req.status or "").strip().lower()
+
+    # 1) 유저 상태 업데이트
+    ok = crud_update_user_status_only(user_id=user_id, status=status)
+    if not ok:
+        raise HTTPException(status_code=500, detail="유저 상태 업데이트 실패")
+
+    # 2) 계정이 있으면 UPSERT (없으면 스킵)
+    # 2) user_info에 SNS 계정 업서트 (있을 때만)
+    accounts = req.accounts or []
+    clean: List[Dict[str, str]] = []
+    for a in accounts:
+        ch = (a.channel or "").strip()
+        acc = (a.account or "").strip()
+        if ch and acc:
+            clean.append({"channel": ch, "account": acc})
+
+    if clean:
+        crud_upsert_social_accounts(user_id=user_id, accounts=clean)
+
+    return {"success": True}
+
+
+
 
 
 # OCR 파일 타입 체크

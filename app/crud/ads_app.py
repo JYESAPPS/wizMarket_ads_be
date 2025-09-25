@@ -2,10 +2,13 @@ from app.db.connect import (
     get_db_connection, commit, close_connection, rollback, close_cursor, get_re_db_connection
 )
 import random
+import logging
 import pymysql
 from datetime import datetime, timedelta
+from typing import List, Dict, Tuple
+from fastapi import HTTPException
 
-
+logger = logging.getLogger(__name__)
 # 선택 된 스타일 값에서 랜덤 이미지 뽑기
 def select_random_image(style):
     try:
@@ -455,6 +458,119 @@ def update_register_tag(user_id: int, register_tag: str) -> bool:
         raise
     finally:
         conn.close()
+
+
+
+
+
+def update_user_status_only(user_id: int, status: str) -> bool:
+    """
+    user.status 만 갱신
+    """
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    try:
+        conn.autocommit(False)
+        sql = """
+            UPDATE user
+               SET status = %s,
+                   updated_at = NOW()
+             WHERE user_id = %s
+        """
+        cur.execute(sql, (status, user_id))
+        if cur.rowcount == 0:
+            conn.rollback()
+            raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+        conn.commit()
+        return True
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_update_user_status_only] {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+CHANNEL_TO_COLUMN = {
+    "인스타그램": "insta_account",
+    "블로그": "blog_account",
+    "X": "x_account",
+    "네이버밴드": "band_account",
+    "카카오": "kakao_account",
+    "카카오톡": "kakao_account",
+    # "페이스북": 없음 → 스킵(테이블에 컬럼이 없음)
+    "페이스북": None,
+}
+
+def _map_accounts_to_columns(accounts: List[Dict[str, str]]) -> Dict[str, str]:
+    """
+    전달된 accounts를 user_info의 컬럼 딕셔너리로 변환.
+    - 정의된 컬럼만 포함
+    - '페이스북'은 컬럼이 없으므로 무시
+    - 마지막 값이 우선(중복 채널 입력 방지)
+    """
+    colmap: Dict[str, str] = {}
+    for item in accounts:
+        ch = item.get("channel", "").strip()
+        acc = item.get("account", "").strip()
+        col = CHANNEL_TO_COLUMN.get(ch)
+        if col:
+            colmap[col] = acc
+        elif col is None and ch:  # 매핑 없음(예: 페이스북)
+            logger.warning(f"[user_info] Unsupported channel, skipped: {ch}")
+    return colmap
+
+def crud_upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> bool:
+    """
+    user_info 테이블에 필요한 계정 컬럼만 동적 UPSERT.
+    - UNIQUE KEY(user_id) 가정.
+    - 제공되지 않은 컬럼은 건드리지 않음(= NULL로 덮어쓰지 않음).
+    - INSERT 시 제공한 컬럼만 넣고, DUPLICATE 시 제공한 컬럼만 UPDATE.
+    """
+    colmap = _map_accounts_to_columns(accounts)
+    if not colmap:
+        return True  # 업데이트할 계정 없음
+
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    try:
+        conn.autocommit(False)
+
+        # 동적 INSERT ... ON DUPLICATE KEY UPDATE
+        cols: List[str] = ["user_id"] + list(colmap.keys())
+        placeholders = ", ".join(["%s"] * len(cols))
+        insert_cols = ", ".join(cols)
+        update_clause = ", ".join([f"{c}=VALUES({c})" for c in colmap.keys()] + ["updated_at=NOW()"])
+
+        sql = f"""
+            INSERT INTO user_info ({insert_cols})
+            VALUES ({placeholders})
+            ON DUPLICATE KEY UPDATE {update_clause}
+        """
+
+        params: Tuple = tuple([user_id] + list(colmap.values()))
+        cur.execute(sql, params)
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_upsert_user_info_accounts] {e}")
+        raise HTTPException(status_code=500, detail="user_info 저장 실패")
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+
+
+
 
 def upsert_user_info(user_id, request):
     # user_id가 str이어도 캐스팅만 해주면 됨

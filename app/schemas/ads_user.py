@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 
 
 class InstallCheckResponse(BaseModel):
@@ -22,6 +22,17 @@ class StoreAddInfo(BaseModel):
     store_business_number: str
     road_name: str
     status: str  
+
+
+class SNSAccount(BaseModel):
+    channel: str = Field(..., description="채널명 (인스타그램/블로그/페이스북/X/네이버밴드 등)")
+    account: str = Field(..., description="계정 ID 또는 URL")
+
+class SNSRegisterRequest(BaseModel):
+    user_id: int
+    status: str = Field(..., description="유저 상태, 예: active")
+    accounts: Optional[List[SNSAccount]] = None
+
 
 class ImageListRequest(BaseModel):
     categoryId : int
