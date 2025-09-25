@@ -524,7 +524,7 @@ def _map_accounts_to_columns(accounts: List[Dict[str, str]]) -> Dict[str, str]:
             logger.warning(f"[user_info] Unsupported channel, skipped: {ch}")
     return colmap
 
-def crud_upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> bool:
+def upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> bool:
     """
     user_info 테이블에 필요한 계정 컬럼만 동적 UPSERT.
     - UNIQUE KEY(user_id) 가정.

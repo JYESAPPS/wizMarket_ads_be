@@ -16,7 +16,7 @@ from app.crud.ads_user import (
 from app.crud.ads_app import (
     update_register_tag as crud_update_register_tag,
     update_user_status_only as crud_update_user_status_only,
-    upsert_social_accounts as crud_upsert_social_accounts,
+    upsert_user_info_accounts as crud_upsert_user_info_accounts
 )
 
 
@@ -69,7 +69,7 @@ def register_sns(req):
             clean.append({"channel": ch, "account": acc})
 
     if clean:
-        crud_upsert_social_accounts(user_id=user_id, accounts=clean)
+        crud_upsert_user_info_accounts(user_id=user_id, accounts=clean)
 
     return {"success": True}
 
