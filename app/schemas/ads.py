@@ -118,6 +118,7 @@ class InstaAccount(BaseModel):
 
 
 class AdsInitInfoOutPutWithImages(BaseModel):
+    user_id: int
     store_business_number: str
     store_name: str
     road_name: str

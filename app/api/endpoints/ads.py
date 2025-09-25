@@ -96,6 +96,7 @@ def select_ads_init_info(store_business_number: str):
         # print(ai_age, ai_data)
         return AdsInitInfoOutPutWithImages(
             **init_data.dict(),
+            user_id=user_id,
             register_tag=register_tag,
             custom_menu=custom_menu,
             image_list=random_image_list,
