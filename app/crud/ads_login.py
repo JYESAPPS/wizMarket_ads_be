@@ -163,7 +163,7 @@ def insert_user_sns(email: str | None, provider: str, provider_id: str):
                         (provider, provider_id),
                     )
                 row = cursor.fetchone()
-                user_id = row["id"] if row else None
+                user_id = row["user_id"] if row else None
 
             if not user_id:
                 raise HTTPException(status_code=500, detail="사용자 식별 실패")
