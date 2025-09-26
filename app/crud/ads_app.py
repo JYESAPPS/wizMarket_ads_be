@@ -580,6 +580,7 @@ def delete_user(user_id: str) -> bool:
             UPDATE user
             SET status='deleted', is_active=0,
                 access_token=NULL, refresh_token=NULL, 
+                store_business_number=NULL,
                 permission_confirmed=0, updated_at=NOW()
             WHERE user_id = %s;
         '''

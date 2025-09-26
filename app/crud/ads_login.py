@@ -114,6 +114,7 @@ def get_user_by_provider(login_provider: str, provider_id: str):
                 SELECT *
                 FROM user
                 WHERE login_provider = %s AND provider_id = %s
+                AND is_active = 1 AND status != 'deleted'
             """
             cursor.execute(query, (login_provider, provider_id))
             user = cursor.fetchone()
