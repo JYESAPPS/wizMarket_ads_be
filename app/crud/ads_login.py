@@ -142,7 +142,7 @@ def insert_user_sns(email: str | None, provider: str, provider_id: str):
         # 1) 순수 INSERT (사전 조회 없음)
         cursor.execute("""
             INSERT INTO `user` (email, login_provider, provider_id, is_active, status, created_at, updated_at)
-            VALUES (%s, %s, %s, 1, 'active', NOW(), NOW())
+            VALUES (%s, %s, %s, 1, 'approved', NOW(), NOW())
         """, (email, provider, provider_id))
         connection.commit()
         return cursor.lastrowid
