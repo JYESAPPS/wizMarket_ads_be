@@ -595,7 +595,7 @@ def delete_user(user_id: str) -> bool:
         # 3) user_reserve 삭제
         user_reserve_sql = '''
             UPDATE user_reserve
-            SET is_active=0, updated_at=NOW()
+            SET is_active=0
             WHERE user_id = %s;
         '''
         cur.execute(user_reserve_sql, (user_id,))
