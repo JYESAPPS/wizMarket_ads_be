@@ -133,57 +133,56 @@ def get_user_by_provider(login_provider: str, provider_id: str):
 
 
 def insert_user_sns(email: str | None, provider: str, provider_id: str):
+    import pymysql
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
 
     try:
-        if connection.open:
-            # ✅ 업서트: email 또는 (login_provider, provider_id) UNIQUE에 걸리면 업데이트
-            upsert_sql = """
-                INSERT INTO user (email, login_provider, provider_id, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, 1, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    login_provider = VALUES(login_provider),
-                    provider_id    = VALUES(provider_id),
-                    is_active      = VALUES(is_active),
-                    updated_at     = NOW()
-            """
-            cursor.execute(upsert_sql, (email, provider, provider_id))
-            connection.commit()
+        # 1) 순수 INSERT (사전 조회 없음)
+        cursor.execute("""
+            INSERT INTO `user` (email, login_provider, provider_id, is_active, status, created_at, updated_at)
+            VALUES (%s, %s, %s, 1, 'active', NOW(), NOW())
+        """, (email, provider, provider_id))
+        connection.commit()
+        return cursor.lastrowid
 
-            # 새로 삽입이면 lastrowid 존재, 기존행 업데이트면 0 또는 None
-            user_id = cursor.lastrowid
-            if not user_id:
-                # ✅ 기존 레코드 id 조회 (email 우선, 없으면 provider+provider_id)
-                if email:
-                    cursor.execute("SELECT user_id FROM user WHERE email = %s LIMIT 1", (email,))
-                else:
-                    cursor.execute(
-                        "SELECT user_id FROM user WHERE login_provider = %s AND provider_id = %s LIMIT 1",
-                        (provider, provider_id),
-                    )
+    except pymysql.err.IntegrityError as e:
+        # 1062: 동일 SNS로 거의 동시에 다른 요청이 먼저 INSERT한 경우
+        if getattr(e, "args", [None])[0] == 1062:
+            connection.rollback()
+            # 2) 충돌 시 활성(비삭제) 행을 재조회하여 user_id 반환
+            try:
+                cursor.execute("""
+                    SELECT user_id
+                    FROM `user`
+                    WHERE login_provider=%s AND provider_id=%s
+                      AND is_active=1
+                      AND status!='deleted'
+                    LIMIT 1
+                """, (provider, provider_id))
                 row = cursor.fetchone()
-                user_id = row["user_id"] if row else None
+                if row:
+                    return row["user_id"]
+                logger.error("Duplicate key but no active row found — index/state mismatch.")
+                raise HTTPException(status_code=500, detail="일시적 오류(가입 경합). 다시 시도해주세요.")
+            except Exception:
+                raise
+        # 그 외 무결성 오류
+        connection.rollback()
+        logger.error(f"MySQL IntegrityError: {e}")
+        raise HTTPException(status_code=500, detail="회원 가입 중 DB 무결성 오류")
 
-            if not user_id:
-                raise HTTPException(status_code=500, detail="사용자 식별 실패")
-
-            return user_id
-
-    except pymysql.MySQLError as e:
-        logger.error(f"MySQL Error: {e}")
-        raise HTTPException(status_code=500, detail="회원 가입 중 DB 오류 발생")
     except Exception as e:
+        connection.rollback()
         logger.error(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류")
+
     finally:
         try: cursor.close()
         except: pass
         try: connection.close()
         except: pass
-
-
 
 
 # 다중 기기 처리
