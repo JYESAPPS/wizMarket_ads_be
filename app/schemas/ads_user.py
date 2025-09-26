@@ -34,6 +34,12 @@ class SNSRegisterRequest(BaseModel):
     accounts: Optional[List[SNSAccount]] = None
 
 
+class UserDelete(BaseModel):
+    user_id: str
+
+
+
+
 class ImageListRequest(BaseModel):
     categoryId : int
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from app.schemas.ads_user import (
-    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest
+    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest, UserDelete
 )
 
 from app.service.ads_user import (
@@ -14,6 +14,7 @@ from app.service.ads_user import (
     read_ocr as service_read_ocr,
     _extract_biz_fields as service_extract_biz_fields,
     register_sns as service_register_sns,
+    delete_user as service_delete_user,
 )
 
 
@@ -82,6 +83,36 @@ def register_sns(request: SNSRegisterRequest):
     ※ 토큰 디코드/인증 미사용 (요청 그대로 수신)
     """
     return service_register_sns(request)
+
+
+
+@router.post("/user/delete")
+def delete_user(request: UserDelete):
+    """
+    회원 탈퇴
+    - request: { user_id }
+    """
+    try:
+        user_id = request.user_id
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Missing user_id")
+
+        # 탈퇴 로직 구현 (예: DB에서 사용자 삭제)
+        success = service_delete_user(user_id)
+
+        # success = True  # 실제로는 탈퇴 성공 여부에 따라 설정
+
+        if success:
+            return {"success": True}
+        else:
+            return {"success": False, "message": "탈퇴 실패"}
+
+    except Exception as e:
+        print(f"회원 탈퇴 오류: {e}")
+        return {"success": False, "message": "서버 오류"}
+
+
+
 
 
 

@@ -524,6 +524,7 @@ def _map_accounts_to_columns(accounts: List[Dict[str, str]]) -> Dict[str, str]:
             logger.warning(f"[user_info] Unsupported channel, skipped: {ch}")
     return colmap
 
+
 def upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> bool:
     """
     user_info 테이블에 필요한 계정 컬럼만 동적 UPSERT.
@@ -567,7 +568,44 @@ def upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> b
         conn.close()
 
 
+def delete_user(user_id: str) -> bool:
 
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    try:
+        conn.autocommit(False)
+
+        # 1) user 삭제
+        user_sql = '''
+            UPDATE user
+            SET status='deleted', is_active=0,
+                access_token=NULL, refresh_token=NULL, 
+                permission_confirmed=0, updated_at=NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (user_id,))
+        # 2) user_device 삭제
+        user_info_sql = '''
+            UPDATE user_device
+            SET is_active=0, device_token=NULL, last_seen=NOW(), updated_at=NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_info_sql, (user_id,))
+
+        # 3) user_reserve 삭제
+        user_reserve_sql = '''
+            UPDATE user_reserve
+            SET is_active=0, updated_at=NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_reserve_sql, (user_id,))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_delete_user] {e}")
+        return False
 
 
 

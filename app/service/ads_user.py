@@ -16,7 +16,8 @@ from app.crud.ads_user import (
 from app.crud.ads_app import (
     update_register_tag as crud_update_register_tag,
     update_user_status_only as crud_update_user_status_only,
-    upsert_user_info_accounts as crud_upsert_user_info_accounts
+    upsert_user_info_accounts as crud_upsert_user_info_accounts,
+    delete_user as crud_delete_user,
 )
 
 
@@ -73,6 +74,14 @@ def register_sns(req):
 
     return {"success": True}
 
+
+def delete_user(user_id: str):
+    # 탈퇴 로직 구현 (예: DB에서 사용자 삭제)
+    success = crud_delete_user(user_id)
+
+    # success = True  # 실제로는 탈퇴 성공 여부에 따라 설정
+
+    return success
 
 
 
