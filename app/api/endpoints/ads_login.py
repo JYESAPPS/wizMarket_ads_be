@@ -210,6 +210,55 @@ def ads_login_google_route(request: Google):
         }
     }
 
+# 애플 로그인 API 엔드포인트
+@router.post("/login/apple")
+def ads_login_google_route(request: Google):
+    # 로그아웃 유저 검사
+    logout_user = service_get_logout_user(request.installation_id)
+    if logout_user:
+        # dict 또는 객체 대응
+        lp = logout_user.get("login_provider") if isinstance(logout_user, dict) else getattr(logout_user, "login_provider", None)
+        le = logout_user.get("email")          if isinstance(logout_user, dict) else getattr(logout_user, "email", None)
+
+        if lp and lp != "apple":
+            return {
+                "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 기존 SNS계정으로 로그인해주세요."
+            }
+        if le and le != request.email:
+            return {
+                "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
+            }
+
+
+    provider = "email"
+    email = request.email
+    google_id = email.split("@", 1)[0]
+    # print(email, google_id)
+    # user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
+    user_id = service_get_user_by_provider(provider, google_id, email)
+    user_info = service_get_user_by_id(user_id)
+
+    if request.device_token:
+        service_update_device_token(user_id, request.device_token, request.installation_id)
+
+    # JWT 발급
+    access_token = service_create_access_token(data={"sub": str(user_id)})
+    refresh_token = service_create_refresh_token({"sub": str(user_id)})
+
+    # 토큰 update
+    service_update_user_token(user_id, access_token, refresh_token)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "user_id": user_id,
+            "provider" : provider,
+            "type": user_info["type"],
+            "store_business_number": user_info.get("store_business_number", None)
+        }
+    }
+
 
 # 네이버 로그인 API 엔드포인트
 @router.post("/login/naver")
