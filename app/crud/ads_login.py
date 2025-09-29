@@ -10,6 +10,46 @@ import random
 from typing import List, Optional
 
 
+# INSTALLATION_ID 에 해당하는 user_id 값 여부 확인
+def chect_logout_user_id(install_id: str):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            sql = '''
+                SELECT user_id FROM user_device
+                WHERE installation_id = %s
+                '''
+            cur.execute(sql, (install_id,))
+            row = cur.fetchone()
+            if row:
+                return row[0]  # user_id 반환
+            else:
+                return None
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+            
+
+def get_logout_user_by_id(user_id: int):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            sql = '''
+                SELECT * FROM user
+                WHERE user_id = %s AND is_active = 1 AND status = 'logout'
+                LIMIT 1
+                '''
+            cur.execute(sql, (user_id,))
+            row = cur.fetchone()
+            return row  # dict 형태로 반환, 없으면 None
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
 
 def check_install_id(install_id: str) -> bool:
     conn = get_re_db_connection()

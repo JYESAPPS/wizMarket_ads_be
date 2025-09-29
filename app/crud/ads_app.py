@@ -568,6 +568,30 @@ def upsert_user_info_accounts(user_id: int, accounts: List[Dict[str, str]]) -> b
         conn.close()
 
 
+
+def logout_user(user_id: str) -> bool:
+
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+
+    try:
+        conn.autocommit(False)
+        user_sql = '''
+            UPDATE user
+            SET status = 'logout', updated_at=NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (user_id,))
+        conn.commit()
+        return True
+    
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_logout_user] {e}")
+        return False
+
+
+
 def delete_user(user_id: str) -> bool:
 
     conn = get_re_db_connection()

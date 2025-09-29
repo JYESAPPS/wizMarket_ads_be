@@ -17,6 +17,8 @@ from app.crud.ads_login import (
     get_permission_confirmed as crud_get_permission_confirmed,
     update_permission_confirmed as crud_update_permission_confirmed,
     check_install_id as crud_check_install_id,
+    chect_logout_user_id as crud_logout_user_id,
+    get_logout_user_by_id as crud_get_logout_user_by_id,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -133,6 +135,22 @@ def create_refresh_token(data: dict):
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
+
+
+
+# 로그아웃 유저인지 먼저 판별
+def get_logout_user(installation_id: int):
+    user_id = crud_logout_user_id(installation_id)
+
+    user_info = crud_get_logout_user_by_id(user_id)
+
+
+    return user_info
+
+
+
+
+
 
 
 # 유저 조회 하거나 없으면 카카오로 회원가입

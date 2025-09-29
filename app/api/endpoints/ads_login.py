@@ -30,6 +30,7 @@ from app.service.ads_login import (
     get_permission_confirmed as service_get_permission_confirmed,
     update_permission_confirmed as service_update_permission_confirmed,
     check_install_id as service_check_install_id,
+    get_logout_user as service_get_logout_user,
 )
 
 from app.service.ads_app import (
@@ -106,6 +107,18 @@ def ads_login_kakao_route(request: KaKao):
 
     # email = kakao_account.get("email")
 
+    # 로그아웃 유저 검사
+    logout_user = service_get_logout_user(request.installation_id)
+    if logout_user["login_provider"] != 'kakao':
+        return {
+            "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 다른 SNS계정으로 로그인 해주세요."
+        }
+    
+    if logout_user["email"] != request.email:
+        return {
+            "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 다른 이메일로 로그인 해주세요."
+        }
+
     provider = "kakao"
     email = request.email
     kakao_id = email.split("@", 1)[0]
@@ -145,6 +158,18 @@ def ads_login_google_route(request: Google):
 
     # google_id = str(google_info["sub"])
     # email = google_info.get("email")
+
+    # 로그아웃 유저 검사
+    logout_user = service_get_logout_user(request.installation_id)
+    if logout_user["login_provider"] != 'kakao':
+        return {
+            "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 다른 SNS계정으로 로그인 해주세요."
+        }
+    
+    if logout_user["email"] != request.email:
+        return {
+            "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 다른 이메일로 로그인 해주세요."
+        }
 
     provider = "google"
     email = request.email
