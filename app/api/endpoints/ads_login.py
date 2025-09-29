@@ -161,15 +161,20 @@ def ads_login_google_route(request: Google):
 
     # 로그아웃 유저 검사
     logout_user = service_get_logout_user(request.installation_id)
-    if logout_user["login_provider"] != 'kakao':
-        return {
-            "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 다른 SNS계정으로 로그인 해주세요."
-        }
-    
-    if logout_user["email"] != request.email:
-        return {
-            "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 다른 이메일로 로그인 해주세요."
-        }
+    if logout_user:
+        # dict 또는 객체 대응
+        lp = logout_user.get("login_provider") if isinstance(logout_user, dict) else getattr(logout_user, "login_provider", None)
+        le = logout_user.get("email")          if isinstance(logout_user, dict) else getattr(logout_user, "email", None)
+
+        if lp and lp != "google":
+            return {
+                "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 기존 SNS계정으로 로그인해주세요."
+            }
+        if le and le != request.email:
+            return {
+                "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
+            }
+
 
     provider = "google"
     email = request.email
