@@ -115,7 +115,7 @@ def insert_business_info(
     except Exception as e:
         if conn:
             rollback(conn)
-        logger.error(f"insert_business_verification error: {e}")
+        logger.error(f"insert_business_verification error: user_id({user_id}) {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
     finally:
         if cursor:
