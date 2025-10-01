@@ -193,3 +193,116 @@ def cms_reject_verification(id : int, notes: Optional[str]) -> int:
 
 
 
+# cms용: 전체 사용자 목록 반환
+def cms_get_user_list():
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, ui.nickname, ud.platform, ud.last_seen,
+                        t.ticket_name, tp.ticket_id, tp.payment_date
+                FROM user u
+                LEFT JOIN user_info AS ui ON ui.user_id = u.user_id
+                LEFT JOIN (
+                    SELECT d.user_id, d.platform, d.last_seen
+                    FROM user_device AS d
+                    JOIN (
+                        SELECT user_id, MAX(last_seen) AS last_seen
+                        FROM user_device
+                        GROUP BY user_id
+                    ) AS mx
+                      ON mx.user_id = d.user_id AND mx.last_seen = d.last_seen
+                ) AS ud
+                    ON ud.user_id = u.user_id
+                LEFT JOIN (
+                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
+                    FROM ticket_payment tp
+                    JOIN (
+                        SELECT user_id, MAX(payment_date) AS max_payment_date
+                        FROM ticket_payment
+                        GROUP BY user_id
+                    ) mx
+                        ON mx.user_id = tp.user_id
+                    AND mx.max_payment_date = tp.payment_date
+                ) AS tp ON tp.user_id = u.user_id
+                LEFT JOIN ticket t ON t.ticket_id = tp.ticket_id
+                ORDER BY u.created_at DESC
+            """)
+            return cur.fetchall()
+    finally:
+        close_connection(conn)
+
+
+def cms_get_user_detail(user_id):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, ui.nickname, ui.register_tag, ud.platform, ud.last_seen,
+                        ls.store_name, ls.large_category_name, ls.medium_category_name, ls.small_category_name, ls.industry_name, ls.road_name_address,
+                        t.ticket_name, t.ticket_price, t.billing_cycle, tp.ticket_id, tp.payment_date,
+                        CASE
+                            WHEN t.billing_cycle IS NULL OR t.billing_cycle = 0
+                                THEN NULL
+                            ELSE DATE_ADD(tp.payment_date, INTERVAL t.billing_cycle MONTH)
+                            END AS next_renewal
+                FROM wiz_report.user AS u
+                LEFT JOIN wiz_report.user_info AS ui ON ui.user_id = u.user_id
+                LEFT JOIN (
+                    SELECT d.user_id, d.platform, d.last_seen
+                    FROM wiz_report.user_device AS d
+                    WHERE d.user_id = %s
+                    ORDER BY d.last_seen DESC
+                    LIMIT 1
+                ) AS ud
+                    ON ud.user_id = u.user_id
+                LEFT JOIN test.local_store AS ls
+                    ON ls.store_business_number = u.store_business_number
+                LEFT JOIN (
+                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
+                    FROM wiz_report.ticket_payment tp
+                    JOIN (
+                        SELECT user_id, MAX(payment_date) AS max_payment_date
+                        FROM wiz_report.ticket_payment
+                        GROUP BY user_id
+                    ) mx
+                        ON mx.user_id = tp.user_id
+                    AND mx.max_payment_date = tp.payment_date
+                ) AS tp ON tp.user_id = u.user_id
+                LEFT JOIN wiz_report.ticket t ON t.ticket_id = tp.ticket_id
+                WHERE u.user_id = %s
+                LIMIT 1
+            """, (user_id, user_id))
+            return cur.fetchone()
+    finally:
+        close_connection(conn)
+
+def get_business_verification(user_id):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute("""
+                SELECT user_id, business_name, business_number
+                FROM wiz_report.business_verification
+                WHERE user_id = %s
+                LIMIT 1
+            """, (user_id,))
+            return cur.fetchone()  # 없으면 None
+    finally:
+        close_connection(conn)
+
+def cms_marketing_agree(user_id: int, agree: bool):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE wiz_report.user_info
+                SET marketing_agree = %s,
+                    marketing_agree_at = CASE WHEN %s=1 THEN NOW() ELSE NULL END
+                WHERE user_id = %s
+            """, (1 if agree else 0, 1 if agree else 0, user_id))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        close_connection(conn)
+

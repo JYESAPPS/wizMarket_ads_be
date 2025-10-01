@@ -9,7 +9,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request, s
 from pathlib import Path
 from uuid import uuid4
 from fastapi.responses import FileResponse
-from app.schemas.cms import BVItem, BVListResponse, BVApproveResponse, BVRejectRequest
+from app.schemas.cms import BVItem, BVListResponse, BVApproveResponse, BVRejectRequest, MarketingConsentIn
 from fastapi import Query
 
 from app.service.cms import (
@@ -17,6 +17,17 @@ from app.service.cms import (
     cms_list_verifications as service_cms_list_verifications,
     cms_approve_verification as service_cms_approve_verification,
     cms_reject_verification as service_cms_reject_verification,
+    cms_get_user_list as service_cms_get_user_list,
+    cms_get_user_detail as service_cms_get_user_detail,
+    get_business_verification as service_get_business_verification,
+    cms_marketing_agree as service_cms_marketing_agree,
+)
+from app.service.ads_app import (
+    update_register_tag as service_update_register_tag
+)
+from app.service.ads_ticket import (
+    get_valid_ticket as service_get_valid_ticket,
+    get_token_deduction_history as service_get_token_deduction_history,
 )
 
 router = APIRouter()
@@ -128,6 +139,30 @@ def cms_reject_verification(
     service_cms_reject_verification(verification_id, body.notes)
 
 
+@router.get("/get/user/list")
+def cms_get_user_list():
+    return service_cms_get_user_list()
 
+@router.get("/get/user/detail")
+def cms_get_user_detail(user_id: int):
+    data = service_cms_get_user_detail(user_id)
+    business = service_get_business_verification(user_id)
+    ticket_info = service_get_valid_ticket(user_id)
+    token_history = service_get_token_deduction_history(user_id)
 
+    return {
+        "detail": data,
+        "business": business,
+        "ticket_info": ticket_info,
+        "token_history" : token_history,
+    }
 
+@router.post("/user/marketing_agree")
+def cms_marketing_agree(body: MarketingConsentIn):
+    affected = service_cms_marketing_agree(body.user_id, body.agree)
+    return {"success": affected > 0}
+
+@router.post("/user/register_tag")
+def set_register_tag(user_id, register_tag):
+    register_tag = service_update_register_tag(user_id, register_tag)
+    return {"register_tag" : register_tag,}

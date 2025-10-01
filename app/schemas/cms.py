@@ -38,3 +38,8 @@ class BVApproveResponse(BaseModel):
 
 class BVRejectRequest(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=255)
+
+class MarketingConsentIn(BaseModel):
+    user_id: int
+    agree: bool
+

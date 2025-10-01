@@ -3,6 +3,10 @@ from app.crud.cms import (
     cms_list_verifications as crud_cms_list_verifications,
     cms_approve_verification as crud_cms_approve_verification,
     cms_reject_verification as crud_cms_reject_verification,
+    cms_get_user_list as crud_get_user_list,
+    cms_get_user_detail as crud_get_user_detail,
+    get_business_verification as crud_get_business_verification,
+    cms_marketing_agree as crud_cms_marketing_agree,
 )
 from typing import Optional, Dict, Any
 from fastapi import HTTPException, status
@@ -87,3 +91,61 @@ def cms_reject_verification(id: int, notes: str | None) -> None:
         )
     # 성공 시 바디 없이 204
 
+
+def cms_get_user_list():
+    rows = crud_get_user_list()  # list[tuple]
+    users = []
+    for r in rows:
+        (user_id, email, login_provider, created_at, nickname,
+        platform, last_seen,
+        ticket_name, ticket_id, payment_date) = r
+
+        users.append({
+            "user_id": user_id,
+            "email": email,
+            "login_provider": login_provider,
+            "created_at": created_at,
+            "nickname": nickname,
+            "platform": platform,
+            "last_seen": last_seen,
+            "ticket_name": ticket_name,
+            "ticket_id": ticket_id,
+            "payment_date": payment_date,
+        })
+    return users
+
+def cms_get_user_detail(user_id):
+    row = crud_get_user_detail(user_id)
+    if not row: ...
+    (user_id, email, login_provider, created_at, nickname, register_tag, platform, last_seen,
+    store_name, large_cat, medium_cat, small_cat, industry_name, road_name_address,
+    ticket_name, ticket_price, billing_cycle, ticket_id, payment_date, next_renewal) = row
+
+    return {
+        "user_id": user_id,
+        "email": email,
+        "login_provider": login_provider,
+        "created_at": created_at,
+        "nickname": nickname,
+        "register_tag": register_tag,
+        "platform": platform,
+        "last_seen": last_seen,
+        "store_name": store_name,
+        "large_category_name": large_cat,
+        "medium_category_name": medium_cat,
+        "small_category_name": small_cat,
+        "industry_name": industry_name,
+        "road_name_address": road_name_address,
+        "ticket_name": ticket_name,
+        "ticket_price": ticket_price,
+        "billing_cycle": billing_cycle,
+        "ticket_id": ticket_id,
+        "payment_date": payment_date,
+        "next_renewal": next_renewal,
+    }
+
+def get_business_verification(user_id):
+    return crud_get_business_verification(user_id)
+
+def cms_marketing_agree(user_id: int, agree: bool):
+    return crud_cms_marketing_agree(user_id, agree)
