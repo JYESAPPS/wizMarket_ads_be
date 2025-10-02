@@ -19,6 +19,7 @@ from app.service.cms import (
     cms_reject_verification as service_cms_reject_verification,
     cms_get_user_list as service_cms_get_user_list,
     cms_get_user_detail as service_cms_get_user_detail,
+    cms_get_user_payments as service_cms_get_user_payments,
     get_business_verification as service_get_business_verification,
     cms_marketing_agree as service_cms_marketing_agree,
 )
@@ -146,12 +147,14 @@ def cms_get_user_list():
 @router.get("/get/user/detail")
 def cms_get_user_detail(user_id: int):
     data = service_cms_get_user_detail(user_id)
+    payments = service_cms_get_user_payments(user_id)
     business = service_get_business_verification(user_id)
     ticket_info = service_get_valid_ticket(user_id)
     token_history = service_get_token_deduction_history(user_id)
 
     return {
         "detail": data,
+        "payments": payments,
         "business": business,
         "ticket_info": ticket_info,
         "token_history" : token_history,

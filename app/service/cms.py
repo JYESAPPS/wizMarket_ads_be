@@ -5,6 +5,7 @@ from app.crud.cms import (
     cms_reject_verification as crud_cms_reject_verification,
     cms_get_user_list as crud_get_user_list,
     cms_get_user_detail as crud_get_user_detail,
+    cms_get_user_payments as crud_cms_get_user_payments,
     get_business_verification as crud_get_business_verification,
     cms_marketing_agree as crud_cms_marketing_agree,
 )
@@ -116,10 +117,11 @@ def cms_get_user_list():
 
 def cms_get_user_detail(user_id):
     row = crud_get_user_detail(user_id)
-    if not row: ...
+    if not row:
+        return None
+    
     (user_id, email, login_provider, created_at, nickname, register_tag, platform, last_seen,
-    store_name, large_cat, medium_cat, small_cat, industry_name, road_name_address,
-    ticket_name, ticket_price, billing_cycle, ticket_id, payment_date, next_renewal) = row
+    store_name, large_cat, medium_cat, small_cat, industry_name, road_name_address,) = row
 
     return {
         "user_id": user_id,
@@ -136,13 +138,33 @@ def cms_get_user_detail(user_id):
         "small_category_name": small_cat,
         "industry_name": industry_name,
         "road_name_address": road_name_address,
-        "ticket_name": ticket_name,
-        "ticket_price": ticket_price,
-        "billing_cycle": billing_cycle,
-        "ticket_id": ticket_id,
-        "payment_date": payment_date,
-        "next_renewal": next_renewal,
     }
+
+def cms_get_user_payments(user_id):
+    rows = crud_cms_get_user_payments(user_id)
+
+    payments = []
+
+    for (
+        payment_id, u_id, ticket_id,
+        ticket_name, ticket_price, billing_cycle,
+        payment_date, expire_date, next_renewal, is_valid
+    ) in rows:
+        payments.append({
+            "payment_id": int(payment_id) if payment_id is not None else None,
+            "user_id": int(u_id) if u_id is not None else None,
+            "ticket_id": int(ticket_id) if ticket_id is not None else None,
+            "ticket_name": ticket_name,
+            "ticket_price": float(ticket_price) if ticket_price is not None else None,
+            "billing_cycle": int(billing_cycle) if billing_cycle is not None else None,
+            "payment_date": payment_date.isoformat() if payment_date else None,
+            "expire_date": expire_date.isoformat() if expire_date else None,
+            "next_renewal": next_renewal.isoformat() if next_renewal else None,
+            "is_valid": int(is_valid) if is_valid is not None else 0,
+        })
+
+    return payments 
+
 
 def get_business_verification(user_id):
     return crud_get_business_verification(user_id)

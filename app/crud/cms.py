@@ -239,13 +239,7 @@ def cms_get_user_detail(user_id):
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT u.user_id, u.email, u.login_provider, u.created_at, ui.nickname, ui.register_tag, ud.platform, ud.last_seen,
-                        ls.store_name, ls.large_category_name, ls.medium_category_name, ls.small_category_name, ls.industry_name, ls.road_name_address,
-                        t.ticket_name, t.ticket_price, t.billing_cycle, tp.ticket_id, tp.payment_date,
-                        CASE
-                            WHEN t.billing_cycle IS NULL OR t.billing_cycle = 0
-                                THEN NULL
-                            ELSE DATE_ADD(tp.payment_date, INTERVAL t.billing_cycle MONTH)
-                            END AS next_renewal
+                        ls.store_name, ls.large_category_name, ls.medium_category_name, ls.small_category_name, ls.industry_name, ls.road_name_address
                 FROM wiz_report.user AS u
                 LEFT JOIN wiz_report.user_info AS ui ON ui.user_id = u.user_id
                 LEFT JOIN (
@@ -258,24 +252,40 @@ def cms_get_user_detail(user_id):
                     ON ud.user_id = u.user_id
                 LEFT JOIN test.local_store AS ls
                     ON ls.store_business_number = u.store_business_number
-                LEFT JOIN (
-                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
-                    FROM wiz_report.ticket_payment tp
-                    JOIN (
-                        SELECT user_id, MAX(payment_date) AS max_payment_date
-                        FROM wiz_report.ticket_payment
-                        GROUP BY user_id
-                    ) mx
-                        ON mx.user_id = tp.user_id
-                    AND mx.max_payment_date = tp.payment_date
-                ) AS tp ON tp.user_id = u.user_id
-                LEFT JOIN wiz_report.ticket t ON t.ticket_id = tp.ticket_id
                 WHERE u.user_id = %s
                 LIMIT 1
             """, (user_id, user_id))
             return cur.fetchone()
     finally:
         close_connection(conn)
+
+def cms_get_user_payments(user_id):
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT tp.payment_id, tp.user_id, tp.ticket_id,
+                    t.ticket_name, t.ticket_price, t.billing_cycle,
+                    tp.payment_date, tp.expire_date,
+                    CASE 
+                        WHEN t.billing_cycle IS NULL OR t.billing_cycle = 0 
+                            THEN NULL
+                        ELSE DATE_ADD(tp.payment_date, INTERVAL t.billing_cycle MONTH)
+                    END AS next_renewal,
+                    CASE 
+                        WHEN tp.expire_date IS NOT NULL AND tp.expire_date >= CURDATE() 
+                            THEN 1 ELSE 0 
+                    END AS is_valid
+                FROM wiz_report.ticket_payment tp
+                LEFT JOIN wiz_report.ticket t 
+                    ON t.ticket_id = tp.ticket_id
+                WHERE tp.user_id = %s
+                ORDER BY tp.payment_date DESC
+        """, (user_id,))
+        return cur.fetchall()
+    finally:
+        close_connection(conn)                
+
 
 def get_business_verification(user_id):
     conn = get_re_db_connection()
