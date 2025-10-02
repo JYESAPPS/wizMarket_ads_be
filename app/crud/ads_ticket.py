@@ -180,6 +180,61 @@ def insert_onetime(user_id, ticket_id, token_grant, token_onetime, grant_date):
         close_cursor(cursor)
         close_connection(connection)
 
+
+
+# 사용자의 토큰 내역에 월구독 삽입
+def insest_monthly(user_id, ticket_id, token_grant, token_onetime, grant_date):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+        insert_query = """
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+
+        #grant_type은 토큰 지급일 때 1, 소모일 때 0 
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_onetime, grant_date))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+# 사용자의 토큰 내역에 년구독 삽입
+def insest_yearly(user_id, ticket_id, token_grant, token_onetime, grant_date):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+        insert_query = """
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+
+        #grant_type은 토큰 지급일 때 1, 소모일 때 0 
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_onetime, grant_date))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+
+
 #사용자의 결제 내역 조회
 def get_history_100(user_id):
     try:

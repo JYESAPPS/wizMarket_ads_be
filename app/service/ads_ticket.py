@@ -4,6 +4,8 @@ from app.crud.ads_ticket import (
     get_token_amount as crud_get_token_amount,
     get_latest_token_onetime as crud_get_latest_token_onetime,
     insert_onetime as crud_insert_onetime,
+    insest_monthly as crud_insest_monthly,
+    insest_yearly as crud_insest_yearly,
     get_history_100 as crud_get_history_100,
     get_history as crud_get_history,
     get_latest_token_subscription as crud_get_latest_token_subscription,
@@ -42,7 +44,11 @@ def insert_token(request):
     ticket_id = request.ticket_id
     # 지급 토큰 수량 조회
     token_amount = crud_get_token_amount(ticket_id)
+    # print(request)
+    # 지급 일자
     grant_date = datetime.fromisoformat(request.payment_date.replace("Z", "+00:00")).date()
+
+    # 단건 토큰 + 정기 토큰 합산
     token_onetime = crud_get_latest_token_onetime(user_id) + token_amount
 
     #단건의 경우
@@ -55,12 +61,12 @@ def insert_token(request):
     else: 
         # 월 구독
         if request.billing_cycle == "월간":
-            pass
-            # crud_insest_monthly(user_id, ticket_id, token_amount, token_onetime)
+            crud_insest_monthly(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
         # 년구독
         if request.billing_cycle == "연간":
-            pass
+            token_onetime = token_onetime * 12
+            crud_insest_yearly(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
 
 
