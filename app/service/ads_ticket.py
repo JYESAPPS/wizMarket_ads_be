@@ -44,7 +44,7 @@ def insert_token(request):
     ticket_id = request.ticket_id
     # 지급 토큰 수량 조회
     token_amount = crud_get_token_amount(ticket_id)
-    # print(request)
+    print(request)
     # 지급 일자
     grant_date = datetime.fromisoformat(request.payment_date.replace("Z", "+00:00")).date()
 
@@ -59,6 +59,9 @@ def insert_token(request):
            
     # 정기권의 경우 월별로 지급
     else: 
+        if request.billing_cycle == "없음":
+            crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+
         # 월 구독
         if request.billing_cycle == "월간":
             crud_insest_monthly(user_id, ticket_id, token_amount, token_onetime, grant_date)
@@ -66,6 +69,7 @@ def insert_token(request):
         # 년구독
         if request.billing_cycle == "연간":
             token_onetime = token_onetime * 12
+            print(token_onetime)
             crud_insest_yearly(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
 
