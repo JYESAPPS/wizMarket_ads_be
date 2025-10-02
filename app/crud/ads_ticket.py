@@ -189,7 +189,7 @@ def insest_monthly(user_id, ticket_id, token_grant, token_onetime, grant_date):
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_ONETIME, GRANT_DATE)
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
 
@@ -214,7 +214,7 @@ def insest_yearly(user_id, ticket_id, token_grant, token_onetime, grant_date):
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_ONETIME, GRANT_DATE)
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
 

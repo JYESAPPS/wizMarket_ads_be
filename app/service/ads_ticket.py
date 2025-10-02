@@ -68,8 +68,7 @@ def insert_token(request):
 
         # 년구독
         if request.billing_cycle == "연간":
-            token_onetime = token_onetime * 12
-            print(token_onetime)
+            token_amount = token_amount * 12
             crud_insest_yearly(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
 
