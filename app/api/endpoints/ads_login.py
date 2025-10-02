@@ -230,7 +230,7 @@ def ads_login_google_route(request: Apple):
             }
 
 
-    provider = "email"
+    provider = "apple"
     email = request.email
     apple_id = email.split("@", 1)[0]
     # print(email, google_id)
