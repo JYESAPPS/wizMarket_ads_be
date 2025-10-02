@@ -164,7 +164,7 @@ def get_user_by_provider(provider: str, provider_id: str, email: str):
         if user:
             user_id = user["user_id"]
         else:
-            if provider in {"kakao", "google", "naver"}:
+            if provider in {"kakao", "google", "naver", "apple"}:
                 user_id = crud_insert_user_sns(email=email, provider=provider, provider_id=provider_id)
             else:
                 raise ValueError(f"지원하지 않는 provider: {provider}")
