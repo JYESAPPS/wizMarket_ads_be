@@ -7,6 +7,7 @@ class InsertPayRequest(BaseModel):
     payment_date: str  
     qty: int
     type: str
+    billing_cycle: str
 
 class InsertTokenRequest(BaseModel):
     user_id: int
