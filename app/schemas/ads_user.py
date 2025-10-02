@@ -56,6 +56,12 @@ class Google(BaseModel):
     email : str
     device_token : str = None
     installation_id : str = None
+    
+class Apple(BaseModel):
+    apple_access_token : str
+    email : str
+    device_token : str = None
+    installation_id : str = None
 
 class Naver(BaseModel):
     naver_access_token : str

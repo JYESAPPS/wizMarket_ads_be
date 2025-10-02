@@ -2,7 +2,7 @@ import os, requests
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
-    UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, User, UserUpdate,
+    UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, Apple, User, UserUpdate,
     TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister,
     InstallCheckResponse
 )
@@ -212,7 +212,7 @@ def ads_login_google_route(request: Google):
 
 # 애플 로그인 API 엔드포인트
 @router.post("/login/apple")
-def ads_login_google_route(request: Google):
+def ads_login_google_route(request: Apple):
     # 로그아웃 유저 검사
     logout_user = service_get_logout_user(request.installation_id)
     if logout_user:
@@ -232,10 +232,10 @@ def ads_login_google_route(request: Google):
 
     provider = "email"
     email = request.email
-    google_id = email.split("@", 1)[0]
+    apple_id = email.split("@", 1)[0]
     # print(email, google_id)
     # user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
-    user_id = service_get_user_by_provider(provider, google_id, email)
+    user_id = service_get_user_by_provider(provider, apple_id, email)
     user_info = service_get_user_by_id(user_id)
 
     if request.device_token:
@@ -254,6 +254,7 @@ def ads_login_google_route(request: Google):
         "user": {
             "user_id": user_id,
             "provider" : provider,
+            "provider_id" : request.apple_access_token,
             "type": user_info["type"],
             "store_business_number": user_info.get("store_business_number", None)
         }
