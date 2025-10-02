@@ -143,13 +143,25 @@ def get_image_list(category_id: int):
 
 
 
-def get_user_by_provider(login_provider: str, provider_id: str):
+def get_user_by_provider(login_provider: str, provider_id: str, provider_key: str | None = None):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
     logger = logging.getLogger(__name__)
 
     try:
         if connection.open:
+            if login_provider == "apple":
+                query = """
+                    SELECT *
+                    FROM user
+                    WHERE login_provider = %s AND provider_key = %s
+                    AND is_active = 1 AND status != 'deleted'
+                """
+                cursor.execute(query, (login_provider, provider_key))
+                user = cursor.fetchone()
+
+                return user  # dict 형태
+            
             query = """
                 SELECT *
                 FROM user
@@ -172,7 +184,7 @@ def get_user_by_provider(login_provider: str, provider_id: str):
         connection.close()
 
 
-def insert_user_sns(email: str | None, provider: str, provider_id: str):
+def insert_user_sns(email: str | None, provider: str, provider_id: str, provider_key: str | None = None ):
     import pymysql
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
@@ -181,9 +193,9 @@ def insert_user_sns(email: str | None, provider: str, provider_id: str):
     try:
         # 1) 순수 INSERT (사전 조회 없음)
         cursor.execute("""
-            INSERT INTO `user` (email, login_provider, provider_id, is_active, status, created_at, updated_at)
-            VALUES (%s, %s, %s, 1, 'approved', NOW(), NOW())
-        """, (email, provider, provider_id))
+            INSERT INTO `user` (email, login_provider, provider_id, provider_key, is_active, status, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, 1, 'approved', NOW(), NOW())
+        """, (email, provider, provider_id, provider_key))
         connection.commit()
         return cursor.lastrowid
 

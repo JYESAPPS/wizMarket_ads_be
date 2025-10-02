@@ -155,17 +155,17 @@ def get_logout_user(installation_id: int):
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
 # def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
-def get_user_by_provider(provider: str, provider_id: str, email: str):
+def get_user_by_provider(provider: str, provider_id: str, email: str, provider_key: str | None = None):
     try:
         # 1) 사용자 조회
-        user = crud_get_user_by_provider(provider, provider_id)
+        user = crud_get_user_by_provider(provider, provider_id, provider_key)
 
         # 2) 없으면 SNS 가입
         if user:
             user_id = user["user_id"]
         else:
             if provider in {"kakao", "google", "naver", "apple"}:
-                user_id = crud_insert_user_sns(email=email, provider=provider, provider_id=provider_id)
+                user_id = crud_insert_user_sns(email, provider, provider_id, provider_key)
             else:
                 raise ValueError(f"지원하지 않는 provider: {provider}")
 

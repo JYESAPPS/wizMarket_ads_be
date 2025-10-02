@@ -233,9 +233,10 @@ def ads_login_google_route(request: Apple):
     provider = "apple"
     email = request.email
     apple_id = email.split("@", 1)[0]
-    # print(email, google_id)
-    # user_id = service_get_user_by_provider(provider, google_id, email, request.device_token, request.installation_id)
-    user_id = service_get_user_by_provider(provider, apple_id, email)
+    provider_key = request.apple_access_token
+
+    # apple의 경우 계정 있을 시 provider_key 제공
+    user_id = service_get_user_by_provider(provider, apple_id, email, provider_key)
     user_info = service_get_user_by_id(user_id)
 
     if request.device_token:
