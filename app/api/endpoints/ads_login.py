@@ -215,16 +215,18 @@ def ads_login_google_route(request: Google):
 def ads_login_google_route(request: Apple):
     # 로그아웃 유저 검사
     logout_user = service_get_logout_user(request.installation_id)
+    provider_key = request.apple_access_token
+
     if logout_user:
         # dict 또는 객체 대응
         lp = logout_user.get("login_provider") if isinstance(logout_user, dict) else getattr(logout_user, "login_provider", None)
-        le = logout_user.get("email")          if isinstance(logout_user, dict) else getattr(logout_user, "email", None)
+        le = logout_user.get("provider_key")   if isinstance(logout_user, dict) else getattr(logout_user, "provider_key", None)
 
         if lp and lp != "apple":
             return {
                 "msg" : "기존 SNS계정과 다른 SNS계정으로 로그인 할 수 없습니다. 기존 SNS계정으로 로그인해주세요."
             }
-        if le and le != request.email:
+        if le and le != provider_key:
             return {
                 "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
             }
@@ -233,9 +235,8 @@ def ads_login_google_route(request: Apple):
     provider = "apple"
     email = request.email
     apple_id = email.split("@", 1)[0]
-    provider_key = request.apple_access_token
 
-    # apple의 경우 계정 있을 시 provider_key 제공
+    # apple의 경우 계정 있을 시 provider_key 전송
     user_id = service_get_user_by_provider(provider, apple_id, email, provider_key)
     user_info = service_get_user_by_id(user_id)
 
