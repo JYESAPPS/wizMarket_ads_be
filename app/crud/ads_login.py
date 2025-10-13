@@ -50,6 +50,31 @@ def get_logout_user_by_id(user_id: int):
         except:
             pass
 
+# status : logout -> active
+def update_logout_status(user_id):
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        conn.autocommit(False)
+        user_sql = '''
+            UPDATE user
+            SET status = 'active'
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (user_id,))
+        conn.commit()
+        return True
+    
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"계정 상태 변경 저장 중 오류 발생: {e}")
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
 
 def check_install_id(install_id: str) -> bool:
     conn = get_re_db_connection()

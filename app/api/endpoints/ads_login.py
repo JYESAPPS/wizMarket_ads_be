@@ -31,6 +31,7 @@ from app.service.ads_login import (
     update_permission_confirmed as service_update_permission_confirmed,
     check_install_id as service_check_install_id,
     get_logout_user as service_get_logout_user,
+    update_logout_status as service_update_logout_status,
 )
 
 from app.service.ads_app import (
@@ -122,6 +123,13 @@ def ads_login_kakao_route(request: KaKao):
             return {
                 "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
             }
+        
+        # state : active으로 전환
+        status_change = service_update_logout_status(request.installation_id)
+
+        if not status_change:
+            raise HTTPException(status_code=500, detail="로그아웃 유저 상태 변경에 실패했습니다.")
+
 
     provider = "kakao"
     email = request.email

@@ -19,6 +19,7 @@ from app.crud.ads_login import (
     check_install_id as crud_check_install_id,
     chect_logout_user_id as crud_logout_user_id,
     get_logout_user_by_id as crud_get_logout_user_by_id,
+    update_logout_status as crud_update_logout_status,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -148,8 +149,11 @@ def get_logout_user(installation_id: int):
     return user_info
 
 
-
-
+# 로그아웃 유저가 재로그인 시 status active로 전환
+def update_logout_status(installation_id):
+    user_id = crud_logout_user_id(installation_id)
+    success = crud_update_logout_status(user_id)
+    return success
 
 
 
