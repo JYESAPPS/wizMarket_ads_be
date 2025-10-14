@@ -232,6 +232,29 @@ def insest_yearly(user_id, ticket_id, token_grant, token_onetime, grant_date):
         close_connection(connection)
 
 
+# 구매 시 user_info에 티켓 정보 추가
+def update_subscription_info(user_id, plan_type):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+        update_query = """
+            UPDATE user_info
+            SET subscription_type = %s
+            WHERE user_id = %s
+        """
+
+        cursor.execute(update_query, (plan_type, user_id))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
 
 
 

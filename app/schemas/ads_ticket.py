@@ -8,6 +8,7 @@ class InsertPayRequest(BaseModel):
     qty: int
     type: str
     billing_cycle: str
+    plan_type: str
 
 class InsertTokenRequest(BaseModel):
     user_id: int

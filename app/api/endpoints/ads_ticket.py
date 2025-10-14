@@ -15,7 +15,8 @@ from app.service.ads_ticket import (
     get_token as service_get_token,
     get_valid_ticket as service_get_valid_ticket,
     deduct_token as service_deduct_token,
-    get_token_deduction_history as service_get_token_deduction_history
+    get_token_deduction_history as service_get_token_deduction_history,
+    update_subscription_info as service_update_subscription_info,
 )
 
 
@@ -64,6 +65,15 @@ def insert_payment(request: List[InsertPayRequest]):
             detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
         )
 
+    # user_info에 구독 정보 추가
+    try:
+        service_update_subscription_info(request[0].user_id, request[0].plan_type)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"구독 정보 저장 과정에서 문제가 발생했습니다.: {str(e)}"
+        )
+    
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={

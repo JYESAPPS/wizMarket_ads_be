@@ -12,7 +12,8 @@ from app.crud.ads_ticket import (
     get_valid_ticket as crud_get_valid_ticket,
     insert_payment_history as crud_insert_token_deduction_history,
     insert_token_deduction_history as crud_insert_token_deduction_history,
-    get_token_deduction_history as crud_get_token_deduction_history
+    get_token_deduction_history as crud_get_token_deduction_history,
+    update_subscription_info as crud_update_subscription_info,
 )
 
 from datetime import datetime
@@ -71,7 +72,8 @@ def insert_token(request):
             token_amount = token_amount * 12
             crud_insest_yearly(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
-
+def update_subscription_info(user_id, plan_type):
+    crud_update_subscription_info(user_id, plan_type)
 
 
     # grant_date : 구매 일자부터 종료일자까지 달별로 지급
