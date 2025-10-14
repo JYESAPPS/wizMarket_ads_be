@@ -15,6 +15,7 @@ from app.crud.ads_ticket import (
     get_token_deduction_history as crud_get_token_deduction_history,
     get_subscription_info as crud_get_subscription_info,
     update_subscription_info as crud_update_subscription_info,
+    get_token_onetime as crud_get_token_onetime,
 )
 
 from datetime import datetime
@@ -126,9 +127,14 @@ def get_valid_ticket(user_id):
     subscription = crud_get_latest_token_subscription(user_id)
     valid_ticket = crud_get_valid_ticket(user_id)
 
+    # 구독권이 없을 때 단건 조회
+    if valid_ticket is None:
+        valid_ticket = crud_get_token_onetime(user_id)
+
     return {
         "ticket_name": valid_ticket["ticket_name"] if valid_ticket else None,
-        "token_amount": onetime + (subscription["sub"] or 0)
+        "token_amount": onetime + (subscription["sub"] or 0),
+        "billing_cycle": valid_ticket["billing_cycle"] if valid_ticket else None
     }
 
 # 차감 함수

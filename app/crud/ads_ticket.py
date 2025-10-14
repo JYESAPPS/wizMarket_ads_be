@@ -346,7 +346,7 @@ def get_valid_ticket(user_id):
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT t.TICKET_NAME, p.EXPIRE_DATE
+                SELECT t.TICKET_NAME, t.BILLING_CYCLE, p.EXPIRE_DATE
                 FROM ticket_payment p
                 JOIN ticket t
                 ON t.TICKET_ID = p.TICKET_ID           
@@ -362,7 +362,8 @@ def get_valid_ticket(user_id):
             return None
         return {
             "ticket_name": result[0],
-            "expire": result[1]
+            "billing_cycle": result[1],
+            "expire": result[2]
         }
             
     except Exception as e:
@@ -370,6 +371,35 @@ def get_valid_ticket(user_id):
         return []
     finally:
         connection.close()     
+
+def get_token_onetime(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT t.TICKET_NAME, t.BILLING_CYCLE
+                FROM ticket_payment p
+                JOIN ticket t
+                ON t.TICKET_ID = p.TICKET_ID           
+                WHERE p.USER_ID = %s
+                AND p.TICKET_ID = %s
+                ORDER BY p.PAYMENT_ID DESC
+                LIMIT 1
+            """, (user_id, 1))
+            result = cursor.fetchone()
+
+        if result is None:
+            return None
+        return {
+            "ticket_name": result[0],
+            "billing_cycle": result[1],
+        }
+            
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return 0
+    finally:
+        connection.close()
 
 # 구독 토큰 차감
 def update_subscription_token(user_id: int):
