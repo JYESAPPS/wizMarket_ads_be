@@ -24,6 +24,28 @@ class StoreAddInfo(BaseModel):
     status: str  
 
 
+class AddRequest(BaseModel):
+
+    road_name : str
+
+    user_id: int
+
+    large_category_code: str 
+    medium_category_code: str 
+    small_category_code: str
+
+    store_name: str 
+    
+
+    business_name: str
+    business_number: str
+
+    status: str  # 예: pending, approved, rejected
+    register_tag: Optional[str] = None
+    
+
+
+
 class SNSAccount(BaseModel):
     channel: str = Field(..., description="채널명 (인스타그램/블로그/페이스북/X/네이버밴드 등)")
     account: str = Field(..., description="계정 ID 또는 URL")
