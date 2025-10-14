@@ -171,7 +171,7 @@ def add_new_store(request: AddRequest):
         service_copy_new_store(store_business_number)
 
         # 5. 카피 매장 매칭
-        service_register_store_info(request)
+        service_register_store_info(request, store_business_number)
         return {"success": True, "message": "매장 등록 성공."}
 
     else : 
