@@ -65,14 +65,15 @@ def insert_payment(request: List[InsertPayRequest]):
             detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
         )
 
-    # user_info에 구독 정보 추가
-    try:
-        service_update_subscription_info(request[0].user_id, request[0].plan_type)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"구독 정보 저장 과정에서 문제가 발생했습니다.: {str(e)}"
-        )
+    if request[0].plan_type in ["basic", "standard", "premium"]:
+        # user_info에 구독 정보 추가
+        try:
+            service_update_subscription_info(request[0].user_id, request[0].plan_type)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"구독 정보 저장 과정에서 문제가 발생했습니다.: {str(e)}"
+            )
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,

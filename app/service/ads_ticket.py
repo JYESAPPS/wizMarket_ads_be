@@ -13,6 +13,7 @@ from app.crud.ads_ticket import (
     # insert_payment_history as crud_insert_token_deduction_history,
     insert_token_deduction_history as crud_insert_token_deduction_history,
     get_token_deduction_history as crud_get_token_deduction_history,
+    get_subscription_info as crud_get_subscription_info,
     update_subscription_info as crud_update_subscription_info,
 )
 
@@ -75,17 +76,24 @@ def insert_token(request):
         elif request.billing_cycle == "연간":
             token_amount = token_amount * 12
             token_subscription = token_subscription + token_amount
-            crud_insest_yearly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
-
-def update_subscription_info(user_id, plan_type):
-    crud_update_subscription_info(user_id, plan_type)
-
+            crud_insest_yearly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date) 
 
     # grant_date : 구매 일자부터 종료일자까지 달별로 지급
     # token_grant
     # token_sub 
     # valid_until : 지급 일자+1달
 
+def update_subscription_info(user_id, plan_type):
+    # 기존 구독 상품 조회
+    subscrtiption_type = crud_get_subscription_info(user_id)
+
+    # if 구독 있음 && basic은 update 안함
+    if subscrtiption_type and plan_type == "basic":
+        return
+
+    # if 구독 없음: 바로 입력
+    else:
+        crud_update_subscription_info(user_id, plan_type)
 
 # 100개 결제 내역 조회
 def get_history_100(user_id):

@@ -231,6 +231,33 @@ def insest_yearly(user_id, ticket_id, token_grant, token_subscription, token_one
         close_cursor(cursor)
         close_connection(connection)
 
+# 현재 구독 상품 조회
+def get_subscription_info(user_id):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    try:
+        if connection.open:
+            select_query = """
+                SELECT subscription_type 
+                FROM user_info
+                WHERE user_id=%s;
+            """
+            cursor.execute(select_query, (user_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            return row["subscription_type"]
+
+    except Exception as e:
+        logger.error(f"Unexpected Error in get_notice: {e}")
+        raise HTTPException(status_code=500, detail="구독 정도 조회 오류가 발생했습니다.")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 # 구매 시 user_info에 티켓 정보 추가
 def update_subscription_info(user_id, plan_type):
