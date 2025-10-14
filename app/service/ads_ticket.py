@@ -10,7 +10,7 @@ from app.crud.ads_ticket import (
     get_history as crud_get_history,
     get_latest_token_subscription as crud_get_latest_token_subscription,
     get_valid_ticket as crud_get_valid_ticket,
-    insert_payment_history as crud_insert_token_deduction_history,
+    # insert_payment_history as crud_insert_token_deduction_history,
     insert_token_deduction_history as crud_insert_token_deduction_history,
     get_token_deduction_history as crud_get_token_deduction_history,
     update_subscription_info as crud_update_subscription_info,
@@ -45,32 +45,37 @@ def insert_token(request):
     ticket_id = request.ticket_id
     # 지급 토큰 수량 조회
     token_amount = crud_get_token_amount(ticket_id)
-    print(request)
+    # print(request)
+
     # 지급 일자
     grant_date = datetime.fromisoformat(request.payment_date.replace("Z", "+00:00")).date()
 
-    # 단건 토큰 + 정기 토큰 합산
-    token_onetime = crud_get_latest_token_onetime(user_id) + token_amount
+    # 단건 토큰 + 지급 토큰 = 지급 후 단건 토큰 개수
+    token_onetime = crud_get_latest_token_onetime(user_id)
+    subscription_info = crud_get_latest_token_subscription(user_id)
+    token_subscription = subscription_info["sub"]
 
     #단건의 경우
-    if request.type=="basic":
-        
+    if request.plan_type=="basic":
+        token_onetime = token_onetime + token_amount
         #삽입
-        crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+        crud_insert_onetime(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
            
     # 정기권의 경우 월별로 지급
     else: 
-        if request.billing_cycle == "없음":
-            crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+        # if request.billing_cycle == "없음":
+        #     crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
 
         # 월 구독
         if request.billing_cycle == "월간":
-            crud_insest_monthly(user_id, ticket_id, token_amount, token_onetime, grant_date)
+            token_subscription = token_subscription + token_amount
+            crud_insest_monthly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
 
         # 년구독
-        if request.billing_cycle == "연간":
+        elif request.billing_cycle == "연간":
             token_amount = token_amount * 12
-            crud_insest_yearly(user_id, ticket_id, token_amount, token_onetime, grant_date)
+            token_subscription = token_subscription + token_amount
+            crud_insest_yearly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
 
 def update_subscription_info(user_id, plan_type):
     crud_update_subscription_info(user_id, plan_type)
@@ -153,7 +158,6 @@ def deduct_token(user_id):
     # 차감 기록 DB 저장
     crud_insert_token_deduction_history(
         user_id=user_id,
-        ticket_id=1,
         token_grant=1,
         token_subscription=token_subscription,
         token_onetime=token_onetime,

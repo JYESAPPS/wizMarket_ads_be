@@ -157,18 +157,18 @@ def get_latest_token_subscription(user_id):
         connection.close()     
 
 #사용자의 토큰 내역에 단건 삽입
-def insert_onetime(user_id, ticket_id, token_grant, token_onetime, grant_date):
+def insert_onetime(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
     connection = get_re_db_connection()
 
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_ONETIME, GRANT_DATE)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
         #grant_type은 토큰 지급일 때 1, 소모일 때 0 
-        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_onetime, grant_date))
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:
@@ -183,18 +183,18 @@ def insert_onetime(user_id, ticket_id, token_grant, token_onetime, grant_date):
 
 
 # 사용자의 토큰 내역에 월구독 삽입
-def insest_monthly(user_id, ticket_id, token_grant, token_onetime, grant_date):
+def insest_monthly(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
     connection = get_re_db_connection()
 
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
         #grant_type은 토큰 지급일 때 1, 소모일 때 0 
-        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_onetime, grant_date))
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:
@@ -208,18 +208,18 @@ def insest_monthly(user_id, ticket_id, token_grant, token_onetime, grant_date):
 
 
 # 사용자의 토큰 내역에 년구독 삽입
-def insest_yearly(user_id, ticket_id, token_grant, token_onetime, grant_date):
+def insest_yearly(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
     connection = get_re_db_connection()
 
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
         #grant_type은 토큰 지급일 때 1, 소모일 때 0 
-        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_onetime, grant_date))
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:
@@ -385,7 +385,7 @@ def update_onetime_token(user_id: int):
         connection.close()
 
 # ticket_payment 테이블에 차감 이력 저장
-def insert_payment_history(user_id: int, ticket_id: int = 1, payment_method: str = "deduct"):
+def insert_payment_history(user_id: int, ticket_id: int = 0, payment_method: str = "deduct"):
     connection = get_re_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -407,18 +407,17 @@ def insert_payment_history(user_id: int, ticket_id: int = 1, payment_method: str
         connection.close()
 
 # 토큰 차감 시 ticket_token에 기록
-def insert_token_deduction_history(user_id: int, ticket_id: int, token_grant: int, token_subscription: int, token_onetime: int, valid_until, grant_date):
+def insert_token_deduction_history(user_id: int, token_grant: int, token_subscription: int, token_onetime: int, valid_until, grant_date):
     connection = get_re_db_connection()
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO ticket_token (
-                    GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, VALID_UNTIL, GRANT_DATE
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    GRANT_TYPE, USER_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, VALID_UNTIL, GRANT_DATE
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 0,  # GRANT_TYPE = 0 for deduction
                 user_id,
-                ticket_id,
                 token_grant,
                 token_subscription,
                 token_onetime,
