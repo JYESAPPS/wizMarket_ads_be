@@ -192,9 +192,9 @@ def add_new_store(
             store_name,
             road_name,
             longitude,
+            latitude,
             local_year,
-            local_quarter,
-            latitude
+            local_quarter
         ))
 
         connection.commit()
