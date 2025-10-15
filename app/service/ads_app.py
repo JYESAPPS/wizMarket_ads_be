@@ -313,7 +313,7 @@ async def insert_upload_record(request, file: UploadFile | None):
 CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog"}
 
 # base64 이미지 파일 저장 및 경로 설정
-UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT", "/app/uploads")).resolve()
+UPLOAD_ROOT = Path("/app/app/uploads").resolve()
 
 def save_base64_image(base64_str: str, user_id: int, channel_code: str, save_dir: str | None = None):
     
