@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from app.schemas.ads_user import (
-    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest, UserDelete, AddRequest
+    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest, UserDelete, AddRequest, UserStop, UserUnstop
 )
 
 from app.service.ads_user import (
@@ -16,6 +16,8 @@ from app.service.ads_user import (
     register_sns as service_register_sns,
     delete_user as service_delete_user,
     logout_user as service_logout_user,
+    stop_user as service_stop_user,
+    unstop_user as service_unstop_user,
 )
 
 
@@ -252,6 +254,55 @@ def delete_user(request: UserDelete):
         print(f"회원 탈퇴 오류: {e}")
         return {"success": False, "message": "서버 오류"}
 
+
+
+
+@router.post("/user/stop")
+def stop_user(request: UserStop):
+    """
+    회원 정지
+    - request: { user_id, reason }
+    """
+    try:
+        if not request.user_id:
+            raise HTTPException(status_code=400, detail="Missing user_id")
+        if not request.reason or not request.reason.strip():
+            raise HTTPException(status_code=400, detail="Missing reason")
+
+        # 회원 정지 로직 구현 (예: DB에서 사용자 삭제)
+        success = service_stop_user(request.user_id, request.reason.strip())
+
+        if success:
+            return {"success": True}
+        else:
+            return {"success": False, "message": "회원 정지 실패"}
+
+    except Exception as e:
+        print(f"회원 정지 오류: {e}")
+        return {"success": False, "message": "서버 오류"}
+
+
+@router.post("/user/unstop")
+def unstop_user(request: UserUnstop):
+    """
+    회원 정지
+    - request: { user_id, reason }
+    """
+    try:
+        if not request.user_id:
+            raise HTTPException(status_code=400, detail="Missing user_id")
+
+        # 회원 정지 로직 구현 (예: DB에서 사용자 삭제)
+        success = service_unstop_user(request.user_id)
+
+        if success:
+            return {"success": True}
+        else:
+            return {"success": False, "message": "회원 정지 실패"}
+
+    except Exception as e:
+        print(f"회원 정지 해제 오류: {e}")
+        return {"success": False, "message": "서버 오류"}
 
 
 

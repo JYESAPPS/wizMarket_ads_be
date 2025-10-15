@@ -98,6 +98,12 @@ class User(BaseModel):
     access_token : str
     device_token : str = None
 
+class UserStop(BaseModel):
+    user_id: int
+    reason: Optional[str] = None
+
+class UserUnstop(BaseModel):
+    user_id: int
 
 class UserUpdate(BaseModel):
     user_id : int

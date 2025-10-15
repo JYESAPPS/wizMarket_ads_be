@@ -10,6 +10,8 @@ from app.crud.ads_user import (
     get_store as crud_get_store,
     insert_business_info as crud_insert_business_info,
     update_user as crud_update_user,
+    stop_user as crud_stop_user,
+    unstop_user as crud_unstop_user,
 
 )
 
@@ -86,6 +88,18 @@ def logout_user(user_id: str):
 
     return success
 
+
+
+# 회원 정지
+def stop_user(user_id: str, reason: str):
+    sucess = crud_stop_user(user_id, reason)
+    return sucess
+
+
+# 회원 정지 해제
+def unstop_user(user_id: str):
+    sucess = crud_unstop_user(user_id)
+    return sucess
 
 
 

@@ -42,6 +42,51 @@ def register_user(user_id, password):
         return {"success": False, "message": "서버 오류"}
     
 
+
+def stop_user(user_id: str, reason: str) -> bool:
+
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+
+    try:
+        conn.autocommit(False)
+        user_sql = '''
+            UPDATE user
+            SET status = 'stop', stop_reason = %s, is_active = 0, updated_at = NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (reason, user_id))
+        conn.commit()
+        return True
+    
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_logout_user] {e}")
+        return False
+
+
+def unstop_user(user_id: str) -> bool:
+
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+
+    try:
+        conn.autocommit(False)
+        user_sql = '''
+            UPDATE user
+            SET status = 'active', stop_reason = null, is_active = 1, updated_at = NOW()
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (user_id))
+        conn.commit()
+        return True
+    
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"[crud_logout_user] {e}")
+        return False
+
+
 # 매장 조회 : 가게명 LIKE, 도로명 ==
 def get_store(store_name, road_name):
     connection = get_re_db_connection()
