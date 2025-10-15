@@ -6,7 +6,6 @@ from app.schemas.ads_user import (
     TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister,
     InstallCheckResponse
 )
-from jose import jwt, ExpiredSignatureError, JWTError
 
 
 from app.service.ads_login import (
@@ -32,6 +31,7 @@ from app.service.ads_login import (
     check_install_id as service_check_install_id,
     get_logout_user as service_get_logout_user,
     update_logout_status as service_update_logout_status,
+    update_last_seen as service_update_last_seen
 )
 
 from app.service.ads_app import (
@@ -318,10 +318,10 @@ def ads_login_naver_route(request: Naver):
 # 네이버 로그인 콜백
 @router.post("/naver/exchange")
 def naver_exchange(request: NaverExchange):
-    print(request)
+    # print(request)
     NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
     NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
-    print("in")
+    # print("in")
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         raise HTTPException(500, "naver client env missing")
 
@@ -354,7 +354,7 @@ def naver_exchange(request: NaverExchange):
         raise HTTPException(400, f"me_fail_{me_res.status_code}:{me_json.get('message','')}")
 
     profile = me_json.get("response", {})
-    print(profile)
+    # print(profile)
     # TODO: 여기서 회원 매핑/가입/로그인 처리 후 JWT 발급 등
     return {"success": True, "profile": profile}
 
@@ -372,7 +372,13 @@ def auto_login(request: User):
     if not user_id:
         raise HTTPException(status_code=400, detail="토큰에 user_id(sub)가 없습니다.")
 
-    user = service_get_user_by_id(int(user_id))
+    user_id = int(user_id)
+    # last_seen 업데이트
+    service_update_last_seen(user_id)
+
+
+    # 유저 정보 얻기
+    user = service_get_user_by_id(user_id)
 
     return {
         "user_id": user["user_id"],

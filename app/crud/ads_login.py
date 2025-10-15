@@ -525,6 +525,48 @@ def update_device_token(
 
 
 
+# last_seen 업데이트
+def update_last_seen(user_id):
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        conn.autocommit(False)
+
+        # installation_id 매칭되는 행만 갱신 (무조건 UPDATE, INSERT 없음)
+        sql = """
+            UPDATE user_device
+               SET last_seen   = NOW()
+             WHERE user_id = %s
+        """
+        cur.execute(sql, (user_id))
+
+        # 영향받은 행이 0이면 매칭 대상 없음 → False
+        if cur.rowcount == 0:
+            conn.rollback()
+            return False
+
+        conn.commit()
+        return True
+
+    except pymysql.MySQLError as e:
+        conn.rollback()
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        try:
+            cur.close()
+        finally:
+            conn.close()
+
+
+
+
 def select_user_id(store_business_number):
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)

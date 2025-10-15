@@ -20,6 +20,7 @@ from app.crud.ads_login import (
     chect_logout_user_id as crud_logout_user_id,
     get_logout_user_by_id as crud_get_logout_user_by_id,
     update_logout_status as crud_update_logout_status,
+    update_last_seen as crud_update_last_seen
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -31,7 +32,6 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import jwt, ExpiredSignatureError, JWTError
 from typing import Optional
-from playwright.sync_api import sync_playwright
 from fastapi import HTTPException
 import re
 import subprocess
@@ -241,6 +241,14 @@ def token_refresh(refresh_token: str):
 # 디바이스 토큰 항상 업데이트
 def update_device_token(user_id: int, device_token: str, installation_id: Optional[str] = None):
     return crud_update_device_token(user_id, device_token, installation_id)
+
+
+
+# last_seen 업데이트
+def update_last_seen(user_id):
+    return crud_update_last_seen(user_id)
+
+
 
 
 # 유저 ID로 유저 정보 조회

@@ -81,7 +81,7 @@ def match_store(request: StoreMatch):
 @router.post("/store/register")
 def register_store_info(request: StoreAddInfo):
     try: 
-        success = service_register_store_info(request)
+        success = service_register_store_info(request, request.store_business_number)
 
         return success
     except Exception as e:
