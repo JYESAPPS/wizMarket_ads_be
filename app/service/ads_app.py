@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from io import BytesIO
+from pathlib import Path
 from runwayml import RunwayML
 from moviepy import *
 from google import genai
@@ -312,32 +313,44 @@ async def insert_upload_record(request, file: UploadFile | None):
 CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog"}
 
 # base64 이미지 파일 저장 및 경로 설정
-def save_base64_image(base64_str, user_id: int, channel_code: str, save_dir="uploads/image/user"):
+UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT", "/app/uploads")).resolve()
+
+def save_base64_image(base64_str: str, user_id: int, channel_code: str, save_dir: str | None = None):
+    
 
     channel_name = CHANNEL_MAP.get(channel_code, "unknown")
 
-    # 저장 디렉토리 생성
-    user_folder = f"user_{user_id}"
-    full_dir = os.path.join(save_dir, user_folder)
-    os.makedirs(full_dir, exist_ok=True)
+    # ▶ base_dir 결정: 인자가 절대경로면 그대로, 아니면 /app/uploads/image/user
+    base_dir = Path(save_dir).resolve() if (save_dir and os.path.isabs(save_dir)) else (UPLOAD_ROOT / "image" / "user")
+    user_dir = base_dir / f"user_{user_id}"
 
-    # 파일명 생성
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{user_id}_{channel_name}_{timestamp}.png"
-    file_path = os.path.join(full_dir, filename)
+    # 디버깅용 사전 로그
+    print(f"[save_base64_image] CWD={os.getcwd()} UPLOAD_ROOT={UPLOAD_ROOT} base_dir={base_dir} user_dir={user_dir}")
 
-    # base64 디코딩 후 저장
-    if "," in base64_str:
-        base64_str = base64_str.split(",")[1]
+    try:
+        user_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(file_path, "wb") as f:
-        f.write(base64.b64decode(base64_str))
+        ts = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{user_id}_{channel_name}_{ts}.png"   # 확장자는 네가 쓰던 대로
+        file_path = user_dir / filename
 
-    # 리턴용 URL 생성 (로컬 저장 경로 → URL 경로 변환)
-    relative_path = file_path.replace("app/", "")  # ex) uploads/image/user/user_1/xxx.png
-    url_path = f"http://wizmarket.ai:8000/{relative_path.replace(os.sep, '/')}"
-    
-    return url_path
+        if "," in base64_str:
+            base64_str = base64_str.split(",")[1]
+
+        data = base64.b64decode(base64_str)
+        file_path.write_bytes(data)
+
+        # ▶ URL 생성: /uploads 가 UPLOAD_ROOT를 가리킨다고 가정(FastAPI StaticFiles)
+        rel = file_path.relative_to(UPLOAD_ROOT).as_posix()  # image/user/...
+        url = f"http://wizmarket.ai:8000/uploads/{rel}"
+        print(f"[save_base64_image] OK write -> {file_path}  URL={url}")
+        return url
+
+    except Exception as e:
+        # 에러를 절대 조용히 넘기지 않기(원인 추적 위해)
+        print(f"[save_base64_image] FAILED: base_dir={base_dir}, user_dir={user_dir}, "
+              f"UPLOAD_ROOT={UPLOAD_ROOT}, CWD={os.getcwd()}, err={repr(e)}")
+        raise
 
 # blob 저장 경로
 def save_blob_image(
