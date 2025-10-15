@@ -174,10 +174,10 @@ def add_new_store(request: AddRequest):
 
         # 5. 카피 매장 매칭
         service_register_store_info(request, store_business_number)
-        return {"success": True, "message": "매장 등록 성공."}
+        return {"success": True, "message": "매장 등록 성공." , "store_business_number" : store_business_number}
 
     else : 
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
+        return {"success": False, "message": "서버 오류가 발생했습니다." , "store_business_number" : ""}
 
 
 
