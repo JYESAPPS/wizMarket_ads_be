@@ -38,7 +38,7 @@ app.add_middleware(
 
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
 app.mount("/posting", StaticFiles(directory="app/posting"), name="posting")
 
 
