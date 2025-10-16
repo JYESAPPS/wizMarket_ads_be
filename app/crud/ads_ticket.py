@@ -325,7 +325,7 @@ def get_history(user_id):
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT t.TICKET_NAME, t.TICKET_PRICE, p.PAYMENT_DATE, p.EXPIRE_DATE
+                SELECT t.TICKET_NAME, t.TICKET_PRICE, t.BILLING_CYCLE, p.PAYMENT_DATE, p.EXPIRE_DATE
                 FROM ticket t 
                 JOIN ticket_payment p
                 ON t.TICKET_ID = p.TICKET_ID
