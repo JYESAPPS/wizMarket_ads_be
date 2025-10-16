@@ -64,7 +64,7 @@ def select_user_id_token():
 
         if is_user_due_for_push(user_id):
             send_push_fcm_v1(
-                device_token="fRuJ5p-LSNKeJJxoIdo9DP:APA91bHZqnxIjpSeId9IVMt80Qk_Qax73FD61_TfpnKrn6owp7SdRbaMYqOFASH5FVlia1jioFVb44E26QdV4IM5FxsAomD6VxLqMwjqEAgvym2REXNkuEQ",
+                device_token=device_token,
                 title="[예약 알림]",
                 body="지금 홍보를 시작해보세요!"
             )
