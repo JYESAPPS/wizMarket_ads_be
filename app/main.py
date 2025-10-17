@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import (
-    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms, help
+    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms, help, admin
 )
 from app.api.endpoints import webhook
 
@@ -52,16 +52,16 @@ def push_test_job():
     now = datetime.now(pytz.timezone("Asia/Seoul"))
     print(f"[{now.strftime('%H:%M:%S')}] 예약 테스트 실행됨!")
 
-@app.on_event("startup")
-def start_scheduler():
-    scheduler.add_job(
-        select_user_id_token,                 # 실행할 함수
-        CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
-        id="push_job",
-        replace_existing=True
-    )
-    scheduler.start()
-    print("✅ APScheduler 시작됨")
+# @app.on_event("startup")
+# def start_scheduler():
+#     scheduler.add_job(
+#         select_user_id_token,                 # 실행할 함수
+#         CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
+#         id="push_job",
+#         replace_existing=True
+#     )
+#     scheduler.start()
+#     print("✅ APScheduler 시작됨")
 
 
 app.include_router(ads.router, prefix="/ads")
@@ -78,6 +78,7 @@ app.include_router(ads_faq.router, prefix="/faq")
 app.include_router(cms.router, prefix="/cms")
 app.include_router(webhook.router, prefix="/ad")
 app.include_router(help.router, prefix="/help")
+app.include_router(admin.router)
 
 if __name__ == "__main__":
     import uvicorn
