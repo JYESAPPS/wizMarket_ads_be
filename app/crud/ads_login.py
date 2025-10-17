@@ -479,11 +479,11 @@ def update_device_token(
     user_id: int,
     device_token: str,
     installation_id: str,  # 설치 ID(고유)
+    platform: str,
 ) -> bool:
     conn = get_re_db_connection()
     cur = conn.cursor()
     logger = logging.getLogger(__name__)
-    platform: str = "android"
 
     try:
         conn.autocommit(False)

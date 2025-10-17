@@ -239,8 +239,8 @@ def token_refresh(refresh_token: str):
 
 
 # 디바이스 토큰 항상 업데이트
-def update_device_token(user_id: int, device_token: str, installation_id: Optional[str] = None):
-    return crud_update_device_token(user_id, device_token, installation_id)
+def update_device_token(user_id: int, device_token: str, installation_id: Optional[str] = None, platform: Optional[str] = None):
+    return crud_update_device_token(user_id, device_token, installation_id, platform)
 
 
 

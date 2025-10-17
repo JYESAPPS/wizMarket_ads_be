@@ -71,19 +71,21 @@ class KaKao(BaseModel):
     email : str = None
     device_token : str = None
     installation_id : str = None
-
+    platform : str = None
 
 class Google(BaseModel):
     google_access_token : str
     email : str
     device_token : str = None
     installation_id : str = None
+    platform : str = None
     
 class Apple(BaseModel):
     apple_access_token : str
     email : str
     device_token : str = None
     installation_id : str = None
+    platform : str = None
 
 class Naver(BaseModel):
     naver_access_token : str
