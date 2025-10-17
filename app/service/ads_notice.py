@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Optional
 from fastapi import UploadFile, HTTPException, Request
 import logging, os
-
+from uuid import uuid4
+import imghdr
 
 _TRUTHY = {"1","true","t","y","yes","on"}
 
@@ -68,10 +69,16 @@ async def save_notice_image(file: UploadFile | None) -> str | None:
     data = await file.read()
     if len(data) > MAX_BYTES:
         raise HTTPException(400, "최대 10MB까지 업로드 가능합니다.")
-    # ext = Path(file.filename).suffix.lower() or ".jpg"
-    name = f"{file.filename}"
+
+    # 확장자 보정
+    ext = Path(file.filename).suffix.lower()
+    if not ext:
+        kind = imghdr.what(None, h=data)  # 'jpeg','png' 등
+        ext = f".{('jpg' if kind == 'jpeg' else kind or 'jpg')}"
+
+    name = f"{uuid4().hex}{ext}"
     (NOTICE_DIR / name).write_bytes(data)
-    return f"{PUBLIC_PREFIX}/{name}"  # DB에는 공개 경로만 저장
+    return f"{PUBLIC_PREFIX}/{name}"
 
 def delete_notice_image(public_path: str | None) -> None:
     if not public_path:
