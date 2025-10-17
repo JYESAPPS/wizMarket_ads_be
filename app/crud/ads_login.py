@@ -673,17 +673,17 @@ def get_permission_confirmed(user_id: int):
         return False
 
 # installation_id 업데이트
-def update_permission_confirmed(install_id: str):
+def update_permission_confirmed(install_id: str, push_consent):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
                 INSERT INTO user_device
-                    (installation_id, is_active, created_at, updated_at)
+                    (installation_id, is_active, push_consent, created_at, updated_at)
                 VALUES
-                    (%s, 1, NOW(), NOW())
+                    (%s, 1, %s, NOW(), NOW())
                 """
-            cursor.execute(sql, (install_id,))
+            cursor.execute(sql, (install_id, push_consent))
         connection.commit()
         return True
     except Exception as e:

@@ -333,6 +333,6 @@ def insert_init_info(user_id, name, birth):
 def get_permission_confirmed(user_id: int):
     return crud_get_permission_confirmed(user_id)
 
-def update_permission_confirmed(install_id: str):
-    return crud_update_permission_confirmed(install_id)
+def update_permission_confirmed(install_id: str, push_consent):
+    return crud_update_permission_confirmed(install_id, push_consent)
 

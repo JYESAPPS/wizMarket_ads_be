@@ -441,8 +441,8 @@ def get_permission(user_id):
 
 # AdsPermission 페이지에서 '확인' 눌렀을 때 호출.
 @router.post("/login/permission/confirm")
-def confirm_permission_once(install_id):
-    success = service_update_permission_confirmed(install_id)
+def confirm_permission_once(install_id, push_consent):
+    success = service_update_permission_confirmed(install_id, push_consent)
     if not success:
         raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
     return {"success": success}
