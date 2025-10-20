@@ -57,8 +57,7 @@ def select_recent_id_token() -> List[AllUserDeviceToken]:
     cur = conn.cursor(pymysql.cursors.DictCursor)
     try:
         sql = """
-            SELECT 
-                USER_ID,
+            SELECT ud.USER_ID,
                 TRIM(DEVICE_TOKEN) AS DEVICE_TOKEN
             FROM wiz_report.user_device AS ud
             JOIN (
