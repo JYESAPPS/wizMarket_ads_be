@@ -1,6 +1,9 @@
 # app/routers/cms_auth.py
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.crud.admin_user import get_user_by_username, set_password, touch_last_login, create_admin_user
+from app.service.admin import (
+    get_admin_list as service_get_admin_list,
+)
 from app.crud.admin_session import insert_session
 from app.core.security import verify_password, make_tokens, hash_password
 from app.deps.auth import get_current_admin, require_role
@@ -48,7 +51,7 @@ def me(current = Depends(get_current_admin)):
         "must_change_password": bool(current["must_change_password"]),
     }
 
-@router.post("/change-password")
+@router.post("/change/password")
 def change_password(body: ChangePasswordIn, current = Depends(get_current_admin)):
     if not verify_password(body.old_password, current["password_hash"]):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.")
@@ -69,3 +72,13 @@ def create_admin(body: CreateAdminIn):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 존재하는 아이디입니다.")
     uid = create_admin_user(body.username, body.email, body.role, body.temp_password)
     return {"id": uid, "username": body.username, "role": body.role, "must_change_password": True}
+
+
+
+@router.get("/list")
+def get_admin_list():
+    return service_get_admin_list()
+
+
+
+

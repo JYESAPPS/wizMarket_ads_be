@@ -31,3 +31,13 @@ def set_password(user_id: int, new_password: str):
 def touch_last_login(user_id: int):
     with re_db_dict() as (conn, cur):
         cur.execute("UPDATE admin_user SET last_login_at=NOW() WHERE id=%s", (user_id,))
+
+
+def get_admin_list():
+    with re_db_dict() as (conn, cur):
+        cur.execute("""
+            SELECT id, username, email, role, is_active, must_change_password, created_at, last_login_at
+              FROM admin_user
+             ORDER BY created_at DESC
+        """)
+        return cur.fetchall()
