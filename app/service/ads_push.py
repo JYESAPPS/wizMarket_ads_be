@@ -53,7 +53,7 @@ def send_push_fcm_v1(device_token: str, title: str, body: str):
 
 
 def select_user_id_token():
-    user_id_token = crud_select_user_id_token()
+    user_id_token = crud_select_recent_id_token()
 
     for user in user_id_token:
         user_id = user.user_id
