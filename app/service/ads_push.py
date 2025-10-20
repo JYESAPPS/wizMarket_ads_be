@@ -5,7 +5,8 @@ from google.auth.transport.requests import Request
 import os
 from app.crud.ads_push import (
     select_user_id_token as crud_select_user_id_token,
-    is_user_due_for_push
+    is_user_due_for_push,
+    select_recent_id_token as crud_select_recent_id_token,
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +53,7 @@ def send_push_fcm_v1(device_token: str, title: str, body: str):
 
 
 def select_user_id_token():
-    user_id_token = crud_select_user_id_token()
+    user_id_token = crud_select_recent_id_token()
 
     for user in user_id_token:
         user_id = user.user_id
