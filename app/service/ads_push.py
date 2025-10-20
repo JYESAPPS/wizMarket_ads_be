@@ -1,4 +1,3 @@
-# app/service/fcm.py
 import json
 import requests
 from google.oauth2 import service_account

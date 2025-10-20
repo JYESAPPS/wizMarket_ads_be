@@ -22,10 +22,17 @@ def select_user_id_token() -> List[AllUserDeviceToken]:
             SELECT
                 USER_ID,
                 TRIM(DEVICE_TOKEN) AS DEVICE_TOKEN
-            FROM USER_DEVICE
+            FROM wiz_report.user_device AS ud
+            JOIN (
+            SELECT USER_ID, MAX(device_id) AS max_device_id
+            FROM wiz_report.user_device
             WHERE USER_ID IS NOT NULL
-              AND DEVICE_TOKEN IS NOT NULL
-              AND DEVICE_TOKEN <> '';
+                AND DEVICE_TOKEN IS NOT NULL
+                AND DEVICE_TOKEN <> ''
+            GROUP BY USER_ID
+            ) latest
+            ON ud.USER_ID = latest.USER_ID
+            AND ud.device_id = latest.max_device_id;
         """
         cur.execute(sql)
         rows = cur.fetchall() or []

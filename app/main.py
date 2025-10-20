@@ -52,16 +52,16 @@ def push_test_job():
     now = datetime.now(pytz.timezone("Asia/Seoul"))
     print(f"[{now.strftime('%H:%M:%S')}] 예약 테스트 실행됨!")
 
-# @app.on_event("startup")
-# def start_scheduler():
-#     scheduler.add_job(
-#         select_user_id_token,                 # 실행할 함수
-#         CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
-#         id="push_job",
-#         replace_existing=True
-#     )
-#     scheduler.start()
-#     print("✅ APScheduler 시작됨")
+@app.on_event("startup")
+def start_scheduler():
+    scheduler.add_job(
+        select_user_id_token,                 # 실행할 함수
+        CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
+        id="push_job",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("✅ APScheduler 시작됨")
 
 
 app.include_router(ads.router, prefix="/ads")
