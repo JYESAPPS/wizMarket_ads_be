@@ -741,35 +741,107 @@ def generate_vertex_bg(image: bytes, prompt: str) -> bytes:
 # 필터 API (AI lab tools)
 async def cartoon_image(image_bytes: bytes, index: int,
                         poll_interval: float = 2.0, max_attempts: int = 15) -> Image.Image:
-    import os, asyncio, httpx
     AILABTOOLS_API_KEY = os.getenv("AILABTOOLS_API_KEY")
     API_BASE = "https://www.ailabapi.com"
     GEN_URL = f"{API_BASE}/api/image/effects/ai-anime-generator"
     ASYNC_URL = f"{API_BASE}/api/image/asyn-task-results"
 
+    # 업로드 안전판: JPG 재인코딩 + 해상도 캡으로 총 요청 크기 낮추기
+    def _shrink_to_jpeg(src_bytes: bytes, max_side=1280, quality=85) -> bytes:
+        try:
+            img = Image.open(BytesIO(src_bytes)).convert("RGB")
+        except Exception:
+            # 이미지가 아니면 그대로 보냄(서버에서 거절될 수 있음)
+            return src_bytes
+        w, h = img.size
+        scale = min(1.0, max_side / max(w, h))
+        if scale < 1.0:
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=quality, optimize=True)
+        return buf.getvalue()
+    
+    # 업로드 전 선제적으로 줄여서 경계 이슈/네트워크 불안정 완화
+    safe_bytes = _shrink_to_jpeg(image_bytes)
+
     headers = {"ailabapi-api-key": AILABTOOLS_API_KEY}
     files = {
         "task_type": (None, "async"),
         "index": (None, str(index)),
-        "image": ("input.png", image_bytes, "image/png"),
+        "image": ("input.png", safe_bytes, "image/png"),
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    # HTTP/2 비활성화 + 타임아웃 분리(연결/쓰기/읽기/풀)
+    timeout = httpx.Timeout(connect=15.0, write=60.0, read=60.0, pool=5.0)
+    async with httpx.AsyncClient(timeout=timeout, http2=False) as client:
         # 1) 비동기 작업 생성
-        create_resp = await client.post(GEN_URL, headers=headers, files=files)
-        create_resp.raise_for_status()
-        payload = create_resp.json()
+        try:
+            create_resp = await client.post(GEN_URL, headers=headers, files=files)
+        except httpx.HTTPError as e:
+            # 네트워크/프로토콜(incomplete chunked read 포함) 예외 방어
+            raise HTTPException(status_code=502, detail=f"AILabTools 연결 오류: {e!r}")
+
+        # 상태코드 우선 체크(본문 파싱 전에)
+        if create_resp.status_code == 413:
+            raise HTTPException(
+                status_code=413,
+                detail="업로드 용량 초과(총 요청 크기). 이미지 해상도/용량을 더 줄여주세요."
+            )
+
+        # 상태코드 오류면 본문 일부라도 캡처
+        try:
+            create_resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            try:
+                body_preview = (await create_resp.aread())[:300]
+            except Exception:
+                body_preview = b""
+            raise HTTPException(
+                status_code=502,
+                detail=f"AILabTools 오류 {create_resp.status_code}: {body_preview!r}"
+            ) from e
+
+        # JSON 파싱(중간 끊김 방어)
+        try:
+            payload = create_resp.json()
+        except Exception as e:
+            try:
+                # 바디를 끝까지 읽어서 프리뷰 남김
+                raw = await create_resp.aread()
+                preview = raw[:300]
+            except Exception as e2:
+                preview = f"<read-failed: {e2!r}>".encode()
+            raise HTTPException(
+                status_code=502,
+                detail=f"생성 응답 JSON 파싱 실패: {e!r}, body_prefix={preview!r}"
+            )
 
         job_id = payload.get("request_id") or payload.get("task_id")
         if not job_id:
-             raise HTTPException(status_code=502, detail=f"Invalid response from AILabTools: {payload}")
+            raise HTTPException(status_code=502, detail=f"AILabTools 응답에 job_id 없음: {payload}")
 
         # 2) 결과 폴링
         params = {"job_id": job_id, "type": "GENERATE_CARTOONIZED_IMAGE"}
         for _ in range(max_attempts):
-            result_resp = await client.get(ASYNC_URL, headers=headers, params=params)
-            result_resp.raise_for_status()
-            result = result_resp.json()
+            try:
+                result_resp = await client.get(ASYNC_URL, headers=headers, params=params)
+                result_resp.raise_for_status()
+            except httpx.HTTPError as e:
+                raise HTTPException(status_code=502, detail=f"결과 조회 오류: {e!r}")
+
+            try:
+                result = result_resp.json()
+            except Exception as e:
+                try:
+                    raw = await result_resp.aread()
+                    preview = raw[:300]
+                except Exception as e2:
+                    preview = f"<read-failed: {e2!r}>".encode()
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"결과 JSON 파싱 실패: {e!r}, body_prefix={preview!r}"
+                )
+
             data = result.get("data") or {}
             status = (data.get("status") or "").upper()
 
@@ -779,8 +851,6 @@ async def cartoon_image(image_bytes: bytes, index: int,
                     raise HTTPException(status_code=502, detail="AILabTools 결과 URL 누락")
                 img_resp = await client.get(result_url)
                 img_resp.raise_for_status()
-
-                # ✅ bytes → PIL.Image 변환
                 return Image.open(BytesIO(img_resp.content))
 
             if status in {"PROCESS_FAILED", "TIMEOUT_FAILED", "LIMIT_RETRY_FAILED"}:
