@@ -138,9 +138,8 @@ def get_user_reserve_list(request):
         if connection:
             connection.close()
 
-def get_push_check(request):
+def get_reserve_push(request):
     user_id = request.user_id
-    device_token = request.device_token
     connection = get_re_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
 
@@ -148,24 +147,24 @@ def get_push_check(request):
         if connection.open:
             select_query = """
                 SELECT 
-                    PUSH_CONSENT
-                FROM USER_DEVICE
+                    RESERVE
+                FROM USER_PUSH
                 WHERE USER_ID = %s
-                AND DEVICE_TOKEN = %s;
             """
-            cursor.execute(select_query, (user_id, device_token))
-            row = cursor.fetchall()
+            cursor.execute(select_query, (user_id))
+            row = cursor.fetchone()
 
             if not row:
                 raise HTTPException(status_code=500, detail="데이터베이스 조회에 실패했습니다.")
 
-            return bool(row["push_consent"])
+            value = row.get("PUSH_CONSENT")
+            return bool(int(value)) if value is not None else False 
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
         raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
     except Exception as e:
-        logger.error(f"Unexpected Error in get_notice: {e}")
+        logger.error(f"Unexpected Error in get_push: {e}")
         raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
     finally:
         if cursor:
@@ -175,17 +174,15 @@ def get_push_check(request):
 
 def update_push_consent(request):
     user_id = request.user_id
-    device_token = request.device_token
     connection = get_re_db_connection()
     try:
         with connection.cursor() as cursor:
             update_sql = """
-                UPDATE USER_DEVICE
-                SET PUSH_CONSENT = 1
+                UPDATE USER_PUSH
+                SET RESERVE = 1
                 WHERE USER_ID = %s
-                AND DEVICE_TOKEN = %s
             """
-            cursor.execute(update_sql, (user_id, device_token))
+            cursor.execute(update_sql, (user_id))
             connection.commit()
         return True
     except Exception as e:

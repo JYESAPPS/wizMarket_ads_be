@@ -4,7 +4,7 @@ from app.crud.ads_reserve import (
     update_reserve_status as crud_update_reserve_status,
     delete_reserve as crud_delete_reserve,
     update_reserve as crud_update_reserve,
-    get_push_check as crud_get_push_check,
+    get_reserve_push as crud_get_reserve_push,
     update_push_consent as crud_update_push_consent,
 )
 
@@ -18,8 +18,8 @@ def get_user_reserve_list(request):
     reserve_list = crud_get_user_reserve_list(request)
     return reserve_list
 
-def get_push_check(request):
-    push_consent = crud_get_push_check(request)
+def get_reserve_push(request):
+    push_consent = crud_get_reserve_push(request)
     return push_consent
 
 def update_push_consent(request):

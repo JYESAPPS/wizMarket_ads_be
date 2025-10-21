@@ -7,7 +7,7 @@ from app.service.ads_reserve import (
     update_reserve_status as service_update_reserve_status,
     delete_reserve as service_delete_reserve,
     update_reserve as service_update_reserve,
-    get_push_check as service_get_push_check,
+    get_reserve_push as service_get_reserve_push,
     update_push_consent as service_update_push_consent,
 )
 from app.schemas.ads_reserve import (
@@ -29,13 +29,14 @@ def get_user_reserve_list(request : ReserveGet):
     reserve_list = service_get_user_reserve_list(request)
     return reserve_list
 
-# 푸시 알림 수신 여부 확인
+# 예약 푸시 알림 수신 여부 확인
 @router.post("/get/push")
-def get_push_check(request: DeviceData):
-    push_consent = service_get_push_check(request)
+def get_reserve_push(request: DeviceData):
+    push_consent = service_get_reserve_push(request)
     return {"push_consent": push_consent}
 
-# 푸시 알림 수신 여부 수정
+# 예약 알림 수신 여부 수정
+@router.post("/update/push")
 def update_push_consent(request: DeviceData):
     success = service_update_push_consent(request)
     return {"success": success}
