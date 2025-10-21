@@ -21,7 +21,9 @@ class ReserveCreate(BaseModel):
 class ReserveGet(BaseModel):
     user_id: int
 
-
+class DeviceData(BaseModel):
+    user_id: int
+    device_token: str
 
 class ReserveGetList(BaseModel):
     reserve_id : int

@@ -138,6 +138,61 @@ def get_user_reserve_list(request):
         if connection:
             connection.close()
 
+def get_push_check(request):
+    user_id = request.user_id
+    device_token = request.device_token
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        if connection.open:
+            select_query = """
+                SELECT 
+                    PUSH_CONSENT
+                FROM USER_DEVICE
+                WHERE USER_ID = %s
+                AND DEVICE_TOKEN = %s;
+            """
+            cursor.execute(select_query, (user_id, device_token))
+            row = cursor.fetchall()
+
+            if not row:
+                raise HTTPException(status_code=500, detail="데이터베이스 조회에 실패했습니다.")
+
+            return bool(row["push_consent"])
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected Error in get_notice: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def update_push_consent(request):
+    user_id = request.user_id
+    device_token = request.device_token
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            update_sql = """
+                UPDATE USER_DEVICE
+                SET PUSH_CONSENT = 1
+                WHERE USER_ID = %s
+                AND DEVICE_TOKEN = %s
+            """
+            cursor.execute(update_sql, (user_id, device_token))
+            connection.commit()
+        return True
+    except Exception as e:
+        logger.error(f"상태 변경 실패: {e}")
+        raise HTTPException(status_code=500, detail="수신 여부 변경 실패")
+    finally:
+        connection.close()
 
 
 def update_reserve_status(request):

@@ -6,10 +6,13 @@ from app.service.ads_reserve import (
     get_user_reserve_list as service_get_user_reserve_list,
     update_reserve_status as service_update_reserve_status,
     delete_reserve as service_delete_reserve,
-    update_reserve as service_update_reserve
+    update_reserve as service_update_reserve,
+    get_push_check as service_get_push_check,
+    update_push_consent as service_update_push_consent,
 )
 from app.schemas.ads_reserve import (
-    ReserveCreate, ReserveGet, ReserveUpdateStatus, ReserveDelete, ReserveUpdate
+    ReserveCreate, ReserveGet, ReserveUpdateStatus, ReserveDelete, ReserveUpdate,
+    DeviceData,
 )
 
 router = APIRouter()
@@ -26,6 +29,16 @@ def get_user_reserve_list(request : ReserveGet):
     reserve_list = service_get_user_reserve_list(request)
     return reserve_list
 
+# 푸시 알림 수신 여부 확인
+@router.post("/get/push")
+def get_push_check(request: DeviceData):
+    push_consent = service_get_push_check(request)
+    return {"push_consent": push_consent}
+
+# 푸시 알림 수신 여부 수정
+def update_push_consent(request: DeviceData):
+    success = service_update_push_consent(request)
+    return {"success": success}
 
 @router.post("/update/status")
 def update_reserve_status(req: ReserveUpdateStatus):
