@@ -809,23 +809,9 @@ def generate_template_regen_manual(request: ManualGenCopy):
             today = datetime.now()
             formattedToday = today.strftime('%Y-%m-%d')
             
-            
-            if channel == "인스타": 
-                copyright_prompt = f'''
+            copyright_prompt = f'''
                     {store_name} 업체를 위한 {subChannel} 에 포스팅할 홍보 내용을 작성해주세요.
-                    주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
-                    {category} 업종의 {formattedToday}, {main}, 
-                    주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
-                    나이는 표현하지 않는다.
-                    ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
-                    ex2) 마라 칼국수 신메뉴! 얼얼하게 매운 맛!
-                    ex3) 7월 대 오픈! 시원한 냉면 드시러 오세요~
-                '''
-            else :
-                copyright_prompt = f'''
-                    {store_name} 업체를 위한 {channel} 에 포스팅할 홍보 내용을 작성해주세요.
-                    주소는 {road_name} 이고 홍보할 주제는 {theme} 입니다.
-                    {category} 업종의 {formattedToday}, {main}, 
+                    {category} 업종의  홍보할 주제는 {theme} 입니다.
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
                     나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
@@ -882,9 +868,9 @@ def generate_event(request: EventGenCopy):
             
             copyright_prompt = f'''
                     {store_name} 업체의 단기 이벤트 내용을 작성해주세요.
-                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
-                    주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
-                    날씨, 주소는 표현하지 않도록 합니다.
+                    이벤트 상품은 {category} 입니다.
+                    이벤트 상품을 바탕으로 100자 이내로 작성해주세요.
+
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                     ex2) 마라 칼국수 신메뉴! 10% 할인!
                     ex3) 7월 대 오픈! 첫 100명에게 냉면 1000원에 제공
@@ -936,11 +922,10 @@ def regenerate_event(request: EventGenCopy):
             
             
             copyright_prompt = f'''
-                    {store_name} 업체의 이벤트 내용을 다른 표현 혹은 말투로 재작성해주세요.
-                    이벤트 내용 :  {custom_text}
-                    주소는 {road_name} 이고 이벤트 상품은 {category} 입니다.
-                    주소, 이벤트 상품, 오늘({formattedToday})의 날씨({weather})를 바탕으로 100자 이내로 작성해주세요.
-                    날씨, 주소는 표현하지 않도록 합니다.
+                    {store_name} 업체의 단기 이벤트 내용을 작성해주세요.
+                    이벤트 상품은 {category} 입니다.
+                    이벤트 상품을 바탕으로 100자 이내로 작성해주세요.
+
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
                     ex2) 마라 칼국수 신메뉴! 10% 할인!
                     ex3) 7월 대 오픈! 첫 100명에게 냉면 1000원에 제공
@@ -1046,45 +1031,74 @@ def generate_template_manual(request : ManualApp):
                 인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
                 마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
-            copyright_prompt = ""
-            
-            if theme == "이벤트":
-                copyright_prompt = f'''
-                    {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
+            event_title = ""
 
-                    - 세부업종 혹은 상품 : {menu}
-                    - 이벤트내용 :  {detail_content}
-                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
-                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
-                    - 핵심 고객 연령대 : {female_text} 
+            # 내용 있을 시 그대로 사용
+            if detail_content != "" :
+                # 이벤트일 경우 제목 생성
+                if theme == "이벤트":
+                    copyright = detail_content
+                    copyright_prompt = f'''
+                        {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
+                        - 세부업종 혹은 상품 : {menu}
+                        - 홍보컨셉 : {theme}, {detail_content}
+                        - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                            빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
+                        - 핵심 고객 연령대 : {female_text} 
+                        {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                        20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
+                        {theme} ({detail_content}) 문구를 작성해주세요. 
+                        단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+                    '''
 
-                    {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
-                    {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
-                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+                    event_title = service_generate_content(
+                        copyright_prompt,
+                        copyright_role,
+                        detail_content
+                    )
 
-                    단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
-                    제목 :, 내용 : 형식으로 작성해주세요.
-                '''
+                else :
+                    copyright = detail_content
 
-            else:
-                copyright_prompt = f'''
-                    {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
-                    - 세부업종 혹은 상품 : {menu}
-                    - 홍보컨셉 : {theme}, {detail_content}
-                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
-                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
-                    - 핵심 고객 연령대 : {female_text} 
-                    {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
-                    20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
-                    {theme} ({detail_content}) 문구를 작성해주세요. 
-                    단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
-                '''
+            else :
+                copyright_prompt = ""
+                if theme == "이벤트":
+                    copyright_prompt = f'''
+                        {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
 
-            copyright = service_generate_content(
-                copyright_prompt,
-                copyright_role,
-                detail_content
-            )
+                        - 세부업종 혹은 상품 : {menu}
+                        - 이벤트내용 :  {detail_content}
+                        - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                            빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                        - 핵심 고객 연령대 : {female_text} 
+
+                        {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                        {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
+                        호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+
+                        단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+                        제목 :, 내용 : 형식으로 작성해주세요.
+                    '''
+
+                else:
+                    copyright_prompt = f'''
+                        {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
+                        - 세부업종 혹은 상품 : {menu}
+                        - 홍보컨셉 : {theme}, {detail_content}
+                        - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                            빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
+                        - 핵심 고객 연령대 : {female_text} 
+                        {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                        20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
+                        {theme} ({detail_content}) 문구를 작성해주세요. 
+                        단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+                    '''
+
+                copyright = service_generate_content(
+                    copyright_prompt,
+                    copyright_role,
+                    detail_content
+                )
 
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
@@ -1176,7 +1190,8 @@ def generate_template_manual(request : ManualApp):
             "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
             "store_name": store_name, "road_name": road_name, "district_name": district_name, 
-            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
+            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText,
+            "event_title": event_title
         })
 
     except HTTPException as http_ex:
@@ -1240,37 +1255,61 @@ def generate_template_event(request : ManualApp):
         formattedToday = today.strftime('%Y-%m-%d')
         season = service_get_season(formattedToday)
 
+        event_title = ""
         # 문구 생성
         try:
-
             copyright_role = '''
                 당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
                 인스타그램과 블로그 광고의 노출 알고리즘을 잘 알고 있으며 광고 카피문구를 능숙하게 작성할 수 있고 
                 마케팅에 대한 상당한 지식으로 지금까지 수 많은 소상공인 기업들의 마케팅에 도움을 주었습니다.  
             '''
 
-            copyright_prompt = f'''
-                {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
+            if detail_content != "" :
+                # 이벤트일 경우 제목 생성
+                copyright = detail_content
+                copyright_prompt = f'''
+                    {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
+                    - 세부업종 혹은 상품 : {menu}
+                    - 홍보컨셉 : {theme}, {detail_content}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
+                    - 핵심 고객 연령대 : {female_text} 
+                    {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                    20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
+                    {theme} ({detail_content}) 문구를 작성해주세요. 
+                    단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+                '''
+                event_title = service_generate_content(
+                    copyright_prompt,
+                    copyright_role,
+                    detail_content
+                )
 
-                - 세부업종 혹은 상품 : {menu}
-                - 이벤트내용 :  {detail_content}
-                - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
-                    빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
-                - 핵심 고객 연령대 : {female_text} 
+            else :
+                
 
-                {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
-                {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
-                호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+                copyright_prompt = f'''
+                    {store_name} 매장의 {channel} {sub_channel}를 위한 이벤트 문구를 제작하려고 합니다.
 
-                단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
-                제목 :, 내용 : 형식으로 작성해주세요.
-            '''
+                    - 세부업종 혹은 상품 : {menu}
+                    - 이벤트내용 :  {detail_content}
+                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                    - 핵심 고객 연령대 : {female_text} 
 
-            copyright = service_generate_content(
-                copyright_prompt,
-                copyright_role,
-                detail_content
-            )
+                    {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                    {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
+                    호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
+
+                    단, 연령대와 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+                    제목 :, 내용 : 형식으로 작성해주세요.
+                '''
+
+                copyright = service_generate_content(
+                    copyright_prompt,
+                    copyright_role,
+                    detail_content
+                )
 
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
@@ -1358,13 +1397,17 @@ def generate_template_event(request : ManualApp):
 
         style = str(style)
 
+        print(event_title)
+        print(copyright)
+
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
             "copyright": copyright, "origin_image": output_images, "insta_copyright" : insta_copyright,
             "title": title, "channel":channel_text, "style": style, "core_f": age,
             "main": main, "temp" : temp, "menu" : menu, "detail_category_name" : detail_category_name,
             "store_name": store_name, "road_name": road_name, "district_name": district_name, 
-            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText
+            "store_business_number": store_business_number, "prompt" : prompt, "customText" : request.customText,
+            "event_title": event_title
         })
 
     except HTTPException as http_ex:
@@ -1771,6 +1814,7 @@ async def generate_template_event_camera(
         
         # 문구 생성
         try:
+            event_title = ""
             detail_content = customText or ""
             copyright_role = '''
                 당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다. 
@@ -1779,7 +1823,8 @@ async def generate_template_event_camera(
             '''
             copyright_prompt = ""
 
-            if title == "이벤트" : 
+            if detail_content != "" :
+                copyright = detail_content
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
                     - 홍보 컨셉 : {customMenu}
@@ -1788,28 +1833,30 @@ async def generate_template_event_camera(
                     - 톤&스타일 : {channel} 스타일로 
                     - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
-                    제목 :, 내용 : 형식으로 작성해주세요.
+                    20자 이하로 작성해주세요
                 '''
-            else:
+                event_title = service_generate_content(
+                    copyright_prompt,
+                    copyright_role,
+                    detail_content
+                )
+            
+            else : 
                 copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 홍보 내용 : {customMenu} --> 입력이 없다면 {category}으로 내용 생성
-                    - 홍보 컨셉 : {detail_content}
-                    - 주소 : {district_name}
-                    - 날짜 : {formattedToday}
-                    - 계절 : 오늘 계절
+                    - 홍보 컨셉 : {customMenu}
+                    - 이벤트 컨셉 : {customMenu}을 주제로 생성
                     - 핵심 고객 연령대 : {age} 
-                    홍보컨셉에 대한 광고문구를 작성하되 계절의 특성, 지역(읍, 면, 동)의 특성을 살려서 
-                    핵심고객 연령대의 카피문구 선호 스타일을 기반으로 30자 내외 
-                    간결하고 호기심을 유발할 수 있는 {channel}에 업로드할 광고문구를 작성해주세요.
-
+                    - 톤&스타일 : {channel} 스타일로 
+                    - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
+                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
+                    제목 :, 내용 : 형식으로 20자 이라호 작성해주세요.
                 '''
-
-            copyright = service_generate_content(
-                copyright_prompt,
-                copyright_role,
-                detail_content
-            )
+                copyright = service_generate_content(
+                    copyright_prompt,
+                    copyright_role,
+                    detail_content
+                )
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -1883,12 +1930,15 @@ async def generate_template_event_camera(
             except Exception as e:
                 print(f"Error occurred: {e}, 인스타 생성 오류")
         
+        print(copyright)
+
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright, "prompt": bg_prompt, "filter_idx": filter
+                "insta_copyright" : insta_copyright, "prompt": bg_prompt, "filter_idx": filter,
+                "event_title": event_title
             })
 
     except HTTPException as http_ex:
