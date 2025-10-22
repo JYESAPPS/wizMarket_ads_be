@@ -673,20 +673,38 @@ def get_permission_confirmed(user_id: int):
         return False
 
 # installation_id 업데이트
-def update_permission_confirmed(install_id: str, push_consent):
+def update_permission_confirmed(install_id: str):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
                 INSERT INTO user_device
-                    (installation_id, is_active, push_consent, created_at, updated_at)
+                    (installation_id, is_active, created_at, updated_at)
                 VALUES
-                    (%s, 1, %s, NOW(), NOW())
+                    (%s, 1, NOW(), NOW())
                 """
-            cursor.execute(sql, (install_id, push_consent))
+            cursor.execute(sql, (install_id))
         connection.commit()
         return True
     except Exception as e:
         print(f"installation_id 삽입 오류: {e}")
         return False
     
+
+# 첫 가입 시 user_push TB INSERT
+def insert_push(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO USER_PUSH 
+                    (user_id)
+                VALUES (%s)
+            """
+            cursor.execute(sql, (user_id))
+        connection.commit()
+        return True
+
+    except Exception as e:
+        print(f"푸시 알림 정보 삽입 오류: {e}")
+        return False

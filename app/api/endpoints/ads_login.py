@@ -31,7 +31,7 @@ from app.service.ads_login import (
     check_install_id as service_check_install_id,
     get_logout_user as service_get_logout_user,
     update_logout_status as service_update_logout_status,
-    update_last_seen as service_update_last_seen
+    update_last_seen as service_update_last_seen,
 )
 
 from app.service.ads_app import (
@@ -259,6 +259,7 @@ def ads_login_google_route(request: Apple):
     user_id = service_get_user_by_provider(provider, apple_id, email, provider_key)
     user_info = service_get_user_by_id(user_id)
 
+    # device token 업데이트
     if request.device_token:
         service_update_device_token(user_id, request.device_token, request.installation_id, request.platform)
 
@@ -441,8 +442,8 @@ def get_permission(user_id):
 
 # AdsPermission 페이지에서 '확인' 눌렀을 때 호출.
 @router.post("/login/permission/confirm")
-def confirm_permission_once(install_id, push_consent):
-    success = service_update_permission_confirmed(install_id, push_consent)
+def confirm_permission_once(install_id):
+    success = service_update_permission_confirmed(install_id)
     if not success:
         raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
     return {"success": success}

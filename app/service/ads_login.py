@@ -20,7 +20,8 @@ from app.crud.ads_login import (
     chect_logout_user_id as crud_logout_user_id,
     get_logout_user_by_id as crud_get_logout_user_by_id,
     update_logout_status as crud_update_logout_status,
-    update_last_seen as crud_update_last_seen
+    update_last_seen as crud_update_last_seen,
+    insert_push as crud_insert_push,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -170,6 +171,7 @@ def get_user_by_provider(provider: str, provider_id: str, email: str, provider_k
         else:
             if provider in {"kakao", "google", "naver", "apple"}:
                 user_id = crud_insert_user_sns(email, provider, provider_id, provider_key)
+                crud_insert_push(user_id)
             else:
                 raise ValueError(f"지원하지 않는 provider: {provider}")
 
@@ -242,6 +244,10 @@ def token_refresh(refresh_token: str):
 def update_device_token(user_id: int, device_token: str, installation_id: Optional[str] = None, platform: Optional[str] = None):
     return crud_update_device_token(user_id, device_token, installation_id, platform)
 
+# 첫 가입 시 user_push TB 인서트
+def insert_push(user_id):
+    # user TB 에 로그인 감지 (재로그인은)
+    return crud_insert_push(user_id)
 
 
 # last_seen 업데이트
@@ -333,6 +339,6 @@ def insert_init_info(user_id, name, birth):
 def get_permission_confirmed(user_id: int):
     return crud_get_permission_confirmed(user_id)
 
-def update_permission_confirmed(install_id: str, push_consent):
-    return crud_update_permission_confirmed(install_id, push_consent)
+def update_permission_confirmed(install_id: str):
+    return crud_update_permission_confirmed(install_id)
 
