@@ -60,13 +60,14 @@ def check_install_id(install_id: str):
 def ads_login_route(request: UserRegisterRequest):
     user = service_ads_login(request.email, request.temp_pw)
     if user:
-        user_id, user_type, store_bn = user
+        user_id, user_type, store_bn, login_provider = user
         return {
             "success": True,
             "message": "로그인 성공",
             "user_id": user_id,
             "type": user_type,
-            "store_business_number": store_bn
+            "store_business_number": store_bn,
+            "login_provider": login_provider
         }
     else:
         return {
