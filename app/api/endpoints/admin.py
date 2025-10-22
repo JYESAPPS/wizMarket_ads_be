@@ -3,6 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.crud.admin_user import get_user_by_username, set_password, touch_last_login, create_admin_user
 from app.service.admin import (
     get_admin_list as service_get_admin_list,
+    create_admin_user as service_create_admin_user,
+    delete_admin as service_delete_admin,
+    get_admin_detail as service_get_admin_detail
 )
 from app.crud.admin_session import insert_session
 from app.core.security import verify_password, make_tokens, hash_password
@@ -80,5 +83,15 @@ def get_admin_list():
     return service_get_admin_list()
 
 
+@router.post("/list/create")
+def create_admin_user():
+    return service_create_admin_user()
 
+@router.post("/delete/{id}")
+def delete_admin(admin_id):
+    return service_delete_admin(admin_id)
+
+@router.get("/{admin_id}")
+def get_admin_detail(admin_id):
+    return service_get_admin_detail(admin_id)
 
