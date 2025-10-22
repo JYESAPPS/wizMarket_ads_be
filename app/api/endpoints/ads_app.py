@@ -1642,6 +1642,7 @@ async def generate_template_manual_camera(
     district_name: str = Form(...),
     main: str = Form(...),
     temp: float = Form(...),
+    custom_text: str = Form(None),
 ):
     try:
         today = datetime.now()
@@ -1649,49 +1650,75 @@ async def generate_template_manual_camera(
         season = service_get_season(formattedToday)
         custom_menu = register_tag or custom_menu
 
+        print("custom_menu:", custom_text)
+
         # 문구 생성
         try:
             detail_content = ""
             copyright_role = '''
-                {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                다음과 같은 속성을 반영하여 업로드한 이미지와 연관성있는 카피문구를 작성해주세요.
+                {store_name} 매장의 {channel}를 위한 문구를 제작하려고 합니다.
+                다음과 같은 속성을 반영하여 연관성있는 카피문구를 작성해주세요.
             '''
             copyright_prompt = ""
-
+            event_title = ""
 
             if title == "이벤트" :
-                copyright_prompt = f'''
+                if custom_text != None :
+                    copyright = custom_text
+
+                    copyright_prompt = f'''
                     {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
                     - 홍보 컨셉 : {custom_menu}
                     - 이벤트 컨셉 : {custom_menu}을 주제로 생성
                     - 핵심 고객 연령대 : {age} 
                     - 톤&스타일 : {channel} 스타일로 
                     - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
-                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
-                    제목 :, 내용 : 형식으로 작성해주세요.
-                ''' 
+                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 20자 이하로 특수기호, 이모티콘도 제외해 주세요.
+                    '''
+
+                    event_title = service_generate_content(
+                        copyright_prompt,
+                        copyright_role,
+                        detail_content
+                    )
+
+                else :
+                    copyright_prompt = f'''
+                        {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
+                        - 홍보 컨셉 : {custom_menu}
+                        - 이벤트 컨셉 : {custom_menu}을 주제로 생성
+                        - 핵심 고객 연령대 : {age} 
+                        - 톤&스타일 : {channel} 스타일로 
+                        - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
+                        단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 20자 이하로 특수기호, 이모티콘도 제외해 주세요.
+                        제목 :, 내용 : 형식으로 작성해주세요.
+                    '''
+
+                    copyright = service_generate_content(
+                        copyright_prompt,
+                        copyright_role,
+                        detail_content
+                    ) 
 
             else:
-                copyright_prompt = f'''
-                    {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
-                    - 홍보 컨셉 : {custom_menu}
-                    - 이벤트 컨셉 : {custom_menu}을 주제로 생성
-                    - 핵심 고객 연령대 : {age} 
-                    - 톤&스타일 : {channel} 스타일로 
-                    - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
-                    단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
-                '''
-                # copyright_prompt = f'''
-                #     {store_name} 업체를 위한 문구.
-                #     {category}, {formattedToday}, {main}, 주요 고객층: {age}
-                #     을 바탕으로 15자 이내로 작성해주세요
-                # '''
-
-            copyright = service_generate_content(
-                copyright_prompt,
-                copyright_role,
-                detail_content
-            )
+                if custom_text != None :
+                    copyright = custom_text
+                
+                else : 
+                    copyright_prompt = f'''
+                        {store_name} 매장의 {channel}를 위한 이벤트 문구를 제작하려고 합니다.
+                        - 홍보 컨셉 : {custom_menu}
+                        - 이벤트 컨셉 : {custom_menu}을 주제로 생성
+                        - 핵심 고객 연령대 : {age} 
+                        - 톤&스타일 : {channel} 스타일로 
+                        - 작성요령 : {age} 고객관심사, 트랜드, 짧고 강렬함, CTA 명확(구매유도, 방문유도)
+                        단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 20자 이하로 특수기호, 이모티콘도 제외해 주세요.
+                    '''
+                    copyright = service_generate_content(
+                        copyright_prompt,
+                        copyright_role,
+                        detail_content
+                    )
 
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
@@ -1769,7 +1796,8 @@ async def generate_template_manual_camera(
                 "title": title, "channel":channel, "style": style, "core_f": age,
                 "main": main, "temp" : temp, "detail_category_name" : category, "register_tag": register_tag,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
-                "insta_copyright" : insta_copyright, "prompt" : bg_prompt, "filter_idx": filter
+                "insta_copyright" : insta_copyright, "prompt" : bg_prompt, "filter_idx": filter,
+                "event_title": event_title
             })
 
     except HTTPException as http_ex:
