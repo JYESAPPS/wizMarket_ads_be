@@ -526,7 +526,7 @@ def update_device_token(
 
 
 # last_seen 업데이트
-def update_last_seen(user_id):
+def update_last_seen(device_token):
     conn = get_re_db_connection()
     cur = conn.cursor()
     logger = logging.getLogger(__name__)
@@ -534,13 +534,13 @@ def update_last_seen(user_id):
     try:
         conn.autocommit(False)
 
-        # installation_id 매칭되는 행만 갱신 (무조건 UPDATE, INSERT 없음)
+        # device_token 매칭되는 행만 갱신 (무조건 UPDATE, INSERT 없음)
         sql = """
             UPDATE user_device
                SET last_seen   = NOW()
-             WHERE user_id = %s
+             WHERE device_token = %s
         """
-        cur.execute(sql, (user_id))
+        cur.execute(sql, (device_token))
 
         # 영향받은 행이 0이면 매칭 대상 없음 → False
         if cur.rowcount == 0:

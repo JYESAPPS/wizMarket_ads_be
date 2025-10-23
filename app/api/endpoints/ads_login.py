@@ -125,8 +125,8 @@ def ads_login_kakao_route(request: KaKao):
                 "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
             }
         
-        # state : active으로 전환
-        status_change = service_update_logout_status(request.installation_id)
+        # state : active으로 전환 + device TB: last_seen update
+        status_change = service_update_logout_status(request.installation_id, request.device_token)
 
         if not status_change:
             raise HTTPException(status_code=500, detail="로그아웃 유저 상태 변경에 실패했습니다.")
@@ -187,9 +187,8 @@ def ads_login_google_route(request: Google):
             return {
                 "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
             }
-        
-        # state : active으로 전환
-        status_change = service_update_logout_status(request.installation_id)
+        # state : active으로 전환 + device TB: last_seen update
+        status_change = service_update_logout_status(request.installation_id, request.device_token)
 
         if not status_change:
             raise HTTPException(status_code=500, detail="로그아웃 유저 상태 변경에 실패했습니다.")
@@ -246,8 +245,8 @@ def ads_login_google_route(request: Apple):
                 "msg" : "기존 이메일과 다른 이메일로 로그인 할 수 없습니다. 기존 이메일로 로그인해주세요."
             }
 
-        # state : active으로 전환
-        status_change = service_update_logout_status(request.installation_id)
+        # state : active으로 전환 + device TB: last_seen update
+        status_change = service_update_logout_status(request.installation_id, request.device_token)
 
         if not status_change:
             raise HTTPException(status_code=500, detail="로그아웃 유저 상태 변경에 실패했습니다.")
@@ -375,8 +374,8 @@ def auto_login(request: User):
         raise HTTPException(status_code=400, detail="토큰에 user_id(sub)가 없습니다.")
 
     user_id = int(user_id)
-    # last_seen 업데이트
-    service_update_last_seen(user_id)
+    # 해당 기기 last_seen 업데이트
+    service_update_last_seen(request.device_token)
 
 
     # 유저 정보 얻기

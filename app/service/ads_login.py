@@ -151,10 +151,17 @@ def get_logout_user(installation_id: int):
 
 
 # 로그아웃 유저가 재로그인 시 status active로 전환
-def update_logout_status(installation_id):
+def update_logout_status(installation_id, device_token) -> bool:
     user_id = crud_logout_user_id(installation_id)
+    if not user_id:
+        return False
+
     success = crud_update_logout_status(user_id)
-    return success
+    if not success:
+        return False
+
+    result = crud_update_last_seen(device_token)
+    return bool(result)
 
 
 
@@ -251,8 +258,8 @@ def insert_push(user_id):
 
 
 # last_seen 업데이트
-def update_last_seen(user_id):
-    return crud_update_last_seen(user_id)
+def update_last_seen(device_token):
+    return crud_update_last_seen(device_token)
 
 
 
