@@ -100,6 +100,12 @@ class AutoAppRegen(BaseModel):
     main: str
     temp: float
 
+    # ✅ 재생성 분기용 신규 필드들(프론트가 보내는 그대로 받아야 함)
+    ad_text: Optional[str] = ""              # 1차 생성 때 작성한 텍스트(있을 수도/없을 수도)
+    ad_text_theme: Optional[str] = None      # 그 텍스트의 주제 라벨("매장홍보"/"상품소개"/"이벤트")
+    ad_text_override: Optional[str] = None   # 재생성 화면에서 방금 입력한 텍스트(빈문자열이면 ‘지우기’)
+    use_override: Optional[bool] = False     # override를 쓸지 여부(의도적 삭제 판단)
+
 
 class AutoAppSave(BaseModel):
     age: str
