@@ -54,13 +54,13 @@ def push_test_job():
 
 @app.on_event("startup")
 def start_scheduler():
-    scheduler.add_job(
-        select_user_id_token,                 # 실행할 함수
-        CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
-        id="push_job",
-        replace_existing=True
-    )
-    scheduler.start()
+    # scheduler.add_job(
+    #     select_user_id_token,                 # 실행할 함수
+    #     CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
+    #     id="push_job",
+    #     replace_existing=True
+    # )
+    # scheduler.start()
     print("✅ APScheduler 시작됨")
 
 

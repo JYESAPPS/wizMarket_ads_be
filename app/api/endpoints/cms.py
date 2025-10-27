@@ -18,6 +18,7 @@ from app.service.cms import (
     cms_approve_verification as service_cms_approve_verification,
     cms_reject_verification as service_cms_reject_verification,
     cms_get_user_list as service_cms_get_user_list,
+    cms_get_deleted_user_list as service_cms_get_deleted_user_list,
     cms_get_user_detail as service_cms_get_user_detail,
     cms_get_user_payments as service_cms_get_user_payments,
     get_business_verification as service_get_business_verification,
@@ -143,6 +144,16 @@ def cms_reject_verification(
 @router.get("/get/user/list")
 def cms_get_user_list():
     return service_cms_get_user_list()
+
+
+
+# 탈퇴 회원 불러오기
+@router.get("/get/deleted/user/list/")
+def cms_get_deleted_user_list():
+    return service_cms_get_deleted_user_list()
+
+
+
 
 @router.get("/get/user/detail")
 def cms_get_user_detail(user_id: int):

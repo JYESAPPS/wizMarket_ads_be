@@ -233,6 +233,48 @@ def cms_get_user_list():
         close_connection(conn)
 
 
+
+def cms_get_deleted_user_list():
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, ui.nickname, ud.platform, ud.last_seen,
+                        t.ticket_name, tp.ticket_id, tp.payment_date
+                FROM user u
+                LEFT JOIN user_info AS ui ON ui.user_id = u.user_id
+                LEFT JOIN (
+                    SELECT d.user_id, d.platform, d.last_seen
+                    FROM user_device AS d
+                    JOIN (
+                        SELECT user_id, MAX(last_seen) AS last_seen
+                        FROM user_device
+                        GROUP BY user_id
+                    ) AS mx
+                      ON mx.user_id = d.user_id AND mx.last_seen = d.last_seen
+                ) AS ud
+                    ON ud.user_id = u.user_id
+                LEFT JOIN (
+                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
+                    FROM ticket_payment tp
+                    JOIN (
+                        SELECT user_id, MAX(payment_date) AS max_payment_date
+                        FROM ticket_payment
+                        GROUP BY user_id
+                    ) mx
+                        ON mx.user_id = tp.user_id
+                    AND mx.max_payment_date = tp.payment_date
+                ) AS tp ON tp.user_id = u.user_id
+                LEFT JOIN ticket t ON t.ticket_id = tp.ticket_id
+                WHERE u.status = 'deleted'
+                ORDER BY u.created_at DESC
+            """)
+            return cur.fetchall()
+    finally:
+        close_connection(conn)
+
+
+
 def cms_get_user_detail(user_id):
     conn = get_re_db_connection()
     try:

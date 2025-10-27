@@ -4,6 +4,7 @@ from app.crud.cms import (
     cms_approve_verification as crud_cms_approve_verification,
     cms_reject_verification as crud_cms_reject_verification,
     cms_get_user_list as crud_get_user_list,
+    cms_get_deleted_user_list as crud_get_deleted_user_list,
     cms_get_user_detail as crud_get_user_detail,
     cms_get_user_payments as crud_cms_get_user_payments,
     get_business_verification as crud_get_business_verification,
@@ -115,6 +116,32 @@ def cms_get_user_list():
             "payment_date": payment_date,
         })
     return users
+
+
+def cms_get_deleted_user_list():
+    rows = crud_get_deleted_user_list()  # list[tuple]
+    users = []
+    for r in rows:
+        (user_id, email, login_provider, created_at, status, nickname,
+        platform, last_seen,
+        ticket_name, ticket_id, payment_date) = r
+
+        users.append({
+            "user_id": user_id,
+            "email": email,
+            "login_provider": login_provider,
+            "created_at": created_at,
+            "status": status,
+            "nickname": nickname,
+            "platform": platform,
+            "last_seen": last_seen,
+            "ticket_name": ticket_name,
+            "ticket_id": ticket_id,
+            "payment_date": payment_date,
+        })
+    return users
+
+
 
 def cms_get_user_detail(user_id):
     row = crud_get_user_detail(user_id)
