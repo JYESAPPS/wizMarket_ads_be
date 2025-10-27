@@ -142,6 +142,18 @@ class ManualGenCopy(BaseModel):
     temp: float
     road_name : str
 
+class CameraGenCopy(BaseModel):
+    category: str
+    # age: str
+    # channel: str
+    # subChannel: Optional[str]
+    theme: str
+    store_name : str
+    main: str
+    temp: float
+    road_name : str
+    # resister_tag: str
+
 
 class EventGenCopy(BaseModel):
     category: str

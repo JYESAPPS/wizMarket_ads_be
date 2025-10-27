@@ -575,7 +575,7 @@ def select_user_id(store_business_number):
     try:
         if connection.open:
             query = """
-                SELECT user_id
+                SELECT user_id, login_provider
                 FROM user
                 WHERE store_business_number = %s
             """

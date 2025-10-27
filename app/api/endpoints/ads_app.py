@@ -6,7 +6,7 @@ from app.schemas.ads_app import (
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
     ManualGenCopy, ManualImageListAIReco, ManualApp,
     UserInfo, UserInfoUpdate, UserRecentRecord, UserRecoDelete,
-    ImageList, ImageUploadRequest, StoreInfo, EventGenCopy
+    ImageList, ImageUploadRequest, StoreInfo, EventGenCopy, CameraGenCopy
 )
 import io
 from fastapi import Request, Body
@@ -898,6 +898,86 @@ def generate_template_regen_manual(request: ManualGenCopy):
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
 
+# AI 생성 수동 - 문구 생성하기
+@router.post("/camera/gen/copy")
+def generate_template_regen_manual(request: CameraGenCopy):
+    try:
+        category = request.category
+        theme = request.theme
+        store_name= request.store_name
+        main= request.main
+        temp = request.temp
+        road_name = request.road_name
+        # resister_tag = request.resister_tag
+        # female_text = f"{age}대"
+        # if request.resister_tag == '' : 
+        #     menu = request.category
+
+        detail_content = ""
+        copyright_role = f'''
+            you are a marketing expert
+        '''
+
+        base_ctx = f"{store_name} 매장, 업종/상품: {category}"
+        if theme == "매장홍보":
+            task = "매장 방문 욕구를 높이는 카피"
+            focus = "매장 경험·분위기·가치"
+        elif theme == "상품소개":
+            task = "핵심 장점을 강조하는 상품 카피"
+            focus = "구체적 특징·맛/식감·차별점"
+        else:  # 이벤트
+            task = "이벤트 참여를 유도하는 카피"
+            focus = "혜택·기간·행동 촉구"
+
+        # 문구 생성
+        try:
+            today = datetime.now()
+            formattedToday = today.strftime('%Y-%m-%d')
+
+            copyright_prompt = f'''
+                아래 조건을 만족하는 한국어 카피 문장 '한 줄'을 1개만 생성하라.
+
+                맥락: {base_ctx}
+                테마: {theme}
+                목표: {task}
+                핵심 초점: {focus}
+                
+                세부업종 혹은 상품 : {category}
+                내용 :  {detail_content}
+                {today}를 기준으로 7일 이내에 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                
+                제약:
+                - 한 줄짜리 카피 '1개'만 생성
+                - 줄바꿈/번호/불릿/따옴표/콜론/이모지/해시태그 금지
+                - 설명/예시/제목·내용 같은 라벨 금지
+                - 날씨 언급 금지
+                - 실제로 존재하지 않는 축제나 기념일, 이벤트 생성 금지
+
+                20자 이하의 호기심을 유발할 수 있는 {theme}에 업로드할 이벤트 문구를 작성해주세요. 
+                단, 날씨를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
+            '''
+            copyright = service_generate_content(
+                copyright_prompt,
+                copyright_role,
+                detail_content
+            )
+        except Exception as e:
+            print(f"Error occurred: {e}, 문구 생성 오류")
+
+
+        # 문구 반환
+        return JSONResponse(content={
+            "copyright": copyright
+        })
+
+    except HTTPException as http_ex:
+        logger.error(f"HTTP error occurred: {http_ex.detail}")
+        raise http_ex
+    except Exception as e:
+        error_msg = f"Unexpected error while processing request: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 # 이벤트 문구 생성하기
 @router.post("/event/gen/copy")
