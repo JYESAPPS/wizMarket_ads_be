@@ -158,30 +158,40 @@ def get_user_record(user_id):
     
 def get_user_record_this_month(user_id):
 
+    """
+    start_date 기준 오늘 포함 최근 7일 기록 조회 (최신순)
+    """
+    conn = None
+    cur = None
     try:
-        # today = datetime.today()
-        # month_start = today.replace(day=1)
-        # next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-        # month_end = next_month - timedelta(days=1)
+        conn = get_re_db_connection()
+        cur = conn.cursor(pymysql.cursors.DictCursor)
 
-        connection = get_re_db_connection()
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
-            query = """
-                SELECT start_date, end_date, repeat_time, age, style, title, channel, image_path
-                FROM user_record
-                WHERE user_id = %s
-            """
-            cursor.execute(query, (user_id))
-            rows = cursor.fetchall()
-
-        if not rows:
-            return None
-
-        return rows
+        sql = """
+            SELECT
+                start_date, end_date, repeat_time, age, style, title, channel, image_path
+            FROM user_record
+            WHERE user_id = %s
+              AND DATE(start_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
+            ORDER BY start_date DESC
+        """
+        cur.execute(sql, (user_id,))  # 파라미터는 튜플로
+        rows = cur.fetchall()
+        return rows if rows else None
 
     except Exception as e:
-        print(f"이번달 회원 기록 정보 오류: {e}")
+        print(f"최근 7일 회원 기록 정보 오류: {e}")
+        # SELECT라도 일관성 있게 롤백 호출 (안전)
+        try:
+            rollback(conn)
+        except Exception:
+            pass
         return None
+    finally:
+        try:
+            close_cursor(cur)
+        finally:
+            close_connection(conn)
     
 
 # 헤더 메인페이지 유저 프로필 가져오기
