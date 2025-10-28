@@ -157,7 +157,7 @@ def get_reserve_push(request):
             if not row:
                 raise HTTPException(status_code=500, detail="데이터베이스 조회에 실패했습니다.")
 
-            value = row.get("PUSH_CONSENT")
+            value = row.get("RESERVE")
             return bool(int(value)) if value is not None else False 
 
     except pymysql.MySQLError as e:

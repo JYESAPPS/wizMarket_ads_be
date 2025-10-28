@@ -57,19 +57,18 @@ def select_recent_id_token() -> List[AllUserDeviceToken]:
     cur = conn.cursor(pymysql.cursors.DictCursor)
     try:
         sql = """
-            SELECT ud.USER_ID,
-                TRIM(DEVICE_TOKEN) AS DEVICE_TOKEN
+            SELECT ud.USER_ID, TRIM(ud.DEVICE_TOKEN) AS DEVICE_TOKEN
             FROM wiz_report.user_device AS ud
             JOIN (
-            SELECT USER_ID, MAX(device_id) AS max_device_id
+            SELECT USER_ID, MAX(last_seen) AS max_last_seen
             FROM wiz_report.user_device
             WHERE USER_ID IS NOT NULL
                 AND DEVICE_TOKEN IS NOT NULL
-                AND DEVICE_TOKEN <> ''
+                AND TRIM(DEVICE_TOKEN) <> ''
             GROUP BY USER_ID
-            ) latest
-            ON ud.USER_ID = latest.USER_ID
-            AND ud.device_id = latest.max_device_id;
+            ) s
+            ON ud.USER_ID = s.USER_ID
+            AND ud.last_seen = s.max_last_seen;
         """
         cur.execute(sql)
         rows = cur.fetchall() or []
