@@ -325,12 +325,12 @@ def get_history(user_id):
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT t.TICKET_NAME, t.TICKET_PRICE, t.BILLING_CYCLE, p.PAYMENT_DATE, p.EXPIRE_DATE
+                SELECT t.TICKET_NAME, t.TICKET_PRICE, t.BILLING_CYCLE, t.TOKEN_AMOUNT, p.PAYMENT_DATE, p.EXPIRE_DATE
                 FROM ticket t 
                 JOIN ticket_payment p
                 ON t.TICKET_ID = p.TICKET_ID
                 WHERE p.USER_ID = %s
-                ORDER BY p.PAYMENT_DATE DESC
+                ORDER BY p.PAYMENT_ID DESC
             """, (user_id))
             rows = cursor.fetchall()
             return rows
@@ -340,7 +340,31 @@ def get_history(user_id):
         return []
     finally:
         connection.close()
-    
+
+#사용자의 결제 내역 조회
+def get_valid_history(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT t.TICKET_NAME, t.TICKET_PRICE, t.BILLING_CYCLE, t.TOKEN_AMOUNT, p.PAYMENT_DATE, p.EXPIRE_DATE
+                FROM ticket t 
+                JOIN ticket_payment p
+                ON t.TICKET_ID = p.TICKET_ID
+                WHERE p.USER_ID = %s
+                AND p.EXPIRE_DATE IS NOT NULL
+                AND p.EXPIRE_DATE >= CURDATE()
+                ORDER BY p.PAYMENT_ID DESC
+            """, (user_id))
+            rows = cursor.fetchall()
+            return rows
+
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()
+
 def get_valid_ticket(user_id):
     try:
         connection = get_re_db_connection()

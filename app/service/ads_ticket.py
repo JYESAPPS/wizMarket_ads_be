@@ -8,6 +8,7 @@ from app.crud.ads_ticket import (
     insest_yearly as crud_insest_yearly,
     get_history_100 as crud_get_history_100,
     get_history as crud_get_history,
+    get_valid_history as crud_get_valid_history,
     get_latest_token_subscription as crud_get_latest_token_subscription,
     get_valid_ticket as crud_get_valid_ticket,
     # insert_payment_history as crud_insert_token_deduction_history,
@@ -104,8 +105,9 @@ def get_history_100(user_id):
 
 #결제 내역 조회
 def get_history(user_id):
-    data = crud_get_history(user_id)
-    return data
+    all_history = crud_get_history(user_id)
+    valid_history = crud_get_valid_history(user_id)
+    return {"all": all_history, "valid": valid_history}
 
 # 사용자의 단건&정기 토큰 반환
 def get_token(user_id):
