@@ -22,7 +22,7 @@ from app.service.ads_push import select_user_id_token
 
 
 app = FastAPI()
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone="Asia/Seoul")
 
 
 load_dotenv()
@@ -52,16 +52,42 @@ def push_test_job():
     now = datetime.now(pytz.timezone("Asia/Seoul"))
     print(f"[{now.strftime('%H:%M:%S')}] 예약 테스트 실행됨!")
 
+
+def as_bool(v: str, default=False):
+    if v is None:
+        return default
+    return v.strip().lower() in ("1", "true", "yes", "y", "on")
+
+ENABLE_SCHEDULER = as_bool(os.getenv("ENABLE_SCHEDULER"), False)
+PUSH_ENABLED     = as_bool(os.getenv("PUSH_ENABLED"), False)
+
+
 @app.on_event("startup")
 def start_scheduler():
+    print("✅ FastAPI startup")
+    print(f"ENABLE_SCHEDULER={ENABLE_SCHEDULER}, PUSH_ENABLED={PUSH_ENABLED}")
+
+    if not ENABLE_SCHEDULER:
+        print("⏭️ Scheduler disabled (ENABLE_SCHEDULER=false)")
+        return
+
+    # 매 분 실행
     scheduler.add_job(
-        select_user_id_token,                 # 실행할 함수
-        CronTrigger(minute='*', timezone="Asia/Seoul"),  # 매 정각 매분
+        select_user_id_token,
+        CronTrigger(minute="*", timezone="Asia/Seoul"),
         id="push_job",
-        replace_existing=True
+        replace_existing=True,
     )
-    scheduler.start()
-    print("✅ APScheduler 시작됨")
+    if not scheduler.running:
+        scheduler.start()
+    print("✅ APScheduler 시작됨 (push_job 등록)")
+
+
+@app.on_event("shutdown")
+def stop_scheduler():
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        print("🛑 APScheduler 중지됨")
 
 
 app.include_router(ads.router, prefix="/ads")
