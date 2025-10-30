@@ -1,5 +1,5 @@
 from fastapi import (
-    APIRouter, UploadFile, File, Form, HTTPException, background, status, Query, Request, Response
+    APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, status, Query, Request, Response
 )
 import logging
 
@@ -52,6 +52,7 @@ def get_notice_by_id(notice_no: int):
 # 공지사항 등록
 @router.post("/create/notice", status_code=201)
 async def create_notice(
+    background_tasks: BackgroundTasks,
     notice_post: str = Form("Y"),
     notice_title: str = Form(...),
     notice_content: str = Form(...),
@@ -68,13 +69,12 @@ async def create_notice(
     push_enqueued = True
     try:
         # 공지사항 등록 푸시
-        background.add_task(
+        background_tasks.add_task(
             service_select_notice_target,
             notice_id,
             notice_title,
             notice_content,
-            notice_content,
-            notice_file,
+            notice_file=None,
         )
 
     except Exception as e:

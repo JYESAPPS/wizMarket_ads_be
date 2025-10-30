@@ -72,7 +72,12 @@ def select_user_id_token():
                 body="지금 홍보를 시작해보세요!"
             )
 
-def select_notice_target(notice_id, notice_title, notice_content, notice_file):
+def select_notice_target(
+    notice_id: int,
+    notice_title: str,
+    notice_content: str,
+    notice_file: str | None = None,
+):
     try:
         targets: List[str] = crud_select_notice_target()
         print("Notice Push Set")
