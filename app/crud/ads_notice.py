@@ -48,6 +48,7 @@ def get_notice(include_hidden: bool = False):
 
 def create_notice(notice_post: str, notice_title: str, notice_content: str, notice_file: Optional[str] = None):
     connection = get_re_db_connection()
+    cursor = None
 
     try:
         cursor = connection.cursor()
@@ -58,7 +59,10 @@ def create_notice(notice_post: str, notice_title: str, notice_content: str, noti
         """
 
         cursor.execute(insert_query, (notice_post or "Y", notice_title, notice_content, notice_file))
+        notice_id = cursor.lastrowid # 신규 공지사항 ID 가져오기
         commit(connection)  # 커스텀 commit 사용
+
+        return notice_id
 
     except pymysql.MySQLError as e:
         rollback(connection)  # 커스텀 rollback 사용

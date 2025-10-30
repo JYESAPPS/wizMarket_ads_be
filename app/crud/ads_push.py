@@ -83,10 +83,10 @@ def select_recent_id_token() -> List[AllUserDeviceToken]:
         return result
     except pymysql.MySQLError as e:
         # 스케줄러에서 터지지 않게: 로그만 남기고 빈 리스트
-        print(f"[select_recent_id_token] MySQL Error: {e}")
+        print(f"[select_recent_id] MySQL Error: {e}")
         return []
     except Exception as e:
-        print(f"[select_recent_id_token] Unexpected Error: {e}")
+        print(f"[select_recent_id] Unexpected Error: {e}")
         return []
     finally:
         try: cur.close()
@@ -171,3 +171,36 @@ def is_user_due_for_push(user_id: int) -> bool:
                 continue
 
     return False
+
+# 공지사항 푸시 대상 조회
+def select_notice_target():
+    conn = get_re_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        sql = """
+        SELECT d.device_token
+        FROM user_device AS d
+        INNER JOIN user_push AS p
+            ON p.user_id = d.user_id
+        WHERE
+            p.notice = 1
+            AND d.is_active = 1
+            AND d.device_token IS NOT NULL
+            AND d.device_token <> ''
+        GROUP BY d.user_id, d.device_token
+        ORDER BY d.user_id, MAX(d.last_seen) DESC
+        """
+        cur.execute(sql)
+        rows = cur.fetchall() or []
+        return [r["device_token"] for r in rows]
+    except pymysql.MySQLError as e:
+        print(f"[get_notice_push_tokens] MySQL Error: {e}")
+        return []
+    except Exception as e:
+        print(f"[get_notice_push_tokens] Unexpected Error: {e}")
+        return []
+    finally:
+        try: cur.close()
+        except: pass
+        try: conn.close()
+        except: pass

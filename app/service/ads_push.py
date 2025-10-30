@@ -1,4 +1,6 @@
 import json
+from typing import List
+from fastapi import logger
 import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
@@ -7,6 +9,7 @@ from app.crud.ads_push import (
     select_user_id_token as crud_select_user_id_token,
     is_user_due_for_push,
     select_recent_id_token as crud_select_recent_id_token,
+    select_notice_target as crud_select_notice_target,
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,3 +71,31 @@ def select_user_id_token():
                 title="[예약 알림]",
                 body="지금 홍보를 시작해보세요!"
             )
+
+def select_notice_target(notice_id, notice_title, notice_content, notice_file):
+    try:
+        targets: List[str] = crud_select_notice_target()
+        print("Notice Push Set")
+
+        # (선택) 너무 긴 본문은 잘라서 전송
+        safe_title = _truncate_for_fcm(notice_title, 128)
+        safe_body  = _truncate_for_fcm(notice_content, 1024)
+
+        for token in targets:
+            if not token:
+                continue
+            
+            send_push_fcm_v1(
+                device_token=token,
+                title=safe_title,
+                body=safe_body
+            )
+    except Exception:
+        logger.exception("notice push batch failed")
+
+
+# FCM 전체 메시지 4KB 제한 감안해 notification body는 너무 길지 않게 절단
+def _truncate_for_fcm(text: str, limit: int = 1024) -> str:
+    if not text:
+        return ""
+    return text if len(text) <= limit else (text[:limit-1] + "…")

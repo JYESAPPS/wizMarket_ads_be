@@ -52,7 +52,7 @@ def get_notice(
 #     return notice
 
 def create_notice(notice_post: str, notice_title: str, notice_content: str, notice_file: str):
-    crud_create_notice(notice_post, notice_title, notice_content, notice_file)
+    return crud_create_notice(notice_post, notice_title, notice_content, notice_file)
 
 
 SERVICE_DIR = Path(__file__).resolve().parent

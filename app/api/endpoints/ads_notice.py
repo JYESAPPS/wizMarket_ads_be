@@ -1,5 +1,5 @@
 from fastapi import (
-    APIRouter, UploadFile, File, Form, HTTPException, status, Query, Request, Response
+    APIRouter, UploadFile, File, Form, HTTPException, background, status, Query, Request, Response
 )
 import logging
 
@@ -13,6 +13,10 @@ from app.service.ads_notice import (
     insert_notice_read as service_insert_notice_read,
     notice_views as service_notice_views,
     NoticeNotFoundError,
+)
+
+from app.service.ads_push import (
+    select_notice_target as service_select_notice_target, 
 )
 
 from app.schemas.ads_notice import (
@@ -53,14 +57,38 @@ async def create_notice(
     notice_content: str = Form(...),
     notice_file: UploadFile | None = File(None),
 ):
+    notice_id = None
     try:
         path = await service_save_notice_image(notice_file)
-        service_create_notice(notice_post, notice_title, notice_content, path)
-        return {"success": True, "message": "공지사항이 등록되었습니다."}
+        notice_id = service_create_notice(notice_post, notice_title, notice_content, path)
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
-        
+    
+    push_enqueued = True
+    try:
+        # 공지사항 등록 푸시
+        background.add_task(
+            service_select_notice_target,
+            notice_id,
+            notice_title,
+            notice_content,
+            notice_content,
+            notice_file,
+        )
+
+    except Exception as e:
+        push_enqueued = False
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "푸시 알림 전송에 실패했습니다."}
+
+    return {
+        "success": True,
+        "message": "공지사항이 등록되었습니다.",
+        "notice_id": notice_id,
+        "push_enqueued": push_enqueued,
+    }
+
 # 공지사항 수정
 @router.post("/edit/notice/{notice_no}", status_code=200)
 async def update_notice(
