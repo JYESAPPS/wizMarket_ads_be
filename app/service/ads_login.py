@@ -22,6 +22,7 @@ from app.crud.ads_login import (
     update_logout_status as crud_update_logout_status,
     update_last_seen as crud_update_last_seen,
     insert_push as crud_insert_push,
+    select_login_provider as crud_select_login_provider,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -325,6 +326,9 @@ def select_user_id(store_business_number):
     user_id = crud_select_user_id(store_business_number)
     return user_id
 
+def select_login_provider(user_id):
+    login_provider = crud_select_login_provider(user_id)
+    return login_provider
 
 def update_init_info(user_id, name, birth):
     try:

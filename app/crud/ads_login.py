@@ -575,7 +575,7 @@ def select_user_id(store_business_number):
     try:
         if connection.open:
             query = """
-                SELECT user_id, login_provider
+                SELECT user_id
                 FROM user
                 WHERE store_business_number = %s
             """
@@ -586,6 +586,36 @@ def select_user_id(store_business_number):
                 return None
 
             return result['user_id']
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
+def select_login_provider(user_id):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT login_provider
+                FROM user
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                return None
+
+            return result['login_provider']
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
