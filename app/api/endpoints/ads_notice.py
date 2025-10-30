@@ -67,20 +67,20 @@ async def create_notice(
         return {"success": False, "message": "서버 오류가 발생했습니다."}
     
     push_enqueued = True
-    # try:
-    #     # 공지사항 등록 푸시
-    #     background_tasks.add_task(
-    #         service_select_notice_target,
-    #         notice_id,
-    #         notice_title,
-    #         notice_content,
-    #         notice_file=None,
-    #     )
+    try:
+        # 공지사항 등록 푸시
+        background_tasks.add_task(
+            service_select_notice_target,
+            notice_id,
+            notice_title,
+            notice_content,
+            notice_file=None,
+        )
 
-    # except Exception as e:
-    #     push_enqueued = False
-    #     logger.error(f"Unexpected error: {str(e)}")
-    #     return {"success": False, "message": "푸시 알림 전송에 실패했습니다."}
+    except Exception as e:
+        push_enqueued = False
+        logger.error(f"Unexpected error: {str(e)}")
+        return {"success": False, "message": "푸시 알림 전송에 실패했습니다."}
 
     return {
         "success": True,
