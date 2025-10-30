@@ -80,7 +80,6 @@ def select_notice_target(
 ):
     try:
         targets: List[str] = crud_select_notice_target()
-        print("Notice Push Set")
 
         # (선택) 너무 긴 본문은 잘라서 전송
         safe_title = _truncate_for_fcm(notice_title, 128)
