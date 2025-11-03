@@ -89,7 +89,7 @@ def unstop_user(user_id: str) -> bool:
 
 # 매장 조회 : 가게명 LIKE, 도로명 ==
 def get_store(store_name, road_name):
-    connection = get_re_db_connection()
+    connection = get_db_connection()
     cursor = connection.cursor(pymysql.cursors.DictCursor)
 
     try:
@@ -107,7 +107,7 @@ def get_store(store_name, road_name):
             where.append("STORE_NAME LIKE %s")
             params.append(to_like(sn))
         if rn:
-            where.append("ROAD_NAME LIKE %s")
+            where.append("ROAD_NAME_ADDRESS LIKE %s")
             params.append(to_like(rn))
 
         if not where:
@@ -115,9 +115,9 @@ def get_store(store_name, road_name):
 
         select_query = f"""
             SELECT
-                STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME, FLOOR_INFO, 
-                BIZ_MAIN_CATEGORY_ID, BIZ_SUB_CATEGORY_ID, BIZ_DETAIL_CATEGORY_REP_NAME
-            FROM REPORT
+                STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME_ADDRESS, FLOOR_INFO, 
+                SMALL_CATEGORY_NAME
+            FROM LOCAL_STORE
             WHERE {" AND ".join(where)}
             ORDER BY STORE_NAME ASC
         """
