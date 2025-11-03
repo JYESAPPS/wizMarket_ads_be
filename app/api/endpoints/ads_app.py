@@ -85,7 +85,15 @@ def generate_template(request: AutoAppMain):
             channel_text = "인스타그램 스토리"
         elif channel == 3:
             channel_text = "인스타그램 피드 게시글"
-        else: channel_text = "네이버 블로그"
+        elif channel == 4:
+            channel_text = "블로그"
+        elif channel == 5:
+            channel_text = "문자메시지"
+        elif channel == 6:
+            channel_text = "네이버밴드"
+        elif channel == 7:
+            channel_text = "X(트위터)"
+
 
         # menu = request.custom_menu 
         # menu = request.register_tag 
