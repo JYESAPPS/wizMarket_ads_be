@@ -137,7 +137,7 @@ def generate_template(request: AutoAppMain):
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                     - 핵심 고객 연령대 : {age} 
                     {season}의 특성, {request.district_name} 지역의 특성, {age}가 선호하는 문체 스타일을 기반으로 
-                    20자 이3의 제목과 40자 내외의 호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요
+                    20자 이하의 제목과 30자 내외의 호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
                 '''
@@ -180,6 +180,8 @@ def generate_template(request: AutoAppMain):
                 copyright_role,
                 detail_content
             )
+            
+            route = "auto_prompt_app"
 
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
@@ -267,14 +269,14 @@ def generate_template(request: AutoAppMain):
             "title": str(title), "channel":str(channel), "style": style, "core_f": age,
             "main": request.main, "temp" : request.temp, "detail_category_name" : request.detail_category_name, "register_tag": menu,
             "store_name": request.store_name, "road_name": request.road_name, "district_name": request.district_name,
-            "store_business_number":request.store_business_number, "prompt" : seed_prompt
+            "store_business_number":request.store_business_number, "prompt" : seed_prompt, "route": route
         })
 
     except HTTPException as http_ex:
         logger.error(f"HTTP error occurred: {http_ex.detail}")
         raise http_ex
     except Exception as e:
-        error_msg = f"Unexpected error while processing request: {str(e)}"
+        error_msg = f"Unexpected error while processing request: {str(e)}"  
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
 
