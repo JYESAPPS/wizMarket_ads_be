@@ -71,3 +71,32 @@ def get_admin_detail(admin_id: int) -> Optional[dict]:
         """, (admin_id,))
         return cur.fetchone()
 
+
+def update_admin_info(admin_id, request):
+    with re_db_dict() as (conn, cur):
+
+        is_active = request.is_active
+        role = request.role
+        name = request.name
+        phone = request.phone
+        email = request.email
+        department = request.department
+        position = request.position
+
+        cur.execute("""
+            UPDATE ADMIN_USER
+            SET
+                is_active = %s,
+                role = %s,
+                name = %s,
+                phone = %s,
+                email = %s,
+                department = %s,
+                position = %s
+            WHERE id=%s
+        """, (is_active, role, name, phone, email, department, position, admin_id,))
+        conn.commit() 
+    return cur.rowcount
+
+
+

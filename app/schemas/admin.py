@@ -34,3 +34,14 @@ class CreateSubAdmin(BaseModel):
     email : str
     department : Optional[str]
     position : Optional[str]
+
+
+
+class UpdateAdminInfo(BaseModel):
+    is_active: Optional[int]
+    role : Optional[str]
+    name: Optional[str]
+    phone: Optional[str]
+    email:  Optional[str]
+    department: Optional[str]
+    position: Optional[str]

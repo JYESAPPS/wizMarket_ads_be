@@ -5,14 +5,15 @@ from app.service.admin import (
     get_admin_list as service_get_admin_list,
     create_admin_user as service_create_admin_user,
     delete_admin as service_delete_admin,
-    get_admin_detail as service_get_admin_detail
+    get_admin_detail as service_get_admin_detail,
+    update_admin_info as service_update_admin_info
 )
 from app.crud.admin_session import insert_session
 from app.core.security import verify_password, make_tokens, hash_password
 from app.deps.auth import get_current_admin, require_role
 from pydantic import BaseModel, EmailStr, Field
 from app.schemas.admin import (
-    CreateSubAdmin
+    CreateSubAdmin, UpdateAdminInfo
 )
 
 router = APIRouter(prefix="/admin", tags=["CMS Auth"])
@@ -86,15 +87,23 @@ def get_admin_list():
     return service_get_admin_list()
 
 
+# 관리자 계정 부여
 @router.post("/list/create")
 def create_admin_user(payload: CreateSubAdmin):
     return service_create_admin_user(data=payload)
 
+# 관리자 삭제
 @router.post("/delete/{id}")
 def delete_admin(admin_id):
     return service_delete_admin(admin_id)
 
+# 관리자 상세보기
 @router.get("/{admin_id}")
 def get_admin_detail(admin_id):
     return service_get_admin_detail(admin_id)
 
+
+# 관리자 정보 업데이트
+@router.post("/update/{admin_id}")
+def update_admin(admin_id, request : UpdateAdminInfo):
+    return service_update_admin_info(admin_id, request)

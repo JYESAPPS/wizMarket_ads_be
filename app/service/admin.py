@@ -2,7 +2,8 @@ from app.crud.admin_user import (
     get_admin_list as crud_get_admin_list,
     create_admin_user as crud_create_admin_user,
     delete_admin as crud_delete_admin,
-    get_admin_detail as crud_get_admin_detail
+    get_admin_detail as crud_get_admin_detail,
+    update_admin_info as crud_update_admin_info
 )
 
 def get_admin_list():
@@ -30,3 +31,9 @@ def delete_admin(admin_id: int):
 
 def get_admin_detail(admin_id):
     return crud_get_admin_detail(admin_id)
+
+
+
+
+def update_admin_info(admin_id, request):
+    return crud_update_admin_info(admin_id, request)
