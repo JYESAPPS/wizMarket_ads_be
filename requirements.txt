@@ -44,3 +44,5 @@ bcrypt==5.0.0
 pydantic==2.10.1
 email-validator==2.3.0
 cryptography==45.0.5
+pycryptodomex==3.23.0
+pydantic-settings==2.11.0
