@@ -12,12 +12,24 @@ def get_user_by_id(user_id: int) -> Optional[dict]:
         cur.execute("SELECT * FROM admin_user WHERE id=%s", (user_id,))
         return cur.fetchone()
 
-def create_admin_user(username: str, email: str|None, role: str, temp_password: str) -> int:
+def create_admin_user(data) -> int:
     with re_db_dict() as (conn, cur):
+
+        is_active = data.is_active
+        role = data.role
+        name = data.name
+        admin_id = data.admin_id
+        phone = data.phone
+        temp_password = data.temp_password
+        email = data.email
+        department = data.department
+        position = data.position
+
+
         cur.execute("""
-            INSERT INTO admin_user (username, admin_uid, email, password_hash, role, must_change_password, is_active)
-            VALUES (%s,%s,%s,%s,%s,1,1)
-        """, (username, email, hash_password(temp_password), role))
+            INSERT INTO admin_user (username, name, email, password_hash, role, must_change_password, is_active, phone, department, position)
+            VALUES (%s, %s, %s, %s, %s, 1, %s, %s, %s, %s)
+        """, (admin_id, name, email, hash_password(temp_password), role, is_active, phone, department, position))
         conn.commit()
         return cur.lastrowid
 
@@ -37,7 +49,7 @@ def touch_last_login(user_id: int):
 def get_admin_list():
     with re_db_dict() as (conn, cur):
         cur.execute("""
-            SELECT id, username, email, admin_uid, role, is_active, must_change_password, created_at, last_login_at, phone, department, position
+            SELECT id, username, name,email, admin_uid, role, is_active, must_change_password, created_at, last_login_at, phone, department, position
               FROM admin_user
              ORDER BY created_at DESC
         """)
@@ -52,7 +64,7 @@ def delete_admin(admin_id: int):
 def get_admin_detail(admin_id: int) -> Optional[dict]:
     with re_db_dict() as (conn, cur):
         cur.execute("""
-            SELECT id, username, email, admin_uid, phone, department, position,
+            SELECT id, username, name, email, admin_uid, phone, department, position,
                    role, is_active, visit_count, created_at, last_login_at
               FROM admin_user
              WHERE id=%s

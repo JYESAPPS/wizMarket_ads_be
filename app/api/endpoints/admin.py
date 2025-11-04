@@ -11,6 +11,9 @@ from app.crud.admin_session import insert_session
 from app.core.security import verify_password, make_tokens, hash_password
 from app.deps.auth import get_current_admin, require_role
 from pydantic import BaseModel, EmailStr, Field
+from app.schemas.admin import (
+    CreateSubAdmin
+)
 
 router = APIRouter(prefix="/admin", tags=["CMS Auth"])
 
@@ -84,8 +87,8 @@ def get_admin_list():
 
 
 @router.post("/list/create")
-def create_admin_user():
-    return service_create_admin_user()
+def create_admin_user(payload: CreateSubAdmin):
+    return service_create_admin_user(data=payload)
 
 @router.post("/delete/{id}")
 def delete_admin(admin_id):

@@ -21,8 +21,9 @@ def get_admin_list():
         })
     return admins
 
-def create_admin_user():
-    return crud_create_admin_user()
+def create_admin_user(data):
+    print(data)
+    return crud_create_admin_user(data)
 
 def delete_admin(admin_id: int):
     return crud_delete_admin(admin_id)
