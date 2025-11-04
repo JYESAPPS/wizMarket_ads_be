@@ -1,6 +1,8 @@
 from fastapi import (
     APIRouter, UploadFile, File, Form, HTTPException, status
 )
+from fastapi.responses import RedirectResponse
+import secrets
 from app.schemas.ads_app import (
     AutoAppMain,
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
@@ -2141,3 +2143,26 @@ def get_store_info(request: StoreInfo):
         error_msg = f"Unexpected error while processing request: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+
+
+DB = {}
+
+def ok(u:str)->bool:
+    return u.startswith("https://map.naver.com/p/search/")
+
+@router.post("/g")
+def create(body: dict):
+    url = body.get("url","")
+    if not ok(url): raise HTTPException(400, "Only Naver Map search URLs allowed")
+    for _ in range(3):
+        k = secrets.token_urlsafe(6).replace("_","").replace("-","")
+        if k not in DB:
+            DB[k] = url
+            return {"short": f"http://wizmarket.ai/g/{k}"}
+    raise HTTPException(500, "Key generation failed")
+
+@router.get("/g/{key}")
+def go(key: str):
+    url = DB.get(key)
+    if not url: raise HTTPException(404, "Not found")
+    return RedirectResponse(url, status_code=302)
