@@ -1,8 +1,7 @@
 from fastapi import (
     APIRouter, UploadFile, File, Form, HTTPException, status
 )
-from fastapi.responses import RedirectResponse
-import secrets
+import httpx
 from app.schemas.ads_app import (
     AutoAppMain,
     AutoApp, AutoAppRegen, AutoAppSave, UserRecoUpdate, AutoGenCopy,
@@ -2151,18 +2150,19 @@ def ok(u:str)->bool:
     return u.startswith("https://map.naver.com/p/search/")
 
 @router.post("/g")
-def create(body: dict):
-    url = body.get("url","")
-    if not ok(url): raise HTTPException(400, "Only Naver Map search URLs allowed")
-    for _ in range(3):
-        k = secrets.token_urlsafe(6).replace("_","").replace("-","")
-        if k not in DB:
-            DB[k] = url
-            return {"short": f"http://wizmarket.ai/g/{k}"}
-    raise HTTPException(500, "Key generation failed")
-
-@router.get("/g/{key}")
-def go(key: str):
-    url = DB.get(key)
-    if not url: raise HTTPException(404, "Not found")
-    return RedirectResponse(url, status_code=302)
+async def create_short(req: Request):
+    body = await req.json()
+    long_url = body.get("url", "")
+    if not ok(long_url):
+        raise HTTPException(400, "Only Naver Map search URLs allowed")
+    # https 단축링크 발급(중간지=cleanuri.com)
+    async with httpx.AsyncClient(timeout=7) as c:
+        r = await c.post(
+            "https://cleanuri.com/api/v1/shorten",
+            data={"url": long_url},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+    short = r.json().get("result_url") if r.status_code == 200 else None
+    if not short:
+        raise HTTPException(502, "Shortening failed")
+    return {"short": short}  # 예: https://cleanuri.com/XXXX
