@@ -31,7 +31,7 @@ from app.service.ads_generate_test import (
 from app.service.ads_image_treat import (
     generate_test_edit_image as service_generate_test_edit_image,
     generate_test_change_person as service_generate_test_change_person,
-    compare_face as service_compare_face,
+    # compare_face as service_compare_face,
     extend_bg as service_extend_bg
 )
 from typing import Optional
@@ -408,15 +408,15 @@ async def generate_test_change_person(
         raise HTTPException(status_code=500, detail=error_msg)
 
 
-# 생성된 얼굴 비교해보기
-@router.post("/test/face")
-async def compare_face(
+# # 생성된 얼굴 비교해보기
+# @router.post("/test/face")
+# async def compare_face(
 
-    image: UploadFile = File(...),  # 이미지 파일
-    prompt: str = Form(...)         # 텍스트 프롬프트
-):
-    data = await service_compare_face(image, prompt)
-    return {"results": data}
+#     image: UploadFile = File(...),  # 이미지 파일
+#     prompt: str = Form(...)         # 텍스트 프롬프트
+# ):
+#     data = await service_compare_face(image, prompt)
+#     return {"results": data}
 
 
 # 배경 확장 테스트
