@@ -5,6 +5,8 @@ import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 import os
+from typing import List
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.crud.ads_push import (
     select_user_id_token as crud_select_user_id_token,
     is_user_due_for_push,
@@ -72,6 +74,8 @@ def select_user_id_token():
                 body="지금 홍보를 시작해보세요!"
             )
 
+CONCURRENCY   = int(os.getenv("PUSH_CONCURRENCY", "30"))  # 동시 요청 개수
+
 def select_notice_target(
     notice_id: int,
     notice_title: str,
@@ -85,15 +89,35 @@ def select_notice_target(
         safe_title = _truncate_for_fcm(notice_title, 128)
         safe_body  = _truncate_for_fcm(notice_content, 1024)
 
-        for token in targets:
-            if not token:
-                continue
+        # for token in targets:
+        #     if not token:
+        #         continue
             
-            send_push_fcm_v1(
-                device_token=token,
-                title=safe_title,
-                body=safe_body
-            )
+        #     send_push_fcm_v1(
+        #         device_token=token,
+        #         title=safe_title,
+        #         body=safe_body
+        #     )
+
+        # 병렬 핵심: 유효 토큰만 중복 제거 후 스레드 풀에 제출
+        uniq = list(dict.fromkeys(t for t in targets if t))
+
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
+            futs = [
+                ex.submit(
+                    send_push_fcm_v1,
+                    device_token=tkn,
+                    title=safe_title,
+                    body=safe_body,
+                )
+                for tkn in uniq
+            ]
+            # 완료되며 예외만 흡수(전체 진행은 계속)
+            for fut in as_completed(futs):
+                try:
+                    fut.result()
+                except Exception as e:
+                    logger.warning(f"[notice push] one token failed: {e}")
     except Exception:
         logger.exception("notice push batch failed")
 
