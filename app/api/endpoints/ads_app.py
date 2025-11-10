@@ -57,6 +57,7 @@ from app.service.ads_app import (
     pick_effective_menu as service_pick_effective_menu,
     generate_vertex_bg as service_generate_vertex_bg,
     cartoon_image as service_cartoon_image,
+    trim_newline as service_trim_newline,
 )
 from app.service.ads_ticket import (
     get_valid_ticket as service_get_valid_ticket
@@ -102,21 +103,19 @@ def generate_template(request: AutoAppMain):
         # if request.register_tag == '' :
         #     menu = request.detail_category_name
 
-        effective_tag = (getattr(request, "register_tag", None) or "").strip()
-        if not effective_tag:
+        menu = (getattr(request, "register_tag", None) or "").strip()
+        if not menu:
             try:
                 # 가능하면 user_id로 조회 (스키마에 user_id 없으면 건너뜀)
                 user_id = int(getattr(request, "user_id", 0) or 0)
                 if user_id:
                     info, _ = service_get_user_info(user_id)
-                    effective_tag = (info or {}).get("register_tag") or ""
+                    menu = (info or {}).get("register_tag") or ""
             except Exception:
                 pass
-        if not effective_tag:
+        if not menu:
             # 최종 폴백: 업종 세부명
-            effective_tag = request.detail_category_name
-        # menu 통일
-        menu = effective_tag
+            menu = request.detail_category_name
 
         theme = ""
         if title == 1: theme = "매장홍보"
@@ -124,8 +123,8 @@ def generate_template(request: AutoAppMain):
         else: theme = "이벤트"
 
         today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
+        # formattedToday = today.strftime('%Y-%m-%d')
+        # season = service_get_season(formattedToday)
 
         detail_content = ""
         # 문구 생성
@@ -142,10 +141,10 @@ def generate_template(request: AutoAppMain):
                 copyright_prompt = f'''
                     {request.store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
                     - 세부 업종 혹은 상품 : {menu}
-                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
-                        빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
+                    - {today}를 기준으로 7일 이내에 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                        할로윈 10월 31일, 빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                     - 핵심 고객 연령대 : {age} 
-                    {season}의 특성, {request.district_name} 지역의 특성, {age}가 선호하는 문체 스타일을 기반으로 
+                    {request.district_name} 지역의 특성, {age}가 선호하는 문체 스타일을 기반으로 
                     20자 이하의 제목과 30자 내외의 호기심을 유발할 수 있는 {channel_text}에 업로드할 이벤트 문구를 작성해주세요
                     단, 연령대와 날씨, 년도, 해시태그를 이벤트 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                     제목 :, 내용 : 형식으로 작성해주세요.
@@ -170,7 +169,7 @@ def generate_template(request: AutoAppMain):
                     - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등)엔 해당 내용으로 문구 생성
                     - 핵심 고객 연령대 : {age} 
-                    {season}의 특성, {request.district_name} 지역의 특성을 살려서 {age}이 선호하는 문체 스타일을 기반으로 
+                    {request.district_name} 지역의 특성을 살려서 {age}이 선호하는 문체 스타일을 기반으로 
                     20자 이하로 간결하고 호기심을 유발할 수 있는 {channel_text} 이미지에 업로드할 {theme} 문구를 작성해주세요. 
                     단, 연령대와 날씨, 년도, 해시태그를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘도 제외해 주세요.
                 '''
@@ -206,7 +205,7 @@ def generate_template(request: AutoAppMain):
                 copyright,
                 request.detail_category_name,
                 seed_prompt,
-                request.register_tag
+                menu
             )
 
             output_images = []
@@ -235,7 +234,6 @@ def generate_template(request: AutoAppMain):
                     {request.store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
                     세부정보: {menu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {request.district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -510,10 +508,6 @@ def generate_template_regen(request: AutoAppRegen):
         #     menu = request.detail_category_name
         menu = service_pick_effective_menu(request)
 
-        today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
-
         detail_content = getattr(request, "ad_text", "") or ""
 
         # 1) 클라이언트에서 온 값들
@@ -566,7 +560,7 @@ def generate_template_regen(request: AutoAppRegen):
                         - 세부업종/상품: {menu}
                         - 이벤트 내용: {detail_content}
                         - 핵심 고객 연령대: {female_text}
-                        - 계절/지역 반영: {season}, {getattr(request, "district_name", "")}
+                        - 지역 반영: {getattr(request, "district_name", "")}
                         제약: 연령/날씨 직접 언급 금지, 특수기호/이모지/해시태그 제외, 20자 이내 한국어 제목만 출력.
                     '''
                     event_title = service_generate_content(copy_prompt, copy_role, detail_content)
@@ -578,7 +572,7 @@ def generate_template_regen(request: AutoAppRegen):
                         - 이벤트내용 : (미입력)
                         - 특정 시즌/기념일(예: 발렌타인데이, 화이트데이, 빼빼로데이, 크리스마스, 추석, 설날 등)은 해당 기념일 특성 반영
                         - 핵심 고객 연령대 : {female_text}
-                        - 지역/계절 고려: {getattr(request, "district_name", "")}, {season}
+                        - 지역 고려: {getattr(request, "district_name", "")}
                         제약: 연령·날씨·년도 직접 언급 금지, 특수기호/이모지/해시태그 제외.
                         형식: 
                         제목 : (20자 이내)
@@ -607,7 +601,7 @@ def generate_template_regen(request: AutoAppRegen):
                         - 홍보컨셉 : {theme}
                         - 특정 시즌/기념일(예: 발렌타인데이, 화이트데이, 빼빼로데이, 크리스마스, 추석, 설날 등)은 반영 가능
                         - 핵심 고객 연령대 : {female_text}
-                        - 지역/계절 고려: {getattr(request, "district_name", "")}, {season}
+                        - 지역 고려: {getattr(request, "district_name", "")}
                         출력: 20자 이하의 간결하고 호기심을 유발하는 한 문장.
                         제약: 연령·날씨 직접 언급 금지, 특수기호/이모지/해시태그 제외.
                     '''
@@ -653,7 +647,6 @@ def generate_template_regen(request: AutoAppRegen):
                     {store_name} 업체의 {channel_text}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {detail_category_name}
                     세부정보: {menu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {request.district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -795,6 +788,8 @@ def generate_template_regen_auto(request: AutoGenCopy):
                 copyright_role,
                 detail_content
             )
+            copyright = service_trim_newline(copyright)
+
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -874,12 +869,10 @@ def generate_template_regen_manual(request: ManualGenCopy):
         '''
         # 문구 생성
         try:
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
             
             copyright_prompt = f'''
                     {store_name} 업체를 위한 {subChannel} 에 포스팅할 홍보 내용을 작성해주세요.
-                    {category} 업종의  홍보할 주제는 {theme} 입니다.
+                    {category} 업종의 홍보할 주제는 {theme} 입니다.
                     주요 고객층: {female_text}을 바탕으로 100자 이내로 작성해주세요.
                     나이는 표현하지 않는다.
                     ex) 오늘 방문하신 고객에게 테이블 당 소주 1병 서비스
@@ -892,6 +885,8 @@ def generate_template_regen_manual(request: ManualGenCopy):
                 copyright_role,
                 detail_content
             )
+            copyright = service_trim_newline(copyright)
+
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -943,7 +938,6 @@ def generate_template_regen_manual(request: CameraGenCopy):
         # 문구 생성
         try:
             today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
 
             copyright_prompt = f'''
                 아래 조건을 만족하는 한국어 카피 문장 '한 줄'을 1개만 생성하라.
@@ -955,8 +949,6 @@ def generate_template_regen_manual(request: CameraGenCopy):
                 
                 세부업종 혹은 상품 : {category}
                 내용 :  {detail_content}
-                {today}를 기준으로 7일 이내에 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
-                빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                 
                 제약:
                 - 한 줄짜리 카피 '1개'만 생성
@@ -973,6 +965,8 @@ def generate_template_regen_manual(request: CameraGenCopy):
                 copyright_role,
                 detail_content
             )
+            copyright = service_trim_newline(copyright)
+
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -999,9 +993,9 @@ def generate_event(request: EventGenCopy):
         # age = request.age
         # subChannel = request.subChannel
         store_name= request.store_name
-        weather= request.weather
+        # weather= request.weather
         # temp = request.temp
-        road_name = request.road_name
+        # road_name = request.road_name
         # female_text = f"{age}대"
 
         detail_content = ""
@@ -1010,9 +1004,6 @@ def generate_event(request: EventGenCopy):
         '''
         # 문구 생성
         try:
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            
             
             copyright_prompt = f'''
                     {store_name} 업체의 단기 이벤트 내용을 작성해주세요.
@@ -1030,6 +1021,7 @@ def generate_event(request: EventGenCopy):
                 copyright_role,
                 detail_content
             )
+            copyright = service_trim_newline(copyright)
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -1055,9 +1047,9 @@ def regenerate_event(request: EventGenCopy):
         category = request.category
         # resister_tag = request.register_tag
         store_name= request.store_name
-        weather= request.weather
-        road_name = request.road_name
-        custom_text = request.custom_text
+        # weather= request.weather
+        # road_name = request.road_name
+        # custom_text = request.custom_text
 
         detail_content = ""
         copyright_role = f'''
@@ -1065,10 +1057,6 @@ def regenerate_event(request: EventGenCopy):
         '''
         # 문구 생성
         try:
-            today = datetime.now()
-            formattedToday = today.strftime('%Y-%m-%d')
-            
-            
             copyright_prompt = f'''
                     {store_name} 업체의 단기 이벤트 내용을 작성해주세요.
                     이벤트 상품은 {category} 입니다.
@@ -1078,6 +1066,7 @@ def regenerate_event(request: EventGenCopy):
                     ex2) 마라 칼국수 신메뉴! 10% 할인!
                     ex3) 7월 대 오픈! 첫 100명에게 냉면 1000원에 제공
                     ex4) 8월 여름맞이 이벤트! 금일 방문하여 3인분 주문 시 숙성 삼겹살 100g 서비스
+                    ex5) 12월 겨울맞이 이벤트! 헬스장 신규 등록 고객 10% 할인
                 '''
 
             copyright = service_generate_content(
@@ -1085,6 +1074,7 @@ def regenerate_event(request: EventGenCopy):
                 copyright_role,
                 detail_content
             )
+            copyright = service_trim_newline(copyright)
         except Exception as e:
             print(f"Error occurred: {e}, 문구 생성 오류")
 
@@ -1168,9 +1158,9 @@ def generate_template_manual(request : ManualApp):
         except Exception as e:
             print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
 
-        today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
+        # today = datetime.now()
+        # formattedToday = today.strftime('%Y-%m-%d')
+        # season = service_get_season(formattedToday)
 
         # 문구 생성
         try:
@@ -1193,7 +1183,7 @@ def generate_template_manual(request : ManualApp):
                         - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                             빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
                         - 핵심 고객 연령대 : {female_text} 
-                        {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                        {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
                         20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
                         {theme} ({detail_content}) 문구를 작성해주세요. 
                         단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
@@ -1220,7 +1210,7 @@ def generate_template_manual(request : ManualApp):
                             빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                         - 핵심 고객 연령대 : {female_text} 
 
-                        {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                        {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
                         {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
                         호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
 
@@ -1236,7 +1226,7 @@ def generate_template_manual(request : ManualApp):
                         - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                             빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
                         - 핵심 고객 연령대 : {female_text} 
-                        {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                        {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
                         20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
                         {theme} ({detail_content}) 문구를 작성해주세요. 
                         단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
@@ -1287,7 +1277,6 @@ def generate_template_manual(request : ManualApp):
                     {store_name} 업체의 {channel} {sub_channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {detail_category_name}
                     세부정보: {menu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -1399,10 +1388,6 @@ def generate_template_event(request : ManualApp):
         except Exception as e:
             print(f"Error occurred: {e}, 유저 커스텀 메뉴 업데이트 오류")
 
-        today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
-
         event_title = ""
         # 문구 생성
         try:
@@ -1422,7 +1407,7 @@ def generate_template_event(request : ManualApp):
                     - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
                     - 핵심 고객 연령대 : {female_text} 
-                    {season}의 특성, {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
+                    {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 
                     20자 이하의 간결하고 호기심을 유발할 수 있는 {channel} {sub_channel} 이미지에 업로드할 
                     {theme} ({detail_content}) 문구를 작성해주세요. 
                     단, 연령대와 날씨를 광고 문구에 직접적으로 언급하지 말고 특수기호, 이모티콘, 해시태그도 제외해 주세요.
@@ -1445,7 +1430,7 @@ def generate_template_event(request : ManualApp):
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 기념일을 포함한 이벤트 문구 생성
                     - 핵심 고객 연령대 : {female_text} 
 
-                    {season}의 특성, {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
+                    {district_name} 지역의 특성, 기념일 이라면 기념일 특성을 살려서 
                     {female_text}가 선호하는 문체 스타일을 기반으로 20자 이하의 제목과 30자 이하의 
                     호기심을 유발할 수 있는 {channel} {sub_channel}에 업로드할 이벤트 문구를 작성해주세요. 
 
@@ -1493,14 +1478,11 @@ def generate_template_event(request : ManualApp):
             insta_copyright = ''
             
             if channel_text == "3" or channel_text == "4" or channel_text == "6" or channel_text == "7":
-                today = datetime.now()
-                formattedToday = today.strftime('%Y-%m-%d')
 
                 copyright_prompt = f'''
                     {store_name} 업체의 {channel} {sub_channel}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {detail_category_name}
                     세부정보: {menu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -1545,8 +1527,6 @@ def generate_template_event(request : ManualApp):
 
         style = str(style)
 
-        print(event_title)
-        print(copyright)
 
         # 문구와 합성된 이미지 반환
         return JSONResponse(content={
@@ -1793,12 +1773,7 @@ async def generate_template_manual_camera(
     custom_text: str = Form(None),
 ):
     try:
-        today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
         custom_menu = register_tag or custom_menu
-
-        print("custom_menu:", custom_text)
 
         # 문구 생성
         try:
@@ -1919,7 +1894,6 @@ async def generate_template_manual_camera(
                     {store_name} 업체의 {channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {category}
                     세부정보: {custom_menu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -1980,10 +1954,6 @@ async def generate_template_event_camera(
     temp: float = Form(...),
 ):
     try:
-        today = datetime.now()
-        formattedToday = today.strftime('%Y-%m-%d')
-        season = service_get_season(formattedToday)
-
         # custom menu DB 수정
         try : 
             service_update_user_custom_menu(customMenu, store_business_number)
@@ -2086,7 +2056,6 @@ async def generate_template_event_camera(
                     {store_name} 업체의 {channel}을 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {category}
                     세부정보: {customMenu}
-                    업종을 감안하여 필요하다면 계절({season})을 반영하는 문구
                     주소: {district_name}
                     
                     단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
@@ -2108,7 +2077,6 @@ async def generate_template_event_camera(
             except Exception as e:
                 print(f"Error occurred: {e}, 인스타 생성 오류")
         
-        print(copyright)
 
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,

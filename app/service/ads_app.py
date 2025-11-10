@@ -216,7 +216,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
             프롬프트 스타일 : {seed_prompt}
             주어진 프롬프트 스타일은 유지하여 {register_tag}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
         """    
-        # print(f"시드 프롬프트 : {seed_image_prompt}")
+        # print(f"시드 프롬프트 : {gpt_content}")
 
         content = gpt_content
         client = OpenAI(api_key=os.getenv("GPT_KEY"))
@@ -227,7 +227,13 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
                 {"role": "user", "content": content},
             ],
         )
-        tag_image_prompt = completion.choices[0].message.content + "without Text!"
+        raw_prompt = completion.choices[0].message.content.strip()
+
+        tag_image_prompt = (
+            raw_prompt
+            + " The image must not contain any text, letters, words, numbers, handwriting, "
+            "logos, menus, signs, captions, subtitles, or watermarks anywhere."
+        )
         # print(f"생성 프롬프트 : {tag_image_prompt}")
 
     except Exception as e:
@@ -996,3 +1002,20 @@ def pick_effective_menu(request) -> str:
 
     # 4) 최종 폴백
     return _clean(getattr(request, "detail_category_name", None)) or "메뉴"
+
+
+# 홍보/이벤트 문구 줄바꿈/따옴표 제거
+def trim_newline(text):
+    if not isinstance(text, str):
+        return text
+
+    # 1차: 앞에 붙은 개행/공백 제거
+    s = text.lstrip("\n\r ")
+
+    # 2차: 전체가 같은 따옴표로 감싸져 있으면 제거
+    if len(s) >= 2 and s[0] in ("'", '"') and s[-1] == s[0]:
+        s = s[1:-1]
+        # 따옴표 안쪽에 또 있는 개행/공백 정리
+        s = s.lstrip("\n\r ").rstrip()
+
+    return s
