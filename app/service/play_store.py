@@ -13,7 +13,7 @@ SCOPES = ["https://www.googleapis.com/auth/androidpublisher"]
 PACKAGE_NAME = "com.wizmarket"  # 플레이스토어 상의 패키지명
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(BASE_DIR), "../", "core", "service-account.json")
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_JSON_PATH")
 
 
 def get_android_publisher():
