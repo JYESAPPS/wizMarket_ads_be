@@ -24,7 +24,7 @@ SERVICE_ACCOUNT_FILE = "C:\\Users\\jyes_semin\\Downloads\\api-526419963684674391
 PACKAGE_NAME = "com.wizmarket"                # 실제 패키지명
 PRODUCT_ID = "wm_basic_n"                     # 실제 인앱 상품 ID
 PURCHASE_TOKEN = (
-    "kmhkncgegefbbofnflnnfmka.AO-J1OyewS5w_dZNCIkKrmqAsdRFjlDofhMr7GgdQgmlnstMcxuET70p68farhLnitbFgu8uXRQRklt4OUkB5efYRDXG5C4DsQ"
+    "lbefaemdgchangbfgpeoocem.AO-J1Oz3U7_z5g1Wt8j2HOrjAB4ae-shjpGht2qIgYGGVqRaTzOhtH-itr2xyokEtVBdS80rGcZK1kosFVNSD4TVhxnXoU7x4g"
 )
 # ===================
 

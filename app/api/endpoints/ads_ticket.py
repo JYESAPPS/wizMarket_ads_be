@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 def insert_payment(request: InsertPayRequest):  
 
     # 확인용
-    print(request)
+    # print(request)
 
     # 구글 플레이스토어 검증
     if request.platform == "android" : 
