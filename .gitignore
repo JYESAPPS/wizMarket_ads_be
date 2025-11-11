@@ -43,3 +43,6 @@ docker-compose.override.yml
 
 #JSON 파일
 app/static/auth/*
+
+# 구글 파일
+app/core/service-account.json
