@@ -1404,7 +1404,7 @@ def generate_template_event(request : ManualApp):
                     {store_name} 매장의 {channel} {sub_channel}에 포스팅할 광고 문구를 제작하려고 합니다.
                     - 세부업종 혹은 상품 : {menu}
                     - 홍보컨셉 : {theme}, {detail_content}
-                    - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                    - 특정 시즌/기념일 이벤트 당일(예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등) 엔 해당 내용으로 문구 생성
                     - 핵심 고객 연령대 : {female_text} 
                     {district_name} 지역의 특성을 살려서 {female_text}이 선호하는 문체 스타일을 기반으로 

@@ -208,15 +208,32 @@ def select_random_image(style):
 def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_prompt, register_tag: str | None = None):
     try:
         # gpt 영역
-        gpt_role = f"""
-            You are a professional prompt writing expert.
+        gpt_role = """
+        You are a professional prompt engineer for image generation models.
+
+        Follow these rules strictly:
+
+        1. Read the given [PROMPT STYLE].
+        2. Output exactly ONE final prompt in English only.
+        3. Preserve the structure, camera angle, composition, mood, and level of detail from [PROMPT STYLE].
+        4. Adapt ONLY the main subject concept according to [TARGET] (e.g., activity, food).
+        5. Do NOT change the subject's ethnicity, nationality, or gender described in [PROMPT STYLE].
+        - If [PROMPT STYLE] describes a "Korean woman or man", the final prompt MUST also describe a Korean woman or man.
+        - Never replace her with non-Korean, generic Asian, Western, or other characters.
+        6. Do NOT introduce new cultures, outfits, or settings inconsistent with [PROMPT STYLE] unless [TARGET] explicitly requires it.
+        7. Do NOT include explanations, labels, quotes, or bullet points. Return only the final prompt sentence(s).
         """
 
         gpt_content = f"""
-            프롬프트 스타일 : {seed_prompt}
-            주어진 프롬프트 스타일은 유지하여 {register_tag}에 맞게 내용만 바꿔 영문 프롬프트를 작성해주세요.
-        """    
-        # print(f"시드 프롬프트 : {gpt_content}")
+        [PROMPT STYLE]
+        {seed_prompt}
+
+        [TARGET]
+        {register_tag}
+
+        Rewrite the prompt following the rules.
+        """  
+        # print(f"스타일 프롬프트 : {gpt_content}")
 
         content = gpt_content
         client = OpenAI(api_key=os.getenv("GPT_KEY"))
@@ -252,7 +269,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
         client = genai.Client(api_key=key)
         # Prompt 전달 및 이미지 생성
         response = client.models.generate_images(
-            model='imagen-3.0-generate-002',
+            model='imagen-4.0-generate-001',
             prompt=tag_image_prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1,
@@ -265,7 +282,7 @@ def generate_by_seed_prompt(channel, copyright, detail_category_name, seed_promp
         for generated_image in response.generated_images:
             img = Image.open(BytesIO(generated_image.image.image_bytes))
 
-            # 🔥 생성된 후, 최종 크기로 리사이징
+            # 생성된 후, 최종 크기로 리사이징
             img_resized = img.resize(resize_size, Image.LANCZOS)  # 고품질 리사이징
             img_parts.append(img_resized)
 
