@@ -42,7 +42,7 @@ def insert_payment(request: InsertPayRequest):
         verify = ""
 
     # 구매 검증 분기 처리
-    if verify.success == True :
+    if verify.get("success"):
         
         # 결제 내역에 추가 로직
         try:

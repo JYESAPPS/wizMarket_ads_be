@@ -28,7 +28,7 @@ def get_android_publisher():
 # ------------------------------
 # /play/store 테스트 엔드포인트
 # ------------------------------
-async def verify_play_store_purchase(request):
+def verify_play_store_purchase(request):
 
     if request.platform != "android":
         return {"success": False, "message": "Only Android supported in test mode"}
