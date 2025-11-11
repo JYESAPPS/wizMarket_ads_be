@@ -18,6 +18,9 @@ from app.service.ads_ticket import (
     get_token_deduction_history as service_get_token_deduction_history,
     update_subscription_info as service_update_subscription_info,
 )
+from app.service.play_store import (
+    verify_play_store_purchase as service_verify_play_store_purchase
+)
 
 
 router = APIRouter()
@@ -26,63 +29,67 @@ logger = logging.getLogger(__name__)
 
 # 결제
 @router.post("/payment")
-def insert_payment(request: List[InsertPayRequest]):  
-    # 토큰 구매 100개 제한
-    # try:
-    #     is_exist = service_get_history_100(request[0].user_id)
-    #     if not is_exist:
-    #         return JSONResponse(
-    #             status_code=status.HTTP_400_BAD_REQUEST,
-    #             content={
-    #                 "success": False,
-    #                 "message": "이미 구매하셨습니다.",
-    #             }
-    #         )
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
-    #     )  
-    # 결제 내역에 추가 로직
-    try:
-        for each in request:
-            for _ in range(each.qty):
-                service_insert_payment(each)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
-        )
+def insert_payment(request: InsertPayRequest):  
 
-    #토큰 지급 로직
-    try:
-        for each in request:
-            for _ in range(each.qty):
-                service_insert_token(each)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
-        )
+    # 확인용
+    print(request)
 
-    if request[0].plan_type in ["basic", "standard", "premium"]:
-        # user_info에 구독 정보 추가
+    # 구글 플레이스토어 검증
+    if request.platform == "android" : 
+        verify = service_verify_play_store_purchase(request)
+    
+    else :
+        verify = ""
+
+    # 구매 검증 분기 처리
+    if verify.success == True :
+        
+        # 결제 내역에 추가 로직
         try:
-            service_update_subscription_info(request[0].user_id, request[0].plan_type)
+            service_insert_payment(request)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"구독 정보 저장 과정에서 문제가 발생했습니다.: {str(e)}"
+                detail=f"결제 과정에서 문제가 발생했습니다.: {str(e)}"
             )
+
+        #토큰 지급 로직
+        try:
+            service_insert_token(request)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"토큰 지급 과정에서 문제가 발생했습니다.: {str(e)}"
+            )
+
+        if request.plan_type in ["basic", "standard", "premium"]:
+            try:
+                service_update_subscription_info(request.user_id, request.plan_type)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"구독 정보 저장 과정에서 문제가 발생했습니다.: {str(e)}"
+                )
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "message": "결제가 성공적으로 처리되었습니다.",
+                "count": request.qty,
+            }
+        )
     
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "success": True,
-            "message": "결제가 성공적으로 처리되었습니다.",
-            "count": sum(each.qty for each in request),
-        }
-    )
+    else :
+        return JSONResponse(
+            status_code=status.HTTP_500_FALSE,
+            content={
+                "success": False,
+                "message": "결제 처리 실패.",
+                "count": request.qty,
+            }
+        )
+
 
 #결제 목록 호출
 @router.get("/list")
