@@ -9,7 +9,7 @@ class InsertPayRequest(BaseModel):
     type: str
     billing_cycle: str
     plan_type: str
-    platfrom : str
+    platform : str
     product_id : str
     purchase_token : str
     transaction_id : str
