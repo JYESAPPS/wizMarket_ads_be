@@ -44,3 +44,5 @@ email-validator==2.3.0
 cryptography==45.0.5
 pycryptodomex==3.21.0
 pydantic-settings==2.11.0
+pyjwt==2.10.1
+app-store-server-library==1.9.0

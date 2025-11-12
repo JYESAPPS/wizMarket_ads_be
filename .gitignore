@@ -46,3 +46,7 @@ app/static/auth/*
 
 # 구글 파일
 app/core/service-account.json
+
+# ios 파일
+app/core/SubscriptionKey_R73F4XW69P.p8
+apple_roots/AppleRootCA-G3.cer
