@@ -1,8 +1,9 @@
 import pymysql
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 import os
 from fastapi import UploadFile
 from uuid import uuid4
+from fastapi import HTTPException, status
 
 from app.db.connect import (
     get_re_db_connection,
@@ -17,7 +18,8 @@ from app.crud.concierge import (
     submit_concierge_user as crud_submit_concierge_user,
     submit_concierge_store as crud_submit_concierge_store,
     submit_concierge_image as crud_submit_concierge_image,
-    select_concierge_list as crud_select_concierge_list
+    select_concierge_list as crud_select_concierge_list,
+    select_concierge_detail as crud_select_concierge_detail
 )
 
 
@@ -151,5 +153,22 @@ def select_concierge_list(
         apply_start=apply_start,
         apply_end=apply_end,
     )
+
+
+def select_concierge_detail(user_id: int) -> Dict[str, Any]:
+    """
+    컨시어지 상세 조회 서비스
+    - 없으면 404 에러
+    """
+    detail: Optional[Dict[str, Any]] = crud_select_concierge_detail(user_id)
+
+    if not detail:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="해당 컨시어지 신청을 찾을 수 없습니다.",
+        )
+
+    return detail
+
 
 

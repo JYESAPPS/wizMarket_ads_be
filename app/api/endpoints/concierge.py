@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request, Query
 from fastapi.responses import JSONResponse
-from typing import List, Optional
+from typing import List, Dict, Optional, Any
 import logging
 import os
 from uuid import uuid4
@@ -13,7 +13,8 @@ from app.schemas.concierge import (
 from app.service.concierge import (
     is_concierge as service_is_concierge,
     submit_concierge as service_submit_concierge,
-    select_concierge_list as service_select_concierge_list
+    select_concierge_list as service_select_concierge_list,
+    select_concierge_detail as service_select_concierge_detail
 )
 
 router = APIRouter()
@@ -32,7 +33,6 @@ def check_concierge(request: IsConcierge):
 # 신청
 UPLOAD_DIR = "uploads/concierge"  # 원하는 경로로 바꿔도 됨
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 @router.post("/submit/concierge")
 async def submit_concierge(
@@ -58,7 +58,7 @@ async def submit_concierge(
     }
 
 
-
+# 리스트 + 검색 조회
 @router.get("/select/concierge/list")
 def get_concierge_list(
     keyword: str | None = Query(None),
@@ -76,3 +76,13 @@ def get_concierge_list(
     )
     return {"items": rows}
 
+
+# 상세 페이지
+@router.get("/select/concierge/detail/{user_id}")
+def select_concierge_detail(user_id: int) -> Dict[str, Any]:
+    """
+    컨시어지 신청 상세 조회
+    - 프론트: /admin/concierge/:id 에서 사용
+    """
+    detail = service_select_concierge_detail(user_id)
+    return detail

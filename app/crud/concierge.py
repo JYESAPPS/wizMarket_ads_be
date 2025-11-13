@@ -3,7 +3,7 @@ from app.db.connect import (
 )
 from fastapi import HTTPException
 from app.schemas.ads_faq import AdsFaqList, AdsTagList
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import pymysql
 import logging
 
@@ -256,7 +256,7 @@ def submit_concierge_image(cursor, user_id: int, image_paths: Dict[str, str]) ->
 
 
 
-
+# 리스트 + 검색 조회
 def select_concierge_list(
     keyword: Optional[str] = None,
     search_field: Optional[str] = None,      # "name" | "store_name" | None
@@ -366,6 +366,69 @@ def select_concierge_list(
         close_connection(connection)
 
 
+# 상세 조회
+def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
+    """
+    한 명의 컨시어지 신청 상세 조회
+    - CONCIERGE_USER + CONCIERGE_STORE + concierge_user_file
+    """
+    connection = get_re_db_connection()
+    cursor = None
 
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        # 1) 유저 + 스토어 정보 (1건)
+        sql_main = """
+            SELECT
+                cu.user_id        AS user_id,
+                cu.user_name      AS user_name,
+                cu.phone          AS phone,
+                cu.status         AS status,
+                cs.store_name     AS store_name,
+                cs.road_name      AS road_name,
+                cs.menu_1         AS menu_1,
+                cs.menu_2         AS menu_2,
+                cs.menu_3         AS menu_3,
+                cs.created_at     AS created_at
+            FROM CONCIERGE_USER cu
+            JOIN CONCIERGE_STORE cs
+              ON cs.user_id = cu.user_id
+            WHERE cu.user_id = %s
+            LIMIT 1
+        """
+        cursor.execute(sql_main, (user_id,))
+        main = cursor.fetchone()
+
+        if not main:
+            return None
+
+        # 2) 이미지 리스트
+        sql_files = """
+            SELECT
+                file_id,
+                user_id,
+                file_order,
+                storage_path,
+                original_name,
+                mime_type,
+                file_size,
+                created_at
+            FROM concierge_user_file
+            WHERE user_id = %s
+            ORDER BY file_order ASC, file_id ASC
+        """
+        cursor.execute(sql_files, (user_id,))
+        files: List[Dict[str, Any]] = cursor.fetchall() or []
+
+        main["images"] = files
+        return main
+
+    except pymysql.MySQLError as e:
+        print(f"[select_concierge_detail] DB error: {e}")
+        raise
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
 
 
