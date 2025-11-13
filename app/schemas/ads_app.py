@@ -163,9 +163,9 @@ class EventGenCopy(BaseModel):
     # resister_tag: str
     theme: str
     store_name : str
-    weather: str
-    temp: float
-    road_name : str
+    weather: Optional[str] = None
+    temp: Optional[float] = None
+    road_name: Optional[str] = None
     custom_text: Optional[str] = None
     
 
