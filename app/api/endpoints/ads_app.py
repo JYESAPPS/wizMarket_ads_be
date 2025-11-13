@@ -1861,10 +1861,10 @@ async def generate_template_manual_camera(
             input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
             # 스타일에 따라 분기
-            if style == "배경만 제거":
+            if style == "배경만 제거" or style == "배경 제거":
                 origin_images = service_generate_image_remove_bg(input_image)  # List[PIL.Image]
 
-            elif style == "필터":
+            elif style == "필터" or style == "이미지 필터":
                 buf = BytesIO()
                 input_image.save(buf, format="PNG")
                 buf.seek(0)
@@ -2022,10 +2022,10 @@ async def generate_template_event_camera(
             input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
 
             # 스타일에 따라 분기
-            if style == "배경만 제거":
+            if style == "배경만 제거" or style == "배경 제거":
                 origin_images = service_generate_image_remove_bg(input_image)  # 리턴값이 List[Image]
 
-            elif style == "필터":
+            elif style == "필터" or style == "이미지 필터":
                 buf = BytesIO()
                 input_image.save(buf, format="PNG")
                 buf.seek(0)

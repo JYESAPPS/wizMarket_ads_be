@@ -762,7 +762,7 @@ def generate_vertex_bg(image: bytes, prompt: str) -> bytes:
     return out_list
 
 # 필터 API (AI lab tools)
-async def cartoon_image(image_bytes: bytes, index: int,
+async def cartoon_image(image_bytes: bytes, index: int = 0,
                         poll_interval: float = 2.0, max_attempts: int = 15) -> Image.Image:
     AILABTOOLS_API_KEY = os.getenv("AILABTOOLS_API_KEY")
     API_BASE = "https://www.ailabapi.com"
