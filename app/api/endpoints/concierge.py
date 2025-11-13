@@ -43,55 +43,36 @@ async def submit_concierge(
 
     # 1) 일반 필드 뽑기
     fields = {}
+    from starlette.datastructures import UploadFile as StarletteUploadFile
     for key, value in form.items():
-        from starlette.datastructures import UploadFile as StarletteUploadFile
         if isinstance(value, (UploadFile, StarletteUploadFile)):
             continue
         fields[key] = value
 
-    # ─ 이미지 처리 ──────────────────────────────
-    image_paths = {}  # {"image_1": "...", "image_2": "..."}
-    if images:
-        for idx, img in enumerate(images[:6], start=1):  # 최대 6장
-            # 확장자 추출
-            _, ext = os.path.splitext(img.filename)
-            ext = ext.lower() or ".jpg"
-
-            # 파일명 생성 (UUID 등)
-            filename = f"{uuid4().hex}_{idx}{ext}"
-            save_path = os.path.join(UPLOAD_DIR, filename)
-
-            # 실제 파일 저장
-            # with open(save_path, "wb") as f:
-            #     content = await img.read()
-            #     f.write(content)
-
-            # image_1, image_2 형태로 할당
-            image_key = f"image_{idx}"
-            image_paths[image_key] = save_path  # 또는 URL
-
-    success, msg = service_submit_concierge(fields, image_paths)
+    # 2) 서비스에 fields + 이미지 원본 그대로 넘김
+    success, msg = await service_submit_concierge(fields, images or [])
 
     return {
         "success": success,
-        "msg" : msg
+        "msg": msg,
     }
 
 
 
 @router.get("/select/concierge/list")
-async def select_concierge_list(
-    keyword: Optional[str] = Query(
-        None,
-        description="이름 / 매장명 / 도로명 통합 검색어",
-    ),
+def get_concierge_list(
+    keyword: str | None = Query(None),
+    search_field: str | None = Query(None),
+    status: str | None = Query(None),
+    apply_start: str | None = Query(None),
+    apply_end: str | None = Query(None),
 ):
-    """
-    컨시어지 신청 리스트 조회용 엔드포인트 (어드민용)
-    GET /select/concierge/list?keyword=...
-    """
-    items = service_select_concierge_list(keyword=keyword)
-    return {
-        "items": items,
-        "count": len(items),
-    }
+    rows = service_select_concierge_list(
+        keyword=keyword,
+        search_field=search_field,
+        status=status,
+        apply_start=apply_start,
+        apply_end=apply_end,
+    )
+    return {"items": rows}
+

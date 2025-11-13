@@ -140,8 +140,8 @@ def submit_concierge_user(cursor, name, phone, pin) -> int:
     - 커넥션/커밋/롤백은 바깥(service)에서 처리
     """
     insert_query = """
-        INSERT INTO CONCIERGE_USER (user_name, phone, pin, is_payment)
-        VALUES (%s, %s, %s, 0)
+        INSERT INTO CONCIERGE_USER (user_name, phone, pin, status)
+        VALUES (%s, %s, %s, "PENDING")
     """
 
     cursor.execute(insert_query, (name, phone, pin))
@@ -255,12 +255,21 @@ def submit_concierge_image(cursor, user_id: int, image_paths: Dict[str, str]) ->
 
 
 
-# CMS 어드민에서 컨시어지 신청 목록 조회
-def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
+
+
+def select_concierge_list(
+    keyword: Optional[str] = None,
+    search_field: Optional[str] = None,      # "name" | "store_name" | None
+    status: Optional[str] = None,            # "PENDING" | "APPROVED" | "REJECTED" | None
+    apply_start: Optional[str] = None,       # ISO datetime string
+    apply_end: Optional[str] = None,         # ISO datetime string
+) -> List[dict]:
     """
     컨시어지 신청 리스트 조회용 CRUD.
     - CONCIERGE_USER + CONCIERGE_STORE + concierge_user_file 조인
-    - keyword가 있으면 이름/매장명/도로명 LIKE 검색
+    - keyword: 이름/매장명/도로명 LIKE 검색 (search_field에 따라 대상 변경)
+    - status: 신청 상태 필터 (예: PENDING/APPROVED/REJECTED)
+    - apply_start/apply_end: 신청일(생성일) 범위 필터
     """
     connection = get_re_db_connection()
     cursor = None
@@ -279,6 +288,7 @@ def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
                 cs.menu_2           AS menu_2,
                 cs.menu_3           AS menu_3,
                 COUNT(cf.file_id)   AS image_count,
+                cu.status           AS status,      -- 🔹 상태 컬럼 (실제 컬럼명에 맞게 조정)
                 cs.created_at       AS created_at
             FROM CONCIERGE_USER cu
             JOIN CONCIERGE_STORE cs
@@ -287,18 +297,46 @@ def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
                 ON cf.user_id = cu.user_id
         """
 
+        where_clauses = []
         params: list = []
 
-        # keyword 조건 (이름 / 매장명 / 도로명)
+        # 🔹 keyword 조건
         if keyword:
-            sql += """
-            WHERE
-                cu.user_name LIKE %s
-                OR cs.store_name LIKE %s
-                OR cs.road_name LIKE %s
-            """
             kw = f"%{keyword.strip()}%"
-            params.extend([kw, kw, kw])
+
+            # search_field 에 따라 대상 컬럼 변경
+            if search_field == "name":
+                where_clauses.append("cu.user_name LIKE %s")
+                params.append(kw)
+            elif search_field == "store_name":
+                where_clauses.append("cs.store_name LIKE %s")
+                params.append(kw)
+            else:
+                # 기본: 이름 / 매장명 / 도로명 전체 검색
+                where_clauses.append(
+                    "(cu.user_name LIKE %s OR cs.store_name LIKE %s OR cs.road_name LIKE %s)"
+                )
+                params.extend([kw, kw, kw])
+
+        # 🔹 상태 조건 (PENDING / APPROVED / REJECTED 등)
+        if status:
+            where_clauses.append("cu.status = %s")  # 상태 컬럼명은 스키마에 맞게 사용
+            params.append(status)
+
+        # 🔹 신청일(생성일) 범위
+        # apply_start/apply_end 는 프론트에서 KST ISO 로 넘겨주는 걸 그대로 사용
+        if apply_start and apply_end:
+            where_clauses.append("cs.created_at BETWEEN %s AND %s")
+            params.extend([apply_start, apply_end])
+        elif apply_start:
+            where_clauses.append("cs.created_at >= %s")
+            params.append(apply_start)
+        elif apply_end:
+            where_clauses.append("cs.created_at <= %s")
+            params.append(apply_end)
+
+        if where_clauses:
+            sql += "\nWHERE " + " AND ".join(where_clauses)
 
         sql += """
             GROUP BY
@@ -310,13 +348,13 @@ def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
                 cs.menu_1,
                 cs.menu_2,
                 cs.menu_3,
+                cu.status,
                 cs.created_at
             ORDER BY cs.created_at DESC
         """
 
         cursor.execute(sql, params)
-        rows = cursor.fetchall()  # List[Dict]
-
+        rows = cursor.fetchall()
         return rows
 
     except pymysql.MySQLError as e:
@@ -326,3 +364,8 @@ def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
     finally:
         close_cursor(cursor)
         close_connection(connection)
+
+
+
+
+

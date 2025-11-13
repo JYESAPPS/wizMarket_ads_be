@@ -1,5 +1,8 @@
 import pymysql
-from typing import Optional, List
+from typing import Dict, List, Tuple, Optional
+import os
+from fastapi import UploadFile
+from uuid import uuid4
 
 from app.db.connect import (
     get_re_db_connection,
@@ -24,10 +27,58 @@ def is_concierge(request):
 
 
 
+# 이미지 저장 처리
+UPLOAD_ROOT = "/app/uploads"  # 도커 컨테이너 내부 실제 저장 위치 (볼륨 마운트 추천)
+
+async def save_concierge_images(user_id: int, images: List[UploadFile]) -> Dict[str, str]:
+    """
+    user_id 기준으로 concierge/user_{user_id}/... 에 저장하고,
+    DB에 넣을 storage_path 맵을 반환.
+    예: { "image_1": "concierge/user_1/abcd1234_1.png", ... }
+    """
+    image_paths: Dict[str, str] = {}
+
+    if not images:
+        return image_paths
+
+    # 1) 실제 저장 디렉토리 (컨테이너 내부)
+    user_dir = os.path.join(UPLOAD_ROOT, "concierge", f"user_{user_id}")
+    os.makedirs(user_dir, exist_ok=True)  # 폴더 없으면 자동 생성
+
+    for idx, img in enumerate(images[:6], start=1):  # 최대 6장
+        if not img.filename:
+            continue
+
+        _, ext = os.path.splitext(img.filename)
+        ext = (ext or ".jpg").lower()
+
+        filename = f"{uuid4().hex}_{idx}{ext}"
+
+        # 실제 파일이 저장될 전체 경로 (컨테이너 파일 시스템 기준)
+        save_path = os.path.join(user_dir, filename)
+
+        # 파일 쓰기
+        content = await img.read()
+        with open(save_path, "wb") as f:
+            f.write(content)
+
+        # 🔹 DB에는 이렇게 저장 (논리 경로)
+        #    concierge/user_1/abcd1234_1.png
+        storage_path = os.path.join("concierge", f"user_{user_id}", filename).replace("\\", "/")
+
+        image_paths[f"image_{idx}"] = storage_path
+
+    return image_paths
+
+
 # 커밋 처리 한번에
-def submit_concierge(fields, image_paths):
+async def submit_concierge(fields: Dict[str, str], images: List[UploadFile]) -> Tuple[bool, str]:
+    """
+    - concierge_user / concierge_store / concierge_user_file INSERT
+    - 이미지 파일은 user_id 기준 폴더에 저장: uploads/concierge/user_{user_id}/...
+    """
     main_category = fields.get("mainCategory")
-    sub_category = fields.get("SubCategory") or fields.get("subCategory")
+    sub_category = fields.get("subCategory")
     detail_category = fields.get("detailCategory")
 
     name = fields.get("name")
@@ -40,17 +91,14 @@ def submit_concierge(fields, image_paths):
 
     connection = get_re_db_connection()
     cursor = None
-    step = "init"
 
     try:
         cursor = connection.cursor()
 
         # 1) 컨시어지 유저 생성
-        step = "user"
         user_id = crud_submit_concierge_user(cursor, name, phone, pin)
 
         # 2) 컨시어지 가게 생성
-        step = "store"
         crud_submit_concierge_store(
             cursor,
             user_id,
@@ -62,47 +110,46 @@ def submit_concierge(fields, image_paths):
             detail_category,
         )
 
-        # 3) 컨시어지 이미지 저장
-        step = "image"
-        crud_submit_concierge_image(cursor, user_id, image_paths)
+        # 3) 이미지 저장 → image_paths 구성 (user_id 기준 폴더 내부)
+        image_paths = await save_concierge_images(user_id, images)
 
-        # ✅ 세 개 다 성공했을 때만 커밋
+        # 4) 컨시어지 이미지 메타데이터 INSERT
+        if image_paths:
+            crud_submit_concierge_image(cursor, user_id, image_paths)
+
+        # 5) 모두 성공 시 커밋
         commit(connection)
-
-        return {
-            "success": True,
-            "message": "",
-        }
+        return True, "신청이 정상적으로 접수되었습니다."
 
     except pymysql.MySQLError as e:
-        # ❌ 중간에 하나라도 실패하면 전부 롤백
         rollback(connection)
+        print(f"[submit_concierge] DB error: {e}")
+        return False, "신청 처리 중 DB 오류가 발생했습니다."
 
-        # 단계별 에러 메시지 매핑
-        step_message = {
-            "user": "컨시어지 사용자 생성 중 오류가 발생했습니다.",
-            "store": "컨시어지 매장 생성 중 오류가 발생했습니다.",
-            "image": "컨시어지 이미지 저장 중 오류가 발생했습니다.",
-        }
-        msg = step_message.get(step, "컨시어지 신청 처리 중 오류가 발생했습니다.")
-
-        print(f"[submit_concierge] step={step}, DB error: {e}")
-
-        # 여기서 예외를 다시 던지지 않고, 메시지 리턴
-        return {
-            "success": False,
-            "message": msg,
-        }
+    except Exception as e:
+        rollback(connection)
+        print(f"[submit_concierge] error: {e}")
+        return False, "신청 처리 중 알 수 없는 오류가 발생했습니다."
 
     finally:
         close_cursor(cursor)
+        close_connection(connection)
 
 
-def select_concierge_list(keyword: Optional[str] = None) -> List[dict]:
-    """
-    컨시어지 신청 리스트 조회 서비스.
-    - 나중에 페이징, 권한 체크, 추가 가공 등을 여기에 붙이면 됨.
-    """
-    items = crud_select_concierge_list(keyword=keyword)
-    return items
+
+def select_concierge_list(
+    keyword: Optional[str],
+    search_field: Optional[str],
+    status: Optional[str],
+    apply_start: Optional[str],
+    apply_end: Optional[str],
+):
+    return crud_select_concierge_list(
+        keyword=keyword,
+        search_field=search_field,
+        status=status,
+        apply_start=apply_start,
+        apply_end=apply_end,
+    )
+
 
