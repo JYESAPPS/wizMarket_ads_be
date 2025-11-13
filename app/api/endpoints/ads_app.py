@@ -1773,12 +1773,12 @@ async def generate_template_manual_camera(
     custom_text: str = Form(None),
 ):
     try:
-        custom_menu = register_tag or custom_menu
+        custom_menu = custom_menu or register_tag
 
         # 문구 생성
         try:
             detail_content = ""
-            copyright_role = '''
+            copyright_role = f'''
                 {store_name} 매장의 {channel}를 위한 문구를 제작하려고 합니다.
                 다음과 같은 속성을 반영하여 연관성있는 카피문구를 작성해주세요.
             '''
