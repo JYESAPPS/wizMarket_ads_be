@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import (
     ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms, help, admin,
-    auth_name, play_store_test
+    auth_name, play_store_test, concierge
 )
 from app.api.endpoints import webhook
 
@@ -107,6 +107,7 @@ app.include_router(webhook.router, prefix="/ad")
 app.include_router(help.router, prefix="/help")
 app.include_router(auth_name.router)
 app.include_router(play_store_test.router)
+app.include_router(concierge.router)
 app.include_router(admin.router)
 
 if __name__ == "__main__":
