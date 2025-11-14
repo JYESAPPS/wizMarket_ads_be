@@ -37,10 +37,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+STATIC_ROOT = os.getenv("STATIC_ROOT")
+UPLOAD_ROOT = os.getenv("UPLOAD_ROOT")
+POSTING_ROOT = os.getenv("POSTING_ROOT")
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")
-app.mount("/posting", StaticFiles(directory="app/posting"), name="posting")
+
+app.mount("/static", StaticFiles(directory=STATIC_ROOT), name="static")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT), name="uploads")
+app.mount("/posting", StaticFiles(directory=POSTING_ROOT), name="posting")
 
 
 
