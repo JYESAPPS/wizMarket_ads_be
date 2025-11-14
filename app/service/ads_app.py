@@ -336,25 +336,26 @@ async def insert_upload_record(request, file: UploadFile | None):
 CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog"}
 
 # base64 이미지 파일 저장 및 경로 설정
-UPLOAD_ROOT = Path("/app/app/uploads").resolve()
+UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT")).resolve()
 
 def save_base64_image(base64_str: str, user_id: int, channel_code: str, save_dir: str | None = None):
-    
-
     channel_name = CHANNEL_MAP.get(channel_code, "unknown")
 
-    # ▶ base_dir 결정: 인자가 절대경로면 그대로, 아니면 /app/uploads/image/user
-    base_dir = Path(save_dir).resolve() if (save_dir and os.path.isabs(save_dir)) else (UPLOAD_ROOT / "image" / "user")
+    # ▶ base_dir: 절대경로가 들어오면 그대로, 아니면 UPLOAD_ROOT/image/user 기준
+    if save_dir and os.path.isabs(save_dir):
+        base_dir = Path(save_dir).resolve()
+    else:
+        base_dir = UPLOAD_ROOT / "image" / "user"
+
     user_dir = base_dir / f"user_{user_id}"
 
-    # 디버깅용 사전 로그
     print(f"[save_base64_image] CWD={os.getcwd()} UPLOAD_ROOT={UPLOAD_ROOT} base_dir={base_dir} user_dir={user_dir}")
 
     try:
         user_dir.mkdir(parents=True, exist_ok=True)
 
         ts = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"{user_id}_{channel_name}_{ts}.png"   # 확장자는 네가 쓰던 대로
+        filename = f"{user_id}_{channel_name}_{ts}.png"
         file_path = user_dir / filename
 
         if "," in base64_str:
@@ -363,14 +364,13 @@ def save_base64_image(base64_str: str, user_id: int, channel_code: str, save_dir
         data = base64.b64decode(base64_str)
         file_path.write_bytes(data)
 
-        # ▶ URL 생성: /uploads 가 UPLOAD_ROOT를 가리킨다고 가정(FastAPI StaticFiles)
+        # ▶ URL 생성: UPLOAD_ROOT 기준 상대경로 → /uploads/...
         rel = file_path.relative_to(UPLOAD_ROOT).as_posix()  # image/user/...
         url = f"http://wizmarket.ai:8000/uploads/{rel}"
         print(f"[save_base64_image] OK write -> {file_path}  URL={url}")
         return url
 
     except Exception as e:
-        # 에러를 절대 조용히 넘기지 않기(원인 추적 위해)
         print(f"[save_base64_image] FAILED: base_dir={base_dir}, user_dir={user_dir}, "
               f"UPLOAD_ROOT={UPLOAD_ROOT}, CWD={os.getcwd()}, err={repr(e)}")
         raise
@@ -380,17 +380,15 @@ def save_blob_image(
     file: UploadFile,
     user_id: int,
     channel_code: str,
-    save_dir: str = "app/uploads/image/user",
+    save_dir: str | None = None,
     base_url: str = "http://wizmarket.ai:8000",
 ) -> str:
     if not file:
         raise HTTPException(status_code=400, detail="file이 없습니다.")
 
-    # 허용 타입/확장자 결정
     allow = {"image/jpeg": ".jpg", "image/png": ".png"}
     ext = allow.get(file.content_type)
     if not ext:
-        # content_type이 비어있으면 파일명 확장자로 보정 시도
         name = (file.filename or "").lower()
         if name.endswith(".jpg") or name.endswith(".jpeg"):
             ext = ".jpg"
@@ -401,36 +399,36 @@ def save_blob_image(
 
     channel_name = CHANNEL_MAP.get(str(channel_code), "unknown")
 
-    # 저장 경로 준비
+    # ▶ base_dir: 절대경로면 그대로, 아니면 UPLOAD_ROOT/image/user
+    if save_dir and os.path.isabs(save_dir):
+        base_dir = Path(save_dir).resolve()
+    else:
+        base_dir = UPLOAD_ROOT / "image" / "user"
+
     user_folder = f"user_{user_id}"
-    full_dir = os.path.join(save_dir, user_folder)
-    os.makedirs(full_dir, exist_ok=True)
+    full_dir = base_dir / user_folder
+    full_dir.mkdir(parents=True, exist_ok=True)
 
-    # 파일명 생성
     ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    # unique = uuid.uuid4().hex
     filename = f"{user_id}_{channel_name}_{ts}{ext}"
-    file_path = os.path.join(full_dir, filename)
+    file_path = full_dir / filename
 
-    # 스트리밍 저장
     try:
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
     finally:
         try:
-            # UploadFile 닫기 (에러 나도 무시)
             if hasattr(file, "close"):
-                # FastAPI UploadFile.close는 코루틴일 수도 있음
                 close = file.close()
                 if hasattr(close, "__await__"):
                     import asyncio
-                    asyncio.create_task(close)  # fire-and-forget
+                    asyncio.create_task(close)
         except Exception:
             pass
 
-    # 퍼블릭 URL 생성 (로컬 경로 → URL)
-    relative_path = file_path.replace("app/", "").replace(os.sep, "/")
-    return f"{base_url}/{relative_path}"
+    # ▶ 퍼블릭 URL: UPLOAD_ROOT 기준 상대경로
+    rel = file_path.relative_to(UPLOAD_ROOT).as_posix()  # image/user/...
+    return f"{base_url}/uploads/{rel}"
 
 # AI 생성 수동 - 이미지 리스트와 추천 값 가져오기
 def get_style_image_ai_reco(request):
