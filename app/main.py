@@ -42,9 +42,9 @@ UPLOAD_ROOT = os.getenv("UPLOAD_ROOT")
 POSTING_ROOT = os.getenv("POSTING_ROOT")
 
 
-app.mount("/static", StaticFiles(directory=STATIC_ROOT), name="static")
-app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT), name="uploads")
-app.mount("/posting", StaticFiles(directory=POSTING_ROOT), name="posting")
+app.mount("/static",  StaticFiles(directory="app/static"),  name="static")   # 예전처럼
+app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT),  name="uploads")  # env 사용
+app.mount("/posting", StaticFiles(directory="app/posting"), name="posting") # 예전처럼
 
 
 
