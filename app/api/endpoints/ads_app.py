@@ -1953,7 +1953,8 @@ async def generate_template_manual_camera(
         return JSONResponse(content={
                 "copyright": copyright, "origin_image": output_images,
                 "title": title, "channel":channel, "style": style, "core_f": age,
-                "main": main, "temp" : temp, "detail_category_name" : category, "register_tag": register_tag,
+                "main": main, "temp" : temp, "detail_category_name" : category, 
+                "register_tag": register_tag, "custom_menu": custom_menu,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
                 "insta_copyright" : insta_copyright, "prompt" : bg_prompt, "filter_idx": filter,
                 "event_title": event_title
