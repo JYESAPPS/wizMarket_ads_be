@@ -387,6 +387,9 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cu.status         AS status,
                 cs.store_name     AS store_name,
                 cs.road_name      AS road_name,
+                cs.temp_big_category AS temp_big_category,
+                cs.temp_medium_category AS temp_medium_category,
+                cs.temp_small_category AS temp_small_category,
                 cs.menu_1         AS menu_1,
                 cs.menu_2         AS menu_2,
                 cs.menu_3         AS menu_3,
@@ -430,5 +433,125 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
     finally:
         close_cursor(cursor)
         close_connection(connection)
+
+
+
+
+
+
+def get_report_store(store_name, road_name):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    norm_road = normalize_addr_full(road_name)
+
+    try:
+        if not connection.open:
+            raise HTTPException(status_code=500, detail="DB 연결이 열려있지 않습니다.")
+
+        # 🔹 STORE_BUSINESS_NUMBER 조회
+        sql = """
+            SELECT STORE_BUSINESS_NUMBER
+            FROM REPORT
+            WHERE STORE_NAME = %s
+              AND ROAD_NAME = %s
+            LIMIT 1
+        """
+        cursor.execute(sql, (store_name, norm_road))
+        row = cursor.fetchone()
+
+        # 🔹 있으면 사업자번호 반환, 없으면 None
+        if row and row.get("STORE_BUSINESS_NUMBER"):
+            return row["STORE_BUSINESS_NUMBER"]
+
+        return None
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected Error in is_concierge: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
+
+
+
+
+def update_report_is_concierge(store_business_number):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        if not connection.open:
+            raise HTTPException(status_code=500, detail="DB 연결이 열려있지 않습니다.")
+
+        # 🔹 STORE_BUSINESS_NUMBER 조회
+        sql = """
+            UPDATE REPORT 
+            SET IS_CONCIERGE = 1
+            WHERE store_business_number = %s
+        """
+        cursor.execute(sql, (store_business_number))
+        connection.commit()
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected Error in is_concierge: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
+
+
+
+def update_concierge_user_status(user_id, store_business_number):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        if not connection.open:
+            raise HTTPException(status_code=500, detail="DB 연결이 열려있지 않습니다.")
+
+        # 🔹 STORE_BUSINESS_NUMBER 조회
+        sql = """
+            UPDATE CONCIERGE_USER
+            SET STORE_BUSINESS_NUMBER = %s,
+                STATUS = %s
+            WHERE user_id = %s
+        """
+        cursor.execute(sql, (store_business_number, "APPROVED", user_id))
+        connection.commit()
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
+    except Exception as e:
+        logger.error(f"Unexpected Error in is_concierge: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
+
 
 
