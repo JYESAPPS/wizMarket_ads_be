@@ -35,6 +35,30 @@ from app.service.regist_new_store import (
 )
 
 
+# 축약/변형 → 정식 명칭 매핑
+_ALIAS_TO_CANON = {
+    # 특별/광역시
+    "서울": "서울특별시", "서울시": "서울특별시",
+    "부산": "부산광역시", "부산시": "부산광역시",
+    "대구": "대구광역시", "대구시": "대구광역시",
+    "인천": "인천광역시", "인천시": "인천광역시",
+    "광주": "광주광역시", "광주시": "광주광역시",
+    "대전": "대전광역시", "대전시": "대전광역시",
+    "울산": "울산광역시", "울산시": "울산광역시",
+    "세종": "세종특별자치시", "세종시": "세종특별자치시", "세종특별시": "세종특별자치시",
+
+    # 도(광역자치단체)
+    "경기": "경기도", "경기도": "경기도",
+    "강원": "강원특별자치도", "강원도": "강원특별자치도", "강원특별자치도": "강원특별자치도",
+    "충북": "충청북도", "충청북도": "충청북도",
+    "충남": "충청남도", "충청남도": "충청남도",
+    "전북": "전라북도", "전라북도": "전라북도",
+    "전남": "전라남도", "전라남도": "전라남도",
+    "경북": "경상북도", "경상북도": "경상북도",
+    "경남": "경상남도", "경상남도": "경상남도",
+    "제주": "제주특별자치도", "제주도": "제주특별자치도", "제주특별자치도": "제주특별자치도",
+}
+
 
 # 기존 매장인지 조회
 def is_concierge(request):
@@ -223,7 +247,8 @@ def concierge_add_new_store (request):
     req = requests.get(url, headers=headers, params=params)
     data = json.loads(req.text)          # 또는 data = req.json()  # req 가 requests.Response 인 경우
 
-    si_name = data["documents"][0]["address"]["region_1depth_name"]
+    raw_si_name = data["documents"][0]["address"]["region_1depth_name"]
+    si_name = _ALIAS_TO_CANON.get(raw_si_name, raw_si_name)
     # 원문
     full = data["documents"][0]["address"]["region_2depth_name"]
 
@@ -268,7 +293,6 @@ def concierge_add_new_store (request):
         )
     # 3. 매장 등록 시도
     success, store_business_number = service_add_new_store(request, city_id, district_id, sub_district_id, longitude, latitude)
-
     if success:
         # 4. 서비스 DB 로 매장 카피
         service_copy_new_store(store_business_number)
