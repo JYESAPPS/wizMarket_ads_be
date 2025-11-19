@@ -770,7 +770,8 @@ async def insert_upload_record_endpoint(req: Request):
                 date_range=json.loads(form.get("date_range") or "[]"),
                 image=None,
                 type=form.get("type"),
-                insta_copyright=form.get("insta_copyright") or ""
+                insta_copyright=form.get("insta_copyright") or "",
+                copyright=form.get("copyright")
             )
             result = await service_insert_upload_record(data, file=file)
             return JSONResponse(content=result)

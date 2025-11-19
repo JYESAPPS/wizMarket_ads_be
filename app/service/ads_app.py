@@ -310,6 +310,7 @@ async def insert_upload_record(request, file: UploadFile | None):
     upload_time = request.upload_time
     upload_type = request.type
     insta_copyright = request.insta_copyright
+    copyright = request.copyright
 
     # 여기서만 분기
     if file is not None:
@@ -330,7 +331,8 @@ async def insert_upload_record(request, file: UploadFile | None):
         upload_time,
         image_path,
         upload_type,
-        insta_copyright
+        insta_copyright,
+        copyright
     )
     return {"success": bool(success), "imageUrl": image_path}
 

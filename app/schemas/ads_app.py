@@ -120,6 +120,7 @@ class AutoAppSave(BaseModel):
     image: str | None = None
     type: str
     insta_copyright: Optional[str] = None
+    copyright: str
 
 
 
