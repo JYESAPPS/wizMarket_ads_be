@@ -5,6 +5,7 @@ from datetime import datetime
 
 class ReserveCreate(BaseModel):
     user_id: str
+    title: str = None
     start_date: date
     end_date: date
     repeat_type: str  # daily, weekly, monthly
@@ -12,6 +13,7 @@ class ReserveCreate(BaseModel):
     upload_times: List[str]
     weekly_days: Optional[List[str]] = None  # ["Mon", "Wed"]
     monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
+    straight: str
 
     class Config:
         from_attributes = True

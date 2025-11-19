@@ -22,21 +22,24 @@ def insert_reserve(request):
         insert_query = """
             INSERT INTO user_reserve (
                 user_id,
+                title,
                 repeat_type,
                 repeat_count,
                 start_date,
                 end_date,
                 upload_times,
                 weekly_days,
-                monthly_days
+                monthly_days,
+                straight
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         cursor.execute(
             insert_query,
             (
                 int(request.user_id),
+                request.title,
                 request.repeat_type,
                 request.repeat_count,
                 request.start_date,
@@ -44,6 +47,7 @@ def insert_reserve(request):
                 json.dumps(request.upload_times),
                 json.dumps(request.weekly_days) if request.weekly_days else None,
                 json.dumps(request.monthly_days) if request.monthly_days else None,
+                request.straight
             ),
         )
 
@@ -53,6 +57,7 @@ def insert_reserve(request):
         select_query = """
             SELECT 
                 RESERVE_ID AS reserve_id,
+                TITLE AS title,
                 REPEAT_TYPE AS repeat_type,
                 REPEAT_COUNT AS repeat_count,
                 START_DATE AS start_date,
@@ -61,7 +66,8 @@ def insert_reserve(request):
                 WEEKLY_DAYS AS weekly_days,
                 MONTHLY_DAYS AS monthly_days,
                 IS_ACTIVE AS is_active,
-                CREATED_AT AS created_at
+                CREATED_AT AS created_at,
+                STRAIGHT AS straight
             FROM USER_RESERVE
             WHERE RESERVE_ID = %s;
 
