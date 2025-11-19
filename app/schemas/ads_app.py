@@ -119,6 +119,7 @@ class AutoAppSave(BaseModel):
     date_range: List[str] 
     image: str | None = None
     type: str
+    insta_copyright: Optional[str] = None
 
 
 
