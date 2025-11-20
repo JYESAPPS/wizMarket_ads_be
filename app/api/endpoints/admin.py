@@ -37,16 +37,36 @@ def login(body: LoginIn, request: Request):
     user = get_user_by_username(body.username)
     if not user or not user["is_active"] or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다.")
+
     access, refresh, sid, _, _ = make_tokens(user["id"], user["role"])
+
+    # 🔹 기본값: 일반 관리자 세션 지속 시간
+    idle_minutes = 30          # 30분 미사용 시 만료
+    absolute_hours = 12        # 최대 12시간
+
+    # 🔹 특정 id / role 만 세션 사실상 무제한
+    # 예) id=1 이거나 SUPER 계정은 무제한 취급
+    if user["id"] == 1:
+        idle_minutes = 60 * 24 * 365 * 10   # 10년
+        absolute_hours = 24 * 365 * 10      # 10년
+
     insert_session(
         user_id=user["id"],
         session_id=sid,
         refresh_token_raw=refresh,
         ip=(request.client.host if request.client else None),
-        ua=request.headers.get("user-agent")
+        ua=request.headers.get("user-agent"),
+        idle_minutes=idle_minutes,
+        absolute_hours=absolute_hours,
     )
+
     touch_last_login(user["id"])
-    return TokenOut(access_token=access, refresh_token=refresh, must_change_password=bool(user["must_change_password"]))
+    return TokenOut(
+        access_token=access,
+        refresh_token=refresh,
+        must_change_password=bool(user["must_change_password"]),
+    )
+
 
 @router.get("/me")
 def me(current = Depends(get_current_admin)):

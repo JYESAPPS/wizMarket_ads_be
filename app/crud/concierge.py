@@ -387,9 +387,9 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cu.status         AS status,
                 cs.store_name     AS store_name,
                 cs.road_name      AS road_name,
-                cs.temp_big_category AS temp_big_category,
-                cs.temp_medium_category AS temp_medium_category,
-                cs.temp_small_category AS temp_small_category,
+                cs.big_category_code AS main_category_code,
+                cs.medium_category_code AS sub_category_code,
+                cs.small_category_code AS detail_category_code,
                 cs.menu_1         AS menu_1,
                 cs.menu_2         AS menu_2,
                 cs.menu_3         AS menu_3,
@@ -516,6 +516,7 @@ def update_report_is_concierge(store_business_number):
             connection.close()
         except Exception:
             pass
+
 
 
 
