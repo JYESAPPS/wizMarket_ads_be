@@ -159,7 +159,7 @@ def approve_concierge(request : AddConciergeStore):
 
 
 # 엑셀 파일 제출
-@router.post("concierge/submit/excel")
+@router.post("/concierge/submit/excel")
 def submit_concierge_excel(request: ConciergeExcelUploadRequest):
     if not request.rows:
         raise HTTPException(
