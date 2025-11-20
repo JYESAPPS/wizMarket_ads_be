@@ -571,7 +571,7 @@ def delete_concierge_user(cursor, user_ids: List[int]) -> int:
 
     query = f"""
         DELETE FROM CONCIERGE_USER
-        WHERE id IN ({placeholders})
+        WHERE user_id IN ({placeholders})
     """
     cursor.execute(query, user_ids)
     return cursor.rowcount
