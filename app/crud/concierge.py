@@ -177,9 +177,9 @@ def submit_concierge_store(
             menu_1,
             menu_2,
             menu_3,
-            temp_big_category,
-            temp_medium_category,
-            temp_small_category
+            big_category_code,
+            medium_category_code,
+            small_category_code
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
