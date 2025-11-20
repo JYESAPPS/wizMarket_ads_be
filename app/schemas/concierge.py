@@ -34,9 +34,9 @@ class ConciergeExcelRow(BaseModel):
     phone: Optional[str] = ""
     store_name: Optional[str] = ""   # 가게 이름
     road_name: Optional[str] = ""    # 도로명 주소
-    menu1: Optional[str] = ""
-    menu2: Optional[str] = ""
-    menu3: Optional[str] = ""
+    menu_1: Optional[str] = ""
+    menu_2: Optional[str] = ""
+    menu_3: Optional[str] = ""
 
 
 class ConciergeExcelUploadRequest(BaseModel):

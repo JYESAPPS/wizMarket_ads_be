@@ -312,11 +312,6 @@ def update_concierge_status(user_id, store_business_number):
 
 # 엑셀 업로드된 컨시어지 일괄 등록
 def submit_concierge_excel(rows) -> Dict[str, Any]:
-    """
-    엑셀로 업로드된 컨시어지 후보들을 일괄 등록.
-    - rows: [ConciergeExcelRow, ...]
-    - 한 row 처리할 때마다 commit
-    """
     connection = get_re_db_connection()
     cursor = None
 
@@ -329,15 +324,16 @@ def submit_concierge_excel(rows) -> Dict[str, Any]:
 
         for idx, row in enumerate(rows):
             try:
-                # 0) 완전 빈 줄은 스킵 (필요시 조건 조절)
+                # 0) 완전 빈 줄은 스킵
                 if not (row.store_name or row.road_name or row.phone or row.name):
                     continue
 
-                # 1) 메뉴 리스트 구성
-                menus = [m for m in [row.menu_1, row.menu_2, row.menu_3] if m]
+                # 1) 메뉴 리스트 구성 → 문자열로 합치기
+                menus_list = [row.menu_1, row.menu_2, row.menu_3]
+                menus_clean = [m.strip() for m in menus_list if m]  # None / 빈 문자열 제거
+                menus_str = ", ".join(menus_clean) if menus_clean else ""  # 예: "예시5, 메뉴5, 대표5"
 
                 # 2) 컨시어지 유저 생성
-                #    pin, 카테고리는 엑셀에 없으니까 우선 None / "" 로 처리
                 user_id = crud_submit_concierge_user(
                     cursor,
                     row.name or "",
@@ -345,16 +341,16 @@ def submit_concierge_excel(rows) -> Dict[str, Any]:
                     None,  # pin
                 )
 
-                # 3) 컨시어지 가게 생성
+                # 3) 컨시어지 가게 생성 (menus는 문자열로 전달)
                 crud_submit_concierge_store(
                     cursor,
                     user_id,
                     row.store_name or "",
                     row.road_name or "",
-                    menus,   # 기존 crud에서 리스트/문자열 중 어떤 걸 기대하는지에 맞춰서 조정
-                    None,    # main_category
-                    None,    # sub_category
-                    None,    # detail_category
+                    menus_str,   # 🔹 리스트가 아니라 문자열
+                    None,        # main_category
+                    None,        # sub_category
+                    None,        # detail_category
                 )
 
                 # 4) 이 row까지는 정상 → 커밋
@@ -382,6 +378,7 @@ def submit_concierge_excel(rows) -> Dict[str, Any]:
     finally:
         close_cursor(cursor)
         close_connection(connection)
+
 
 
 
