@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class IsConcierge(BaseModel):
@@ -24,3 +24,25 @@ class AddConciergeStore(BaseModel):
 
 class ConciergeUploadRequest(BaseModel):
     image: str  # data:image/png;base64,... or 순수 base64
+
+
+
+class ConciergeExcelRow(BaseModel):
+    # 프론트에서 오는 키 그대로(camelCase) 받아도 되고,
+    # snake_case로 받으려면 프론트에서 맞춰주면 됨.
+    name: Optional[str] = ""
+    phone: Optional[str] = ""
+    store_name: Optional[str] = ""   # 가게 이름
+    road_name: Optional[str] = ""    # 도로명 주소
+    menu1: Optional[str] = ""
+    menu2: Optional[str] = ""
+    menu3: Optional[str] = ""
+
+
+class ConciergeExcelUploadRequest(BaseModel):
+    rows: List[ConciergeExcelRow]
+
+
+# 삭제 요청
+class ConciergeDeleteRequest(BaseModel):
+    ids: List[int]

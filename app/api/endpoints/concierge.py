@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 import asyncio
 
 from app.schemas.concierge import (
-    IsConcierge, AddConciergeStore, ConciergeUploadRequest
+    IsConcierge, AddConciergeStore, ConciergeUploadRequest, ConciergeExcelUploadRequest, ConciergeDeleteRequest
 ) 
 from app.service.concierge import (
     is_concierge as service_is_concierge,
@@ -21,7 +21,9 @@ from app.service.concierge import (
     select_concierge_detail as service_select_concierge_detail,
     get_report_store as service_get_report_store,
     concierge_add_new_store as service_concierge_add_new_store,
-    update_concierge_status as service_update_concierge_status
+    update_concierge_status as service_update_concierge_status,
+    submit_concierge_excel as service_submit_concierge_excel,
+    delete_concierge_user as service_delete_concierge_user
 )
 from app.service.ads import (
     select_ads_init_info as service_select_ads_init_info,
@@ -149,6 +151,53 @@ def approve_concierge(request : AddConciergeStore):
         }
     
     return {"messeage" : "승인 성공"}
+
+
+
+# 컨시어지 매장 선택 삭제
+
+
+
+# 엑셀 파일 제출
+@router.post("concierge/submit/excel")
+def submit_concierge_excel(request: ConciergeExcelUploadRequest):
+    if not request.rows:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="rows가 비어 있습니다.",
+        )
+
+    created_count = 0
+
+    result = service_submit_concierge_excel(request.rows)
+    return result
+
+
+
+
+
+@router.post("/concierge/delete")
+def delete_concierge_user(request: ConciergeDeleteRequest):
+    if not request.ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ids가 비어 있습니다.",
+        )
+
+    result = service_delete_concierge_user(request.ids)
+
+    if not result.get("success"):
+        # 서비스에서 메시지 리턴한 경우
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result.get("message", "컨시어지 삭제 중 오류가 발생했습니다."),
+        )
+
+    return result
+
+
+
+
 
 # ==================================================================
 # 🔥 1) 병렬로 돌릴 “개별 매장 처리 함수”

@@ -6,6 +6,7 @@ from uuid import uuid4
 from fastapi import HTTPException, status
 import json, requests
 from fastapi.responses import JSONResponse
+import shutil
 
 from app.db.connect import (
     get_re_db_connection,
@@ -24,7 +25,8 @@ from app.crud.concierge import (
     select_concierge_detail as crud_select_concierge_detail,
     get_report_store as crud_get_report_store,
     update_report_is_concierge as crud_update_report_is_concierge,
-    update_concierge_user_status as crud_update_concierge_user_status
+    update_concierge_user_status as crud_update_concierge_user_status,
+    delete_concierge_user as crud_delete_concierge_user,
 )
 from app.service.regist_new_store import (
     get_city_id as service_get_city_id,
@@ -306,3 +308,143 @@ def concierge_add_new_store (request):
 def update_concierge_status(user_id, store_business_number):
     crud_update_report_is_concierge(store_business_number)
     crud_update_concierge_user_status(user_id, store_business_number)
+
+
+# 엑셀 업로드된 컨시어지 일괄 등록
+def submit_concierge_excel(rows) -> Dict[str, Any]:
+    """
+    엑셀로 업로드된 컨시어지 후보들을 일괄 등록.
+    - rows: [ConciergeExcelRow, ...]
+    - 한 row 처리할 때마다 commit
+    """
+    connection = get_re_db_connection()
+    cursor = None
+
+    total = len(rows)
+    created_count = 0
+    failed_rows: List[int] = []
+
+    try:
+        cursor = connection.cursor()
+
+        for idx, row in enumerate(rows):
+            try:
+                # 0) 완전 빈 줄은 스킵 (필요시 조건 조절)
+                if not (row.store_name or row.road_name or row.phone or row.name):
+                    continue
+
+                # 1) 메뉴 리스트 구성
+                menus = [m for m in [row.menu_1, row.menu_2, row.menu_3] if m]
+
+                # 2) 컨시어지 유저 생성
+                #    pin, 카테고리는 엑셀에 없으니까 우선 None / "" 로 처리
+                user_id = crud_submit_concierge_user(
+                    cursor,
+                    row.name or "",
+                    row.phone or "",
+                    None,  # pin
+                )
+
+                # 3) 컨시어지 가게 생성
+                crud_submit_concierge_store(
+                    cursor,
+                    user_id,
+                    row.store_name or "",
+                    row.road_name or "",
+                    menus,   # 기존 crud에서 리스트/문자열 중 어떤 걸 기대하는지에 맞춰서 조정
+                    None,    # main_category
+                    None,    # sub_category
+                    None,    # detail_category
+                )
+
+                # 4) 이 row까지는 정상 → 커밋
+                commit(connection)
+                created_count += 1
+
+            except pymysql.MySQLError as e:
+                rollback(connection)
+                failed_rows.append(idx)
+                print(f"[submit_concierge_excel] DB error at row {idx}: {e}")
+
+            except Exception as e:
+                rollback(connection)
+                failed_rows.append(idx)
+                print(f"[submit_concierge_excel] error at row {idx}: {e}")
+
+        return {
+            "success": True,
+            "total": total,
+            "created": created_count,
+            "failed": len(failed_rows),
+            "failed_rows": failed_rows,
+        }
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+
+# 컨시어지 매장 삭제 처리
+def delete_concierge_user(user_ids: List[int]) -> Dict[str, Any]:
+    """
+    컨시어지 신청 여러 건 삭제.
+    - user_ids 는 CONCIERGE_USER.id
+    - ON DELETE CASCADE 로 STORE / FILE 은 자동 삭제
+    - DB 삭제 이후, concierge/user_{user_id} 폴더 통째로 삭제
+    """
+    connection = get_re_db_connection()
+    cursor = None
+
+    total = len(user_ids)
+
+    try:
+        cursor = connection.cursor()
+
+        # 1) USER 삭제 (CASCADE로 store/file 레코드 자동 삭제)
+        deleted_users = crud_delete_concierge_user(cursor, user_ids)
+
+        # 2) DB 커밋
+        commit(connection)
+
+    except pymysql.MySQLError as e:
+        rollback(connection)
+        print(f"[delete_concierge_user] DB error: {e}")
+        return {
+            "success": False,
+            "message": "컨시어지 삭제 중 DB 오류가 발생했습니다.",
+        }
+
+    except Exception as e:
+        rollback(connection)
+        print(f"[delete_concierge_user] error: {e}")
+        return {
+            "success": False,
+            "message": "컨시어지 삭제 중 알 수 없는 오류가 발생했습니다.",
+        }
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+    # 3) 커밋이 끝난 뒤, 실제 폴더 삭제 (DB 트랜잭션과 분리)
+    deleted_dirs = 0
+
+    for user_id in user_ids:
+        user_dir = os.path.join(UPLOAD_ROOT, "concierge", f"user_{user_id}")
+        try:
+            if os.path.isdir(user_dir):
+                shutil.rmtree(user_dir)  # 폴더 + 내부 파일 전부 삭제
+                deleted_dirs += 1
+        except Exception as e:
+            # 폴더 삭제 실패해도 DB는 이미 커밋된 상태 → 로그만 남김
+            print(f"[delete_concierge_user] dir remove error ({user_dir}): {e}")
+
+    return {
+        "success": True,
+        "total": total,
+        "deleted_users": deleted_users,
+        "deleted_dirs": deleted_dirs,
+    }
+

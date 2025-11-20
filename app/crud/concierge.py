@@ -556,3 +556,26 @@ def update_concierge_user_status(user_id, store_business_number):
 
 
 
+
+# 컨시어지 매장 삭제 처리
+def delete_concierge_user(cursor, user_ids: List[int]) -> int:
+    """
+    CONCIERGE_USER 의 PK 리스트를 받아 삭제.
+    - ON DELETE CASCADE 로 인해, 연결된 CONCIERGE_STORE / CONCIERGE_FILE 은 자동 삭제.
+    - 반환: 삭제된 USER 개수
+    """
+    if not user_ids:
+        return 0
+
+    placeholders = ", ".join(["%s"] * len(user_ids))
+
+    query = f"""
+        DELETE FROM CONCIERGE_USER
+        WHERE id IN ({placeholders})
+    """
+    cursor.execute(query, user_ids)
+    return cursor.rowcount
+
+
+
+
