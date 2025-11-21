@@ -68,7 +68,7 @@ def insert_reserve(request):
                 IS_ACTIVE AS is_active,
                 CREATED_AT AS created_at,
                 STRAIGHT AS straight
-            FROM USER_RESERVE
+            FROM user_reserve
             WHERE RESERVE_ID = %s;
 
         """
@@ -109,7 +109,7 @@ def get_user_reserve_list(request):
                     STRAIGHT,
                     IS_ACTIVE,
                     CREATED_AT
-                FROM USER_RESERVE
+                FROM user_reserve
                 WHERE USER_ID = %s;
             """
             cursor.execute(select_query, (user_id,))
@@ -208,7 +208,7 @@ def update_reserve_status(request):
     try:
         with connection.cursor() as cursor:
             update_sql = """
-                UPDATE USER_RESERVE
+                UPDATE user_reserve
                 SET IS_ACTIVE = CASE WHEN IS_ACTIVE = 1 THEN 0 ELSE 1 END
                 WHERE RESERVE_ID = %s
             """
@@ -228,7 +228,7 @@ def delete_reserve(request):
     try:
         with connection.cursor() as cursor:
             update_sql = """
-                DELETE FROM USER_RESERVE
+                DELETE FROM user_reserve
                 WHERE RESERVE_ID = %s
             """
             cursor.execute(update_sql, (reserve_id,))
@@ -250,19 +250,22 @@ def update_reserve(request):
         update_query = """
             UPDATE user_reserve
             SET
+                title = %s,
                 repeat_type = %s,
                 repeat_count = %s,
                 start_date = %s,
                 end_date = %s,
                 upload_times = %s,
                 weekly_days = %s,
-                monthly_days = %s
+                monthly_days = %s,
+                straight = %s
             WHERE reserve_id = %s
         """
 
         cursor.execute(
             update_query,
             (
+                request.title,
                 request.repeat_type,
                 request.repeat_count,
                 request.start_date,
@@ -270,13 +273,14 @@ def update_reserve(request):
                 json.dumps(request.upload_times),
                 json.dumps(request.weekly_days) if request.weekly_days else None,
                 json.dumps(request.monthly_days) if request.monthly_days else None,
+                request.straight,
                 request.reserve_id,
             ),
         )
 
         commit(connection)
 
-        # ✅ 수정된 데이터 다시 조회해서 반환
+        # 수정된 데이터 다시 조회해서 반환
         select_query = """
             SELECT 
                 RESERVE_ID AS reserve_id,
@@ -289,7 +293,7 @@ def update_reserve(request):
                 MONTHLY_DAYS AS monthly_days,
                 IS_ACTIVE AS is_active,
                 CREATED_AT AS created_at
-            FROM USER_RESERVE
+            FROM user_reserve
             WHERE RESERVE_ID = %s;
         """
         cursor.execute(select_query, (request.reserve_id,))

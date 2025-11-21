@@ -53,6 +53,7 @@ class ReserveDelete(BaseModel):
 class ReserveUpdate(BaseModel):
     reserve_id : int
     user_id: str
+    title: Optional[str] = None
     start_date: date
     end_date: date
     repeat_type: str  # daily, weekly, monthly
@@ -60,6 +61,7 @@ class ReserveUpdate(BaseModel):
     upload_times: List[str]
     weekly_days: Optional[List[str]] = None  # ["Mon", "Wed"]
     monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
+    straight: Optional[str] = None
 
     class Config:
         from_attributes = True
