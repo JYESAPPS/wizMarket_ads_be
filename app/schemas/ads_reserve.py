@@ -29,6 +29,7 @@ class DeviceData(BaseModel):
 
 class ReserveGetList(BaseModel):
     reserve_id : int
+    title: Optional[str] = None
     repeat_type : str
     repeat_count : int
     start_date : date
@@ -36,6 +37,7 @@ class ReserveGetList(BaseModel):
     upload_times: List[str]
     weekly_days: Optional[List[str]] = None  # ["Mon", "Wed"]
     monthly_days: Optional[List[str]] = None  # ["2025-08-30", "2025-09-02"]
+    straight: Optional[str] = None
     is_active : int
     created_at : datetime
 

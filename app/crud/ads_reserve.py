@@ -98,6 +98,7 @@ def get_user_reserve_list(request):
             select_query = """
                 SELECT 
                     RESERVE_ID,
+                    TITLE,
                     REPEAT_TYPE,
                     REPEAT_COUNT,
                     START_DATE,
@@ -105,6 +106,7 @@ def get_user_reserve_list(request):
                     UPLOAD_TIMES,
                     WEEKLY_DAYS,
                     MONTHLY_DAYS,
+                    STRAIGHT,
                     IS_ACTIVE,
                     CREATED_AT
                 FROM USER_RESERVE
@@ -120,13 +122,15 @@ def get_user_reserve_list(request):
             return [
                 ReserveGetList(
                     reserve_id = row["RESERVE_ID"],
+                    title = row["TITLE"],
                     repeat_type=row["REPEAT_TYPE"],
                     repeat_count=row["REPEAT_COUNT"],
                     start_date=row["START_DATE"],
                     end_date=row["END_DATE"],
-                    upload_times=json.loads(row["UPLOAD_TIMES"]),   # ✅ 여기만 수정
+                    upload_times=json.loads(row["UPLOAD_TIMES"]),
                     weekly_days=json.loads(row["WEEKLY_DAYS"]) if row["WEEKLY_DAYS"] else None,
                     monthly_days=json.loads(row["MONTHLY_DAYS"]) if row["MONTHLY_DAYS"] else None,
+                    straight=row["STRAIGHT"],
                     is_active=row["IS_ACTIVE"],
                     created_at = row["CREATED_AT"]
                 ) for row in rows
