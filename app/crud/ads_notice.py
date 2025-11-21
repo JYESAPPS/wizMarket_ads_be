@@ -19,7 +19,7 @@ def get_notice(include_hidden: bool = False):
             SELECT 
                 NOTICE_NO, NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT,
                 NOTICE_FILE, VIEWS, CREATED_AT, UPDATED_AT
-            FROM NOTICE
+            FROM notice
             {where}
             ORDER BY CREATED_AT DESC;
         """
@@ -159,9 +159,9 @@ def get_notice_read(user_id):
             # 안 읽은 공지사항 목록 가져오기 (읽음 기록 없는 공지)
             cursor.execute("""
                 SELECT N.notice_no, N.notice_title, N.notice_content
-                FROM NOTICE N
+                FROM notice N
                 WHERE N.notice_no NOT IN (
-                    SELECT notice_no FROM NOTICE_READ WHERE user_id = %s
+                    SELECT notice_no FROM notice_read WHERE user_id = %s
                 )
                 ORDER BY N.created_at DESC
             """, (user_id,))

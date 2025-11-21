@@ -129,7 +129,7 @@ def select_custom_menu(user_id):
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT REGISTER_TAG, CUSTOM_MENU
-                FROM USER_INFO
+                FROM user_info
                 WHERE user_id = %s
             """, (user_id,))
             result = cursor.fetchone()
