@@ -16,7 +16,6 @@ def get_admin_list():
             "email": r["email"],
             "role": r["role"],
             "is_active": r["is_active"],
-            "must_change_password": r["must_change_password"],
             "created_at": r["created_at"],
             "last_login_at": r.get("last_login_at"),
         })

@@ -49,7 +49,7 @@ def touch_last_login(user_id: int):
 def get_admin_list():
     with re_db_dict() as (conn, cur):
         cur.execute("""
-            SELECT id, username, name,email, admin_uid, role, is_active, must_change_password, created_at, last_login_at, phone, department, position
+            SELECT id, username, name, email, phone, role, is_active, created_at, last_login_at
               FROM admin_user
              ORDER BY created_at DESC
         """)
@@ -64,7 +64,7 @@ def delete_admin(admin_id: int):
 def get_admin_detail(admin_id: int) -> Optional[dict]:
     with re_db_dict() as (conn, cur):
         cur.execute("""
-            SELECT id, username, name, email, admin_uid, phone, department, position,
+            SELECT id, username, name, email, phone, department, position,
                    role, is_active, visit_count, created_at, last_login_at
               FROM admin_user
              WHERE id=%s
