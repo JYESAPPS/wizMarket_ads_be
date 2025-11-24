@@ -122,8 +122,16 @@ def kcb_decrypt(req: DecryptReq):
 
     rsp_cd = data.get("rsp_cd", "")
     if rsp_cd != "B000":
-        # 실패코드면 원문 그대로 반환
-        return {"rsp_cd": rsp_cd, "rsp_msg": data.get("rsp_msg"), "raw": data}
+        # 실패 코드면 400 에러로 던져서 프론트가 "실패"로 인식하게
+        log.warning(f"[KCB RESULT FAIL] rsp_cd={rsp_cd}, body={data}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "rsp_cd": rsp_cd,
+                "rsp_msg": data.get("rsp_msg"),
+                "raw": data,
+            },
+        )
 
     # 3) 복호화 준비 (AES 1331 가정)
     enc_algo_cd = (req.enc_algo_cd or settings.KCB_ENC_ALGO_CD or "").strip()
