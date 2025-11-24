@@ -108,7 +108,8 @@ def get_user_reserve_list(request):
                     MONTHLY_DAYS,
                     STRAIGHT,
                     IS_ACTIVE,
-                    CREATED_AT
+                    CREATED_AT,
+                    UPDATED_AT
                 FROM user_reserve
                 WHERE USER_ID = %s;
             """
@@ -132,7 +133,8 @@ def get_user_reserve_list(request):
                     monthly_days=json.loads(row["MONTHLY_DAYS"]) if row["MONTHLY_DAYS"] else None,
                     straight=row["STRAIGHT"],
                     is_active=row["IS_ACTIVE"],
-                    created_at = row["CREATED_AT"]
+                    created_at= row["CREATED_AT"],
+                    updated_at=row["UPDATED_AT"]
                 ) for row in rows
             ]
 
