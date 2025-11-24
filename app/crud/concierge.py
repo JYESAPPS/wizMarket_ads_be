@@ -587,6 +587,7 @@ def update_concierge_basic(
     user_name: str,
     phone: str,
     memo: str,
+    store_business_number: str,
     main_category_code: Optional[str],
     sub_category_code: Optional[str],
     detail_category_code: Optional[str],
@@ -606,12 +607,13 @@ def update_concierge_basic(
                phone     = %s,
                memo      = %s,
                status    = %s,
-               updated_at = NOW()
+               updated_at = NOW(),
+               store_business_number = %s
          WHERE user_id = %s
     """
     cursor.execute(
         sql_user,
-        (user_name, phone, memo, status, concierge_id),
+        (user_name, phone, memo, status, concierge_id, store_business_number),
     )
 
     if cursor.rowcount == 0:

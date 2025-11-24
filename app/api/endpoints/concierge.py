@@ -251,6 +251,7 @@ async def update_concierge_status(
         user_name=user_name,
         phone=phone,
         memo=memo,
+        store_business_number = store_business_number,
         main_category_code=main_category_code,
         sub_category_code=sub_category_code,
         detail_category_code=detail_category_code,
