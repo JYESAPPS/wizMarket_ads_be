@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request, Query
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request, Query, Form
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Optional, Any
 import logging
@@ -23,7 +23,8 @@ from app.service.concierge import (
     concierge_add_new_store as service_concierge_add_new_store,
     update_concierge_status as service_update_concierge_status,
     submit_concierge_excel as service_submit_concierge_excel,
-    delete_concierge_user as service_delete_concierge_user
+    delete_concierge_user as service_delete_concierge_user,
+    update_concierge as service_update_concierge,
 )
 from app.service.ads import (
     select_ads_init_info as service_select_ads_init_info,
@@ -154,9 +155,6 @@ def approve_concierge(request : AddConciergeStore):
 
 
 
-# 컨시어지 매장 선택 삭제
-
-
 
 # 엑셀 파일 제출
 @router.post("/concierge/submit/excel")
@@ -175,7 +173,7 @@ def submit_concierge_excel(request: ConciergeExcelUploadRequest):
 
 
 
-
+# 삭제 요청
 @router.post("/concierge/delete")
 def delete_concierge_user(request: ConciergeDeleteRequest):
     if not request.ids:
@@ -194,6 +192,128 @@ def delete_concierge_user(request: ConciergeDeleteRequest):
         )
 
     return result
+
+# 승인 처리
+@router.post("/concierge/approve/{concierge_id}")
+async def update_concierge_status(
+    concierge_id: int,
+    status: str = Form(...),          # APPROVED / PENDING 등
+
+    # 기본 정보
+    user_name: str = Form(""),
+    phone: str = Form(""),
+    memo: str = Form(""),
+
+    # 가게 정보
+    store_name: str = Form(""),
+    road_name: str = Form(""),
+
+    # 메뉴
+    menu_1: str = Form(""),
+    menu_2: str = Form(""),
+    menu_3: str = Form(""),
+
+    # 업종 코드 (승인 상태에서는 프론트가 기존값을 그대로 담아서 보냄)
+    main_category_code: Optional[str] = Form(None),
+    sub_category_code: Optional[str] = Form(None),
+    detail_category_code: Optional[str] = Form(None),
+
+    # 삭제할 파일 id 들 (FormData에 여러 번 넣기: removed_file_ids=1, removed_file_ids=2 ...)
+    removed_file_ids: List[int] = Form([]),
+
+    # 새 파일들
+    new_files: List[UploadFile] = File([]),
+):
+    
+    try:
+    # 기존 매장 조회
+        store_business_number = service_get_report_store(store_name, road_name)
+    except Exception as e:
+        return {
+            "messeage" : "매장 조회 오류"
+        }
+
+    try:
+    # 매장 없을 시 DB 복사
+        if not store_business_number :
+            result = service_concierge_add_new_store(store_name, road_name, main_category_code, sub_category_code, detail_category_code)
+            store_business_number = result.get("store_business_number")
+
+    except Exception as e:
+        return {
+            "messeage" : "매장 복사 오류"
+        }
+
+
+    result = await service_update_concierge(
+        concierge_id=concierge_id,
+        status=status,
+        user_name=user_name,
+        phone=phone,
+        memo=memo,
+        main_category_code=main_category_code,
+        sub_category_code=sub_category_code,
+        detail_category_code=detail_category_code,
+        menu_1=menu_1,
+        menu_2=menu_2,
+        menu_3=menu_3,
+        removed_file_ids=removed_file_ids,
+        new_files=new_files,
+    )
+
+    return result
+    
+
+# 수정 처리
+@router.post("/concierge/update/{concierge_id}")
+async def update_concierge_status(
+    concierge_id: int,
+    status: str = Form(...),          # APPROVED / PENDING 등
+
+    # 기본 정보
+    user_name: str = Form(""),
+    phone: str = Form(""),
+    memo: str = Form(""),
+
+    # 가게 정보
+    store_name: str = Form(""),
+    road_name: str = Form(""),
+
+    # 메뉴
+    menu_1: str = Form(""),
+    menu_2: str = Form(""),
+    menu_3: str = Form(""),
+
+    # 업종 코드 (승인 상태에서는 프론트가 기존값을 그대로 담아서 보냄)
+    main_category_code: Optional[str] = Form(None),
+    sub_category_code: Optional[str] = Form(None),
+    detail_category_code: Optional[str] = Form(None),
+
+    # 삭제할 파일 id 들 (FormData에 여러 번 넣기: removed_file_ids=1, removed_file_ids=2 ...)
+    removed_file_ids: List[int] = Form([]),
+
+    # 새 파일들
+    new_files: List[UploadFile] = File([]),
+):
+
+    result = await service_update_concierge(
+        concierge_id=concierge_id,
+        status=status,
+        user_name=user_name,
+        phone=phone,
+        memo=memo,
+        main_category_code=main_category_code,
+        sub_category_code=sub_category_code,
+        detail_category_code=detail_category_code,
+        menu_1=menu_1,
+        menu_2=menu_2,
+        menu_3=menu_3,
+        removed_file_ids=removed_file_ids,
+        new_files=new_files,
+    )
+
+    return result
+
 
 
 

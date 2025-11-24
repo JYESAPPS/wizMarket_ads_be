@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.schemas.ads_faq import AdsFaqList, AdsTagList
 from typing import List, Dict, Optional, Any
 import pymysql
+from pymysql.cursors import Cursor
 import logging
 
 logger = logging.getLogger(__name__)
@@ -385,6 +386,7 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cu.user_name      AS user_name,
                 cu.phone          AS phone,
                 cu.status         AS status,
+                cu.memo           AS memo,
                 cs.store_name     AS store_name,
                 cs.road_name      AS road_name,
                 cs.big_category_code AS main_category_code,
@@ -576,6 +578,137 @@ def delete_concierge_user(cursor, user_ids: List[int]) -> int:
     cursor.execute(query, user_ids)
     return cursor.rowcount
 
+
+def update_concierge_basic(
+    cursor: Cursor,
+    concierge_id: int,
+    *,
+    status: str,
+    user_name: str,
+    phone: str,
+    memo: str,
+    main_category_code: Optional[str],
+    sub_category_code: Optional[str],
+    detail_category_code: Optional[str],
+    menu_1: Optional[str],
+    menu_2: Optional[str],
+    menu_3: Optional[str],
+) -> None:
+    """
+    - concierge_user : 이름/휴대폰/메모/상태 업데이트
+    - concierge_store: 업종/메뉴 업데이트
+    """
+
+    # 1) 유저 테이블
+    sql_user = """
+        UPDATE concierge_user
+           SET user_name = %s,
+               phone     = %s,
+               memo      = %s,
+               status    = %s,
+               updated_at = NOW()
+         WHERE user_id = %s
+    """
+    cursor.execute(
+        sql_user,
+        (user_name, phone, memo, status, concierge_id),
+    )
+
+    if cursor.rowcount == 0:
+        # 엔드포인트/서비스에서 처리
+        raise ValueError("CONCIERGE_USER_NOT_FOUND")
+
+    # 2) 매장 테이블 (업종 + 메뉴)
+    sql_store = """
+        UPDATE concierge_store
+           SET big_category_code   = %s,
+               medium_category_code    = %s,
+               small_category_code = %s,
+               menu_1               = %s,
+               menu_2               = %s,
+               menu_3               = %s,
+               updated_at           = NOW()
+         WHERE user_id = %s
+    """
+    cursor.execute(
+        sql_store,
+        (
+            main_category_code,
+            sub_category_code,
+            detail_category_code,
+            menu_1,
+            menu_2,
+            menu_3,
+            concierge_id,
+        ),
+    )
+
+
+def mark_concierge_images_deleted(
+    cursor: Cursor,
+    user_id: int,
+    removed_file_ids: List[int],
+) -> None:
+    """
+    기존 신청 이미지 삭제
+    - concierge_user_file 테이블에서 실제 삭제
+    """
+
+    if not removed_file_ids:
+        return
+
+    placeholders = ",".join(["%s"] * len(removed_file_ids))
+
+    sql = f"""
+        DELETE FROM concierge_user_file
+         WHERE user_id = %s
+           AND file_id IN ({placeholders})
+    """
+    cursor.execute(sql, [user_id, *removed_file_ids])
+
+def insert_concierge_image(
+    cursor: Cursor,
+    user_id: int,
+    storage_path: str,
+    original_name: str,
+    mime_type: Optional[str],
+    file_size: int,
+) -> None:
+    """
+    새 이미지 1개 insert
+    - file_order 는 해당 user_id 기준으로 MAX + 1 자동 부여
+    """
+
+    # 1) 현재 user_id 기준 최대 file_order 조회
+    cursor.execute(
+        """
+        SELECT COALESCE(MAX(file_order), 0)
+          FROM concierge_user_file
+         WHERE user_id = %s
+        """,
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    max_order = row[0] if row is not None else 0
+    next_order = max_order + 1
+
+    # 2) INSERT
+    sql = """
+        INSERT INTO concierge_user_file (
+            user_id,
+            file_order,
+            storage_path,
+            original_name,
+            mime_type,
+            file_size,
+            created_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, NOW())
+    """
+    cursor.execute(
+        sql,
+        (user_id, next_order, storage_path, original_name, mime_type, file_size),
+    )
 
 
 

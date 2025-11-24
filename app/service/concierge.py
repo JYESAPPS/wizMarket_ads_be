@@ -7,6 +7,8 @@ from fastapi import HTTPException, status
 import json, requests
 from fastapi.responses import JSONResponse
 import shutil
+import logging
+from types import SimpleNamespace
 
 from app.db.connect import (
     get_re_db_connection,
@@ -27,6 +29,9 @@ from app.crud.concierge import (
     update_report_is_concierge as crud_update_report_is_concierge,
     update_concierge_user_status as crud_update_concierge_user_status,
     delete_concierge_user as crud_delete_concierge_user,
+    update_concierge_basic as crud_update_concierge_basic,
+    mark_concierge_images_deleted as crud_mark_concierge_images_deleted,
+    insert_concierge_image as crud_insert_concierge_image,
 )
 from app.service.regist_new_store import (
     get_city_id as service_get_city_id,
@@ -35,7 +40,7 @@ from app.service.regist_new_store import (
     add_new_store as service_add_new_store,
     copy_new_store as service_copy_new_store
 )
-
+logger = logging.getLogger(__name__)
 
 # 축약/변형 → 정식 명칭 매핑
 _ALIAS_TO_CANON = {
@@ -222,12 +227,12 @@ def get_report_store(store_name, road_name):
 
 
 # 컨시어지 용 매장 등록
-def concierge_add_new_store (request):
+def concierge_add_new_store (store_name, road_name, large_category_code, medium_category_code, small_category_code) -> Dict[str, Any]:
     # 1. 도로명 -> 지번 변환
     url = "https://business.juso.go.kr/addrlink/addrLinkApi.do"
     jibun_key = os.getenv("JIBUN_KEY")
     # ad = "서울특별시 영등포구 영신로 220"
-    ad = request.road_name
+    ad = road_name
 
     params = {
         'confmKey': jibun_key,
@@ -271,7 +276,7 @@ def concierge_add_new_store (request):
         "service": "address",
         "request": "getcoord",
         "crs": "epsg:4326",
-        "address": request.road_name,
+        "address": road_name,
         "format": "json",
         "type": "road",
         "key": key
@@ -293,8 +298,17 @@ def concierge_add_new_store (request):
             status_code=500,
             content={"success": False, "message": "좌표 파싱 실패", "number" : ""}
         )
+    
+    data = SimpleNamespace(
+        large_category_code=large_category_code,
+        medium_category_code=medium_category_code,
+        small_category_code=small_category_code,
+        store_name=store_name,
+        road_name=road_name,
+    )
+
     # 3. 매장 등록 시도
-    success, store_business_number = service_add_new_store(request, city_id, district_id, sub_district_id, longitude, latitude)
+    success, store_business_number = service_add_new_store(data, city_id, district_id, sub_district_id, longitude, latitude)
     if success:
         # 4. 서비스 DB 로 매장 카피
         service_copy_new_store(store_business_number)
@@ -445,3 +459,111 @@ def delete_concierge_user(user_ids: List[int]) -> Dict[str, Any]:
         "deleted_dirs": deleted_dirs,
     }
 
+
+
+
+# 승인 or 수정 처리
+async def update_concierge(
+    concierge_id: int,
+    *,
+    status: str,
+    user_name: str,
+    phone: str,
+    memo: str,
+    main_category_code: Optional[str],
+    sub_category_code: Optional[str],
+    detail_category_code: Optional[str],
+    menu_1: Optional[str],
+    menu_2: Optional[str],
+    menu_3: Optional[str],
+    removed_file_ids: List[int],
+    new_files: List[UploadFile],
+):
+
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        connection.autocommit(False)
+
+        # 1) 기본 정보 + 업종/메뉴 업데이트 (기존 그대로)
+        crud_update_concierge_basic(
+            cursor,
+            concierge_id,
+            status=status,
+            user_name=user_name,
+            phone=phone,
+            memo=memo,
+            main_category_code=main_category_code,
+            sub_category_code=sub_category_code,
+            detail_category_code=detail_category_code,
+            menu_1=menu_1,
+            menu_2=menu_2,
+            menu_3=menu_3,
+        )
+
+        # 🔹 파일 테이블에서 사용할 user_id (지금은 concierge_id와 같다고 가정)
+        user_id_for_file = concierge_id
+
+        # 2) 기존 이미지 삭제 처리
+        if removed_file_ids:
+            crud_mark_concierge_images_deleted(
+                cursor=cursor,
+                user_id=user_id_for_file,
+                removed_file_ids=removed_file_ids,
+            )
+
+        # 3) 새 이미지 저장 + DB insert
+        if new_files:
+            # 예: { "image_1": "concierge/user_1/abcd1234_1.png", ... }
+            storage_map = await save_concierge_images(
+                user_id=user_id_for_file,
+                images=new_files,
+            )
+
+            # save_concierge_images 로직이 images[:6] 만 처리하니까
+            # 여기서도 최대 6장만 순서 맞춰서 사용
+            for idx, upload_file in enumerate(new_files[:6], start=1):
+                key = f"image_{idx}"
+                path = storage_map.get(key)
+                if not path:
+                    # 해당 키에 매칭되는 저장 경로가 없으면 스킵
+                    continue
+
+                # 파일 사이즈 계산
+                file_obj = upload_file.file
+                file_obj.seek(0, 2)  # 끝으로 이동
+                size = file_obj.tell()
+                file_obj.seek(0)     # 다시 처음으로
+
+                mime_type = upload_file.content_type or ""
+                original_name = upload_file.filename or ""
+
+                crud_insert_concierge_image(
+                    cursor=cursor,
+                    user_id=user_id_for_file,
+                    storage_path=path,         # ✅ 이제 "concierge/user_1/xxx.jpg" 형태로 들어감
+                    original_name=original_name,
+                    mime_type=mime_type,
+                    file_size=size,
+                )
+
+
+        connection.commit()
+        return {"success": True}
+
+    except ValueError as ve:
+        connection.rollback()
+        if str(ve) == "CONCIERGE_USER_NOT_FOUND":
+            raise HTTPException(status_code=404, detail="컨시어지 회원을 찾을 수 없습니다.")
+        logger.error("[update_concierge] ValueError: %s", ve)
+        raise HTTPException(status_code=400, detail="요청 처리 중 오류가 발생했습니다.")
+
+    except Exception as e:
+        connection.rollback()
+        logger.exception("[update_concierge] Unexpected error: %s", e)
+        raise HTTPException(status_code=500, detail="승인/수정 처리 중 서버 오류가 발생했습니다.")
+
+    finally:
+        cursor.close()
+        connection.close()
