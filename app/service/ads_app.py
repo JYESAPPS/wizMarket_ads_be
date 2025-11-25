@@ -309,6 +309,7 @@ async def insert_upload_record(request, file: UploadFile | None):
     channel = request.channel
     upload_time = request.upload_time
     upload_type = request.type
+    prompt = request.prompt
     insta_copyright = request.insta_copyright
     copyright = request.copyright
 
@@ -331,6 +332,7 @@ async def insert_upload_record(request, file: UploadFile | None):
         upload_time,
         image_path,
         upload_type,
+        prompt,
         insta_copyright,
         copyright
     )

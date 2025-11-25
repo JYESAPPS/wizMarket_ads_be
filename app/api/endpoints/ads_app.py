@@ -756,7 +756,6 @@ async def insert_upload_record_endpoint(req: Request):
             file = form.get("image")
             if file is None:
                 raise HTTPException(status_code=400, detail="file 필드가 필요합니다.")
-
             # 서비스가 기대하는 필드만 만들어 전달 (image=None)
             data = SimpleNamespace(
                 age=form.get("age"),
@@ -770,6 +769,7 @@ async def insert_upload_record_endpoint(req: Request):
                 date_range=json.loads(form.get("date_range") or "[]"),
                 image=None,
                 type=form.get("type"),
+                prompt=form.get("prompt"),
                 insta_copyright=form.get("insta_copyright") or "",
                 copyright=form.get("copyright")
             )

@@ -78,6 +78,7 @@ def insert_upload_record(
     upload_time,
     image_path,
     upload_type,
+    prompt,
     insta_copyright,
     copyright
 ):
@@ -96,8 +97,8 @@ def insert_upload_record(
     try:
         insert_query = """
         INSERT INTO user_record (
-            user_id, age, alert_check, start_date, end_date, repeat_time, style, title, channel, upload_time, image_path, upload_type, insta_copyright, copyright
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            user_id, age, alert_check, start_date, end_date, repeat_time, style, title, channel, upload_time, image_path, upload_type, prompt, insta_copyright, copyright
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(
             insert_query,
@@ -114,6 +115,7 @@ def insert_upload_record(
                 upload_time,
                 image_path,
                 upload_type,
+                prompt,
                 insta_copyright,
                 copyright
             )
@@ -148,7 +150,7 @@ def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용 # and upload_check = 1 
-            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path, insta_copyright, copyright FROM user_record WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path, prompt, insta_copyright, copyright FROM user_record WHERE user_id = %s", (user_id,))
             rows = cursor.fetchall()
 
         if not rows:
@@ -288,7 +290,7 @@ def get_user_recent_reco(request):
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("""
-                SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, repeat_time, upload_time, alert_check, insta_copyright, copyright
+                SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, prompt, repeat_time, upload_time, alert_check, insta_copyright, copyright
                 FROM user_record
                 WHERE user_id = %s 
                     AND upload_type = %s

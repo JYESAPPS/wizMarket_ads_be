@@ -121,6 +121,7 @@ class AutoAppSave(BaseModel):
     type: str
     insta_copyright: Optional[str] = None
     copyright: Optional[str] = None
+    prompt: Optional[str] = None
 
 
 
