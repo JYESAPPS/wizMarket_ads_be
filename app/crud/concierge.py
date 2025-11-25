@@ -543,6 +543,39 @@ def get_report_store(store_name, road_name):
 
 
 
+# 컨시어지 스케줄 인서트
+def reserve_schedule(user_id, week_day, send_time):
+    connection = get_re_db_connection()
+    cursor = None
+
+    try:
+        # DictCursor 안 써도 되지만, 습관대로 써도 무방
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        sql = """
+            INSERT INTO concierge_schedule (
+                user_id,
+                week_day,
+                send_time
+            )
+            VALUES (%s, %s, %s)
+        """
+
+        cursor.execute(sql, (user_id, week_day, send_time))
+        connection.commit()
+
+        # 필요하면 생성된 PK 반환
+        return cursor.lastrowid
+
+    except pymysql.MySQLError as e:
+        print(f"[reserve_schedule] DB error: {e}")
+        connection.rollback()
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
 
 def update_report_is_concierge(cursor, store_business_number):
     connection = get_re_db_connection()
@@ -578,26 +611,6 @@ def update_report_is_concierge(cursor, store_business_number):
 
 
 
-def update_concierge_user_status(
-    cursor: Cursor,
-    store_business_number: str,
-) -> None:
-    """
-    REPORT 테이블에서 해당 사업자번호에 대해 IS_CONCIERGE = 1 로 설정
-    - 커넥션/커밋/클로즈는 모두 서비스 레이어에서 처리
-    """
-
-
-    sql = """
-        UPDATE report
-           SET is_concierge = 1
-         WHERE store_business_number = %s
-    """
-    cursor.execute(sql, (store_business_number,))
-
-    # 선택: 매칭되는 row 가 없으면 에러로 올리고 싶으면
-    if cursor.rowcount == 0:
-        raise ValueError("REPORT_NOT_FOUND")
 
 
 
@@ -755,5 +768,90 @@ def insert_concierge_image(
         (user_id, next_order, storage_path, original_name, mime_type, file_size),
     )
 
+
+
+
+# 해당하는 요일, 시간 user_id 리스트 가져오기
+def get_user_id_list(same_day: bool, today_code: int, next_day_code: int, start_time_str: str, end_time_str: str) -> List[int]:
+    connection = get_re_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        # 날짜가 안 바뀌는 대부분 경우: 오늘 요일 + 시간 BETWEEN
+        if same_day:
+            sql = """
+                SELECT DISTINCT user_id
+                  FROM concierge_schedule
+                 WHERE is_active = 1
+                   AND week_day = %s
+                   AND send_time BETWEEN %s AND %s
+            """
+            params = (today_code, start_time_str, end_time_str)
+
+        # 예: 23:30 ~ 00:30 같은 경우 → 오늘/내일로 나눠서 OR
+        else:
+            sql = """
+                SELECT DISTINCT user_id
+                  FROM concierge_schedule
+                 WHERE is_active = 1
+                   AND (
+                        (week_day = %s AND send_time >= %s)
+                     OR (week_day = %s AND send_time <  %s)
+                   )
+            """
+            params = (today_code, start_time_str, next_day_code, end_time_str)
+
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+
+        # [8, 12, 15] 형태로 반환
+        return [row["user_id"] for row in rows]
+
+    except pymysql.MySQLError as e:
+        print(f"[select_scheduled_user_ids_within_next_hour] DB error: {e}")
+        raise
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+# 추가 정보 가져오기
+def select_concierge_users_by_ids(user_id_list):
+    """
+    concierge_user에서 user_id 목록에 해당하는
+    store_business_number, menu_1, road_name 등을 한 번에 조회
+    """
+    if not user_id_list:
+        return []
+
+    connection = get_re_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        placeholders = ", ".join(["%s"] * len(user_id_list))
+        sql = f"""
+            SELECT
+                user_id,
+                store_business_number,
+                menu_1,
+                road_name
+            FROM concierge_user
+            WHERE user_id IN ({placeholders})
+        """
+
+        cursor.execute(sql, user_id_list)
+        rows = cursor.fetchall()
+        return rows   # [{user_id:..., store_business_number:..., menu_1:..., road_name:...}, ...]
+    except pymysql.MySQLError as e:
+        print(f"[select_concierge_users_by_ids] DB error: {e}")
+        raise
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
 
 

@@ -28,11 +28,13 @@ from app.crud.concierge import (
     select_concierge_detail as crud_select_concierge_detail,
     get_report_store as crud_get_report_store,
     update_report_is_concierge as crud_update_report_is_concierge,
-    update_concierge_user_status as crud_update_concierge_user_status,
     delete_concierge_user as crud_delete_concierge_user,
+    reserve_schedule as crud_reserve_schedule,
     update_concierge_basic as crud_update_concierge_basic,
     mark_concierge_images_deleted as crud_mark_concierge_images_deleted,
     insert_concierge_image as crud_insert_concierge_image,
+    get_user_id_list as crud_get_user_id_list,
+    select_concierge_users_by_ids as select_concierge_users_by_ids,
 )
 from app.service.regist_new_store import (
     get_city_id as service_get_city_id,
@@ -463,6 +465,65 @@ def delete_concierge_user(user_ids: List[int]) -> Dict[str, Any]:
 
 
 
+# 스케줄 DB 저장 처리
+import json
+from fastapi import HTTPException
+# from app.crud.concierge import insert_concierge_schedule  # 예시: 네가 만든 crud 함수
+
+def reserve_schedule(concierge_id, schedule):
+    """
+    :param concierge_id: concierge_user.user_id (= user_id)
+    :param schedule: GPT에서 내려온 스케줄 JSON
+                     예: '{"days": ["MON","WED"], "time": "15:00:00"}'
+                         또는 {'days': [...], 'time': '...'} dict
+    """
+    # 1) 문자열이면 JSON 파싱
+    if isinstance(schedule, str):
+        try:
+            data = json.loads(schedule)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="스케줄 형식이 올바른 JSON이 아닙니다.")
+    elif isinstance(schedule, dict):
+        data = schedule
+    else:
+        raise HTTPException(status_code=400, detail="스케줄 형식이 올바르지 않습니다.")
+
+    # 2) 필드 꺼내기
+    days = data.get("days")
+    time_str = data.get("time")
+
+    # 3) 기본 유효성 체크
+    if not days or not isinstance(days, list):
+        raise HTTPException(status_code=400, detail="스케줄에 days 리스트가 없습니다.")
+    if not time_str or not isinstance(time_str, str):
+        raise HTTPException(status_code=400, detail="스케줄에 time 값이 없습니다.")
+
+    # 허용 요일 코드 (DB ENUM과 맞춰야 함)
+    valid_days = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
+
+    # 4) 요일별로 insert
+    inserted = 0
+    for day in days:
+        if day not in valid_days:
+            raise HTTPException(status_code=400, detail=f"지원하지 않는 요일 코드입니다: {day}")
+
+        crud_reserve_schedule(
+            user_id=concierge_id,
+            week_day=day,
+            send_time=time_str,
+        )
+
+        inserted += 1
+
+    return {
+        "user_id": concierge_id,
+        "inserted_count": inserted,
+        "days": days,
+        "time": time_str,
+    }
+
+
+
 # 승인 or 수정 처리
 async def update_concierge(
     concierge_id: int,
@@ -573,4 +634,33 @@ async def update_concierge(
     finally:
         cursor.close()
         connection.close()
+
+
+
+# 해당하는 요일, 시간 user_id 리스트 가져오기
+def get_user_id_list(same_day, today_code, next_day_code, start_time_str, end_time_str):
+    user_id_list = crud_get_user_id_list(same_day, today_code, next_day_code, start_time_str, end_time_str)
+    return user_id_list
+
+
+# 해당하는 유저 추가 정보 가져오기
+def get_concierge_user_info_map(user_id_list):
+    """
+    user_id_list를 받아서
+    { user_id: {store_business_number, menu_1, road_name, ...}, ... } 형태로 리턴
+    """
+    rows = select_concierge_users_by_ids(user_id_list)
+
+    info_map = {}
+    for row in rows:
+        uid = row["user_id"]
+        info_map[uid] = {
+            "store_business_number": row.get("store_business_number"),
+            "menu_1": row.get("menu_1"),
+            "road_name": row.get("road_name"),
+            # 필요시 다른 컬럼도 추가
+        }
+    return info_map
+
+
 

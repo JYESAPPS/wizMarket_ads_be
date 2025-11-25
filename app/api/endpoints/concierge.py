@@ -24,7 +24,10 @@ from app.service.concierge import (
     concierge_add_new_store as service_concierge_add_new_store,
     submit_concierge_excel as service_submit_concierge_excel,
     delete_concierge_user as service_delete_concierge_user,
+    reserve_schedule as service_reserve_schedule,
     update_concierge as service_update_concierge,
+    get_user_id_list as service_get_user_id_list,
+    get_concierge_user_info_map as service_get_concierge_user_info_map,
 )
 from app.service.ads import (
     select_ads_init_info as service_select_ads_init_info,
@@ -212,8 +215,39 @@ async def update_concierge_status(
         return {
             "messeage" : "매장 복사 오류"
         }
+    
+
+    # GPT로 스케줄링 작성
+    schedule_role = """
+        너는 매장 홍보 스케줄을 추천하는 어시스턴트이다.
+
+        반드시 아래 JSON 형식 **만** 출력해라. 그 외의 설명, 문장, 코드블록, 주석, 마크다운은 절대 쓰지 마라.
+
+        형식 예시:
+        {
+        "days": ["MON", "WED"],
+        "time": "15:00:00"
+        }
+
+        규칙:
+        - days에는 정확히 2개의 요일만 넣어라.
+        - 요일은 아래 중 하나의 영문 대문자 코드를 사용해라.
+        ["SUN","MON","TUE","WED","THU","FRI","SAT"]
+        - time은 24시간 HH:MM:SS 형식으로, 초는 항상 "00"으로 맞춘다.
+        - 오직 위 JSON 객체 한 개만 출력한다.
+    """
 
 
+    schedule_prompt = f"""
+        매장 업종  : 치킨
+    """
+
+    schedule = service_generate_content(
+        schedule_prompt, schedule_role, ""
+    )
+    service_reserve_schedule(concierge_id, schedule)
+
+    # 수정 처리
     result = await service_update_concierge(
         concierge_id=concierge_id,
         status=status,
@@ -287,23 +321,12 @@ async def update_concierge_status(
     return result
 
 
-
-
-
-
 # ==================================================================
 # 🔥 1) 병렬로 돌릴 “개별 매장 처리 함수”
 # ==================================================================
 
-# --- 하드코딩 리스트 ---
-user_id_list = [1, 7]
-store_business_number_list = ["JS0079", "JS0081"]
-menu_list = ["초밥", "찜닭"]
-road_name_list = ["경기도 안양시 동안구 평의길 8", "충청남도 금산군 금산읍 삼풍로 19"]
-KST = timezone(timedelta(hours=9))
 
-
-async def process_user_task(idx: int):
+async def process_user_task(idx: int, user_id_list, user_info_map):
     """
     idx 번째 user 데이터로
     - init_data
@@ -312,11 +335,20 @@ async def process_user_task(idx: int):
     전부 수행해서 dict 로 결과 반환하는 함수
     """
 
-    
+    KST = timezone(timedelta(hours=9))
+
+    # 예: idx번째 유저 처리
     user_id = user_id_list[idx]
-    store_business_number = store_business_number_list[idx]
-    menu_1 = menu_list[idx]
-    road_name = road_name_list[idx]
+    user_info = user_info_map.get(user_id)
+
+    if not user_info:
+        # 해당 user_id의 concierge_user 정보가 없을 때 처리
+        return
+
+    store_business_number = user_info["store_business_number"]
+    menu_1 = user_info["menu_1"]
+    road_name = user_info["road_name"]
+    
 
     # ------------------------------
     # 1) 초기 정보 로딩
@@ -433,22 +465,68 @@ async def process_user_task(idx: int):
 # ==================================================================
 # 🔥 2) test_interval() → 병렬 처리 적용
 # ==================================================================
-@router.post("/test/interval1")
 async def test_interval():
     """
-    모든 user_id를 병렬 처리로 돌리고
+    지금~1시간 내에 예약된 모든 user를 병렬 처리로 돌리고
     결과를 배열로 반환.
     """
-    tasks = []
+    # -----------------------------
+    # 1) 지금~+1시간 스케줄 기준 user_id_list 뽑기
+    # -----------------------------
+    WEEKDAY_CODES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    KST = timezone(timedelta(hours=9))
 
-    # 유저 수만큼 task 생성
+    now_kst = datetime.now(KST)
+    window_start = now_kst
+    window_end = now_kst + timedelta(hours=1)
+
+    today_idx = now_kst.weekday()          # 0=Mon, 6=Sun
+    today_code = WEEKDAY_CODES[today_idx]  # 'MON' ~ 'SUN'
+
+    next_day_idx = (today_idx + 1) % 7
+    next_day_code = WEEKDAY_CODES[next_day_idx]
+
+    start_time_str = window_start.strftime("%H:%M:%S")
+    end_time_str = window_end.strftime("%H:%M:%S")
+
+    same_day = window_start.date() == window_end.date()
+
+    # 🔹 스케줄 테이블에서 user_id 리스트 조회
+    user_id_list = service_get_user_id_list(
+        same_day, today_code, next_day_code, start_time_str, end_time_str
+    )
+
+    if not user_id_list:
+        # 예약된 유저가 없으면 빈 결과
+        return JSONResponse(content={
+            "count": 0,
+            "results": [],
+        })
+
+    # -----------------------------
+    # 2) user_id → 매장 정보 매핑
+    # -----------------------------
+    user_info_map = service_get_concierge_user_info_map(user_id_list)
+    # 형태 예:
+    # {
+    #   8: { "store_business_number": "...", "menu_1": "...", "road_name": "..." },
+    #   12: {...},
+    #   ...
+    # }
+
+    # -----------------------------
+    # 3) 병렬 처리 태스크 생성
+    # -----------------------------
+    tasks = []
     for idx in range(len(user_id_list)):
-        tasks.append(process_user_task(idx))
+        tasks.append(process_user_task(idx, user_id_list, user_info_map))
 
     # 병렬 실행
     results = await asyncio.gather(*tasks)
 
-    # 최종 응답
+    # -----------------------------
+    # 4) 최종 응답
+    # -----------------------------
     return JSONResponse(content={
         "count": len(results),
         "results": results,
