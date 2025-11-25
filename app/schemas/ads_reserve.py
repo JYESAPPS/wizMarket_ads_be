@@ -40,6 +40,7 @@ class ReserveGetList(BaseModel):
     straight: Optional[str] = None
     is_active : int
     created_at : datetime
+    updated_at : datetime
 
 
 class ReserveUpdateStatus(BaseModel):
