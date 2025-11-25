@@ -4,15 +4,11 @@ from typing import List, Dict, Optional, Any
 import logging
 import os
 from typing import List
-from datetime import datetime
 from fastapi import UploadFile, File, Request
-from io import BytesIO
-import base64
-from datetime import datetime, timezone, timedelta
-import asyncio
+
 
 from app.schemas.concierge import (
-    IsConcierge, AddConciergeStore, ConciergeUploadRequest, ConciergeExcelUploadRequest, ConciergeDeleteRequest
+    IsConcierge, ConciergeExcelUploadRequest, ConciergeDeleteRequest
 ) 
 from app.service.concierge import (
     is_concierge as service_is_concierge,
@@ -29,21 +25,10 @@ from app.service.concierge import (
     get_user_id_list as service_get_user_id_list,
     get_concierge_user_info_map as service_get_concierge_user_info_map,
 )
-from app.service.ads import (
-    select_ads_init_info as service_select_ads_init_info,
-    random_design_style as service_random_design_style,
-    select_ai_age as service_select_ai_age,
-    select_ai_data as service_select_ai_data,
-)
-from app.service.ads_app import (
-    get_style_image as service_get_style_image,
-)
 from app.service.ads_generate import (
     generate_content as service_generate_content,
 )
-from app.service.ads_app import (
-    generate_by_seed_prompt as service_generate_by_seed_prompt,
-)
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -321,214 +306,3 @@ async def update_concierge_status(
     return result
 
 
-# ==================================================================
-# 🔥 1) 병렬로 돌릴 “개별 매장 처리 함수”
-# ==================================================================
-
-
-async def process_user_task(idx: int, user_id_list, user_info_map):
-    """
-    idx 번째 user 데이터로
-    - init_data
-    - 문구 생성
-    - 이미지 생성
-    전부 수행해서 dict 로 결과 반환하는 함수
-    """
-
-    KST = timezone(timedelta(hours=9))
-
-    # 예: idx번째 유저 처리
-    user_id = user_id_list[idx]
-    user_info = user_info_map.get(user_id)
-
-    if not user_info:
-        # 해당 user_id의 concierge_user 정보가 없을 때 처리
-        return
-
-    store_business_number = user_info["store_business_number"]
-    menu_1 = user_info["menu_1"]
-    road_name = user_info["road_name"]
-    
-
-    # ------------------------------
-    # 1) 초기 정보 로딩
-    # ------------------------------
-    try:
-        init_data = service_select_ads_init_info(store_business_number)
-        ai_age = service_select_ai_age(init_data, menu_1)
-        ai_data = service_select_ai_data(init_data, ai_age, menu_1)
-        random_image_list = service_random_design_style(init_data, ai_data[0])
-    except Exception:
-        return {"user_id": user_id, "error": "기본 정보 불러오기 오류"}
-
-    style_number = ai_data[0]
-    channel_number = ai_data[2]
-    title_number = ai_data[3]
-
-    today = datetime.now(KST)
-
-    # ------------------------------
-    # 2) 채널 텍스트 처리
-    # ------------------------------
-    channel_text = {
-        1: "카카오톡",
-        2: "인스타그램 스토리",
-        3: "인스타그램 피드 게시글",
-        4: "블로그",
-        5: "문자메시지",
-        6: "네이버밴드",
-        7: "X(트위터)",
-    }.get(channel_number, "")
-
-    theme = {1: "매장홍보", 2: "상품소개"}.get(title_number, "이벤트")
-
-    # ------------------------------
-    # 3) 문구 생성
-    # ------------------------------
-    try:
-        copyright_role = """
-            당신은 인스타그램, 블로그 등 소셜미디어 광고 전문가입니다.
-        """
-
-        # 이벤트이면 기념일 룰 적용
-        if title_number == 3:
-            copyright_prompt = f"""
-                {init_data.store_name} 매장의 {channel_text} 이벤트 문구 생성.
-                오늘 날짜는 {today}.
-                ...
-                (기념일 규칙 생략)
-            """
-        else:
-            copyright_prompt = f"""
-                {init_data.store_name} 매장의 {channel_text} 광고 문구 생성.
-                세부 업종 : {menu_1}
-                홍보 컨셉 : {theme}
-                지역 : {road_name}
-            """
-
-        copyright = service_generate_content(
-            copyright_prompt, copyright_role, ""
-        )
-
-    except Exception:
-        return {"user_id": user_id, "error": "문구 생성 오류"}
-
-    # ------------------------------
-    # 4) 이미지 생성
-    # ------------------------------
-    seed_prompt = random_image_list.prompt
-
-    try:
-        origin_image = service_generate_by_seed_prompt(
-            channel_number,
-            copyright,
-            "",
-            seed_prompt,
-            menu_1
-        )
-
-        # Base64 변환
-        output_images = []
-        for image in origin_image:
-            buffer = BytesIO()
-            image.save(buffer, format="PNG")
-            buffer.seek(0)
-            output_images.append(
-                base64.b64encode(buffer.getvalue()).decode("utf-8")
-            )
-
-    except Exception as e:
-        return {"user_id": user_id, "error": f"이미지 생성 오류: {str(e)}"}
-
-    # ------------------------------
-    # 5) 최종 결과 반환
-    # ------------------------------
-    return {
-        "user_id": user_id,
-        "copyright": copyright,
-        "origin_image": output_images,
-        "title": title_number,
-        "channel": channel_number,
-        "style": style_number,
-        "core_f": ai_age,
-        "main": init_data.main,
-        "temp": init_data.temp,
-        "detail_category_name": init_data.detail_category_name,
-        "register_tag": menu_1,
-        "store_name": init_data.store_name,
-        "road_name": init_data.road_name,
-        "store_business_number": store_business_number,
-        "prompt": seed_prompt,
-    }
-
-
-# ==================================================================
-# 🔥 2) test_interval() → 병렬 처리 적용
-# ==================================================================
-@router.post("/test/interval")
-async def test_interval():
-    """
-    지금~1시간 내에 예약된 모든 user를 병렬 처리로 돌리고
-    결과를 배열로 반환.
-    """
-    # -----------------------------
-    # 1) 지금~+1시간 스케줄 기준 user_id_list 뽑기
-    # -----------------------------
-    WEEKDAY_CODES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-    KST = timezone(timedelta(hours=9))
-
-    now_kst = datetime.now(KST)
-    window_start = now_kst
-    window_end = now_kst + timedelta(hours=1)
-
-    today_idx = now_kst.weekday()          # 0=Mon, 6=Sun
-    today_code = WEEKDAY_CODES[today_idx]  # 'MON' ~ 'SUN'
-
-    next_day_idx = (today_idx + 1) % 7
-    next_day_code = WEEKDAY_CODES[next_day_idx]
-
-    start_time_str = window_start.strftime("%H:%M:%S")
-    end_time_str = window_end.strftime("%H:%M:%S")
-
-    same_day = window_start.date() == window_end.date()
-
-    # 🔹 스케줄 테이블에서 user_id 리스트 조회
-    user_id_list = service_get_user_id_list(
-        same_day, today_code, next_day_code, start_time_str, end_time_str
-    )
-
-    if not user_id_list:
-        # 예약된 유저가 없으면 빈 결과
-        return JSONResponse(content={
-            "count": 0,
-            "results": [],
-        })
-
-    # -----------------------------
-    # 2) user_id → 매장 정보 매핑
-    # -----------------------------
-    user_info_map = service_get_concierge_user_info_map(user_id_list)
-    # 형태 예:
-    # {
-    #   8: { "store_business_number": "...", "menu_1": "...", "road_name": "..." },
-    #   12: {...},
-    #   ...
-    # }
-
-    # -----------------------------
-    # 3) 병렬 처리 태스크 생성
-    # -----------------------------
-    tasks = []
-    for idx in range(len(user_id_list)):
-        tasks.append(process_user_task(idx, user_id_list, user_info_map))
-
-    # 병렬 실행
-    results = await asyncio.gather(*tasks)
-
-    # -----------------------------
-    # 4) 최종 응답
-    # -----------------------------
-    return JSONResponse(content={
-        "count": len(results),
-        "results": results,
-    })

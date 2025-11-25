@@ -772,9 +772,11 @@ def insert_concierge_image(
 
 
 # 해당하는 요일, 시간 user_id 리스트 가져오기
-def get_user_id_list(same_day: bool, today_code: int, next_day_code: int, start_time_str: str, end_time_str: str) -> List[int]:
+def get_user_id_list(same_day: bool, today_code: str, next_day_code: str, start_time_str: str, end_time_str: str) -> List[int]:
     connection = get_re_db_connection()
     cursor = None
+
+    print(same_day, today_code, next_day_code, start_time_str, end_time_str)
 
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
@@ -821,8 +823,8 @@ def get_user_id_list(same_day: bool, today_code: int, next_day_code: int, start_
 # 추가 정보 가져오기
 def select_concierge_users_by_ids(user_id_list):
     """
-    concierge_user에서 user_id 목록에 해당하는
-    store_business_number, menu_1, road_name 등을 한 번에 조회
+    concierge_user + concierge_store 조인해서
+    user_id 목록에 해당하는 store_business_number, menu_1, road_name 조회
     """
     if not user_id_list:
         return []
@@ -836,22 +838,25 @@ def select_concierge_users_by_ids(user_id_list):
         placeholders = ", ".join(["%s"] * len(user_id_list))
         sql = f"""
             SELECT
-                user_id,
-                store_business_number,
-                menu_1,
-                road_name
-            FROM concierge_user
-            WHERE user_id IN ({placeholders})
+                cu.user_id,
+                cu.store_business_number,
+                cs.menu_1,
+                cs.road_name
+            FROM concierge_user cu
+            JOIN concierge_store cs
+              ON cs.user_id = cu.user_id
+            WHERE cu.user_id IN ({placeholders})
         """
 
         cursor.execute(sql, user_id_list)
         rows = cursor.fetchall()
-        return rows   # [{user_id:..., store_business_number:..., menu_1:..., road_name:...}, ...]
+        return rows
     except pymysql.MySQLError as e:
         print(f"[select_concierge_users_by_ids] DB error: {e}")
         raise
     finally:
         close_cursor(cursor)
         close_connection(connection)
+
 
 
