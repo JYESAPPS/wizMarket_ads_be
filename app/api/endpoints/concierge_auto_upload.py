@@ -12,6 +12,9 @@ from datetime import datetime
 import asyncio
 from app.api.endpoints.insta_test import create_media_container, publish_media          # 네가 작성한 함수 import
 from dotenv import load_dotenv
+import time
+import requests
+
 
 # ==== .env 로드 ====
 load_dotenv()
@@ -97,6 +100,53 @@ async def service_concierge_generate_interval() -> Dict[str, Any]:
     results = await asyncio.gather(*tasks)
 
     return {"count": len(results), "results": results}
+
+
+
+# ==================================================================
+# 🔥 Instagram 컨테이너 준비 상태 폴링 헬퍼
+# ==================================================================
+def wait_until_media_ready(
+    creation_id: str,
+    access_token: str,
+    timeout_sec: int = 60,
+    interval_sec: int = 3,
+) -> None:
+    """
+    Instagram media 컨테이너가 게시 가능한 상태가 될 때까지 대기.
+    - status_code == "FINISHED" : 정상 → return
+    - status_code == "ERROR"    : 예외 발생
+    - timeout 지나도 FINISHED 안 되면 TimeoutError
+    """
+    start = time.time()
+    url = f"https://graph.facebook.com/v18.0/{creation_id}"
+
+    while True:
+        elapsed = time.time() - start
+        if elapsed > timeout_sec:
+            raise TimeoutError("Instagram media not ready within timeout")
+
+        resp = requests.get(
+            url,
+            params={
+                "fields": "status_code",
+                "access_token": access_token,
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        status = data.get("status_code")
+
+        logger.info(f"[wait_until_media_ready] creation_id={creation_id}, status={status}")
+
+        if status == "FINISHED":
+            # 준비 완료 → 게시 가능
+            return
+        if status == "ERROR":
+            raise RuntimeError(f"Instagram media status ERROR for creation_id={creation_id}")
+
+        # 아직 처리 중(IN_PROGRESS 등) → 잠깐 대기 후 재시도
+        time.sleep(interval_sec)
 
 
 
@@ -301,7 +351,7 @@ async def process_single_user_history_and_upload_from_front(
             register_tag=register_tag,
         )
     except Exception as e:
-        print("error : " f"히스토리 INSERT 실패: {e}")
+        # print("error : " f"히스토리 INSERT 실패: {e}")
         return {
             "user_id": user_id,
             "success": False,
@@ -310,10 +360,11 @@ async def process_single_user_history_and_upload_from_front(
 
     # 3) public URL 구성 (인스타에 넘길 image_url)
     image_url = service_build_public_image_url(image_path)
-    print(f"[process_single_user_history_and_upload_from_front] image_url={image_url}")
+    # print(f"[process_single_user_history_and_upload_from_front] image_url={image_url}")
 
     # 4) Instagram 업로드 (동기 함수 → to_thread)
     try:
+        # 1단계: 컨테이너 생성
         creation_id = await asyncio.to_thread(
             create_media_container,
             IG_USER_ID,
@@ -322,6 +373,16 @@ async def process_single_user_history_and_upload_from_front(
             IG_ACCESS_TOKEN,
         )
 
+        logger.info(f"[process_single_user_history_and_upload] creation_id={creation_id}")
+
+        # 1.5단계: 컨테이너 준비 완료될 때까지 폴링
+        await asyncio.to_thread(
+            wait_until_media_ready,
+            creation_id,
+            IG_ACCESS_TOKEN,
+        )
+
+        # 2단계: 게시
         publish_result = await asyncio.to_thread(
             publish_media,
             IG_USER_ID,
@@ -374,10 +435,10 @@ async def concierge_upload_instagram(req: ConciergeInstaUploadRequest):
     를 처리하는 엔드포인트
     """
     # (원하면 서버 로그용)
-    print(
-        f"[concierge_upload_instagram] user_id={req.user_id}, "
-        f"caption_len={len(req.caption)}, channel={req.channel}, tag={req.register_tag}"
-    )
+    # print(
+    #     f"[concierge_upload_instagram] user_id={req.user_id}, "
+    #     f"caption_len={len(req.caption)}, channel={req.channel}, tag={req.register_tag}"
+    # )
 
     result = await process_single_user_history_and_upload_from_front(
         user_id=req.user_id,
