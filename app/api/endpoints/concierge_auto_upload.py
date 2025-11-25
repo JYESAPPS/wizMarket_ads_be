@@ -1,22 +1,26 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 import logging
-from datetime import datetime
 from io import BytesIO
 import base64
 from datetime import datetime, timezone, timedelta
 import asyncio
 import os
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+from pydantic import BaseModel
 from datetime import datetime
 import asyncio
 from app.api.endpoints.insta_test import create_media_container, publish_media          # 네가 작성한 함수 import
+from dotenv import load_dotenv
+
+# ==== .env 로드 ====
+load_dotenv()
 
 UPLOAD_ROOT = "/app/uploads"  # 이미 쓰던 값
-UPLOAD_PUBLIC_BASE_URL = os.getenv("UPLOAD_PUBLIC_BASE_URL", "https://your-domain.com/uploads")
+UPLOAD_PUBLIC_BASE_URL = os.getenv("UPLOAD_PUBLIC_BASE_URL", "https://wizmarket.ai/uploads")
 
-IG_USER_ID = os.getenv("IG_USER_ID")
-IG_ACCESS_TOKEN = os.getenv("IG_LONG_LIVED_TOKEN")
+IG_USER_ID = os.getenv("INSTAGRAM_ACCOUNT_ID")
+IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_TOKEN")
 
 from app.service.concierge import (
     get_user_id_list as service_get_user_id_list,
@@ -47,6 +51,14 @@ from app.crud.concierge_auto_upload import (
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+class ConciergeInstaUploadRequest(BaseModel):
+    user_id: int
+    image_base64: str    # AdsSwiper에서 캡쳐한 최종 템플릿 이미지
+    caption: str         # 인스타 캡션 (copyright)
+    channel: int         # 채널 번호 (1=카톡, 2=스토리, 3=피드 ...)
+    register_tag: Optional[str] = None  # 김치찌개, 치킨 등 태그
 
 
 # 내부 공용 서비스 함수 (엔드포인트 X)
@@ -240,53 +252,46 @@ async def test_interval():
 # ==================================================================
 # 🔥 3) 병렬로 돌릴 "개별 유저 저장 처리 함수"
 # ==================================================================
-async def process_single_user_history_and_upload(result: Dict[str, Any]) -> Dict[str, Any]:
+async def process_single_user_history_and_upload_from_front(
+    user_id: int,
+    image_base64: str,
+    caption: str,
+    channel: int,
+    register_tag: Optional[str],
+) -> Dict[str, Any]:
     """
-    process_user_task() 결과 1건(result)을 받아서:
+    프론트(AdsSwiper)에서 보낸 최종 이미지 + 캡션을 받아:
       - history 디렉토리에 이미지 저장
       - concierge_user_history INSERT (PENDING)
       - Instagram 업로드(컨테이너 생성 + 게시)
       - history 상태 업데이트
     까지 처리하는 비동기 함수
     """
-
     if not IG_USER_ID or not IG_ACCESS_TOKEN:
         return {
-            "user_id": result.get("user_id"),
+            "user_id": user_id,
             "success": False,
             "error": "Instagram 계정 정보(IG_USER_ID / IG_LONG_LIVED_TOKEN)가 설정되지 않았습니다.",
         }
 
-    user_id = result.get("user_id")
-    origin_images: List[str] = result.get("origin_image") or []
-    caption: str = result.get("copyright") or ""
-    channel: int = int(result.get("channel") or 0)
-    register_tag: str | None = result.get("register_tag")
+    if not image_base64:
+        return {
+            "user_id": user_id,
+            "success": False,
+            "error": "image_base64 누락",
+        }
 
-    if not user_id:
-        return {"success": False, "error": "user_id 누락"}
-
-    if not origin_images:
-        return {"user_id": user_id, "success": False, "error": "origin_image 없음"}
-
-    # 1) base64 이미지 1장 선택 (여기서는 첫 장 사용)
-    image_b64 = origin_images[0]
-
-    # 2) history 디렉토리에 파일 저장 (sync → 별도 스레드로)
+    # 1) history 디렉토리에 파일 저장
     try:
         image_path = await asyncio.to_thread(
             service_save_history_image_from_base64,
             user_id,
-            image_b64,
+            image_base64,
         )
     except Exception as e:
-        return {
-            "user_id": user_id,
-            "success": False,
-            "error": f"이미지 저장 실패: {e}",
-        }
+        print("error : " f"이미지 저장 실패: {e}")
 
-    # 3) concierge_user_history INSERT (PENDING)
+    # 2) concierge_user_history INSERT (PENDING)
     try:
         history_id = crud_insert_concierge_user_history(
             user_id=user_id,
@@ -296,18 +301,19 @@ async def process_single_user_history_and_upload(result: Dict[str, Any]) -> Dict
             register_tag=register_tag,
         )
     except Exception as e:
+        print("error : " f"히스토리 INSERT 실패: {e}")
         return {
             "user_id": user_id,
             "success": False,
             "error": f"히스토리 INSERT 실패: {e}",
         }
 
-    # 4) public URL 구성 (인스타에 넘길 image_url)
+    # 3) public URL 구성 (인스타에 넘길 image_url)
     image_url = service_build_public_image_url(image_path)
+    print(f"[process_single_user_history_and_upload_from_front] image_url={image_url}")
 
-    # 5) Instagram 업로드 (동기 함수 → to_thread 로 병렬 실행)
+    # 4) Instagram 업로드 (동기 함수 → to_thread)
     try:
-        # 1단계: 컨테이너 생성
         creation_id = await asyncio.to_thread(
             create_media_container,
             IG_USER_ID,
@@ -316,7 +322,6 @@ async def process_single_user_history_and_upload(result: Dict[str, Any]) -> Dict
             IG_ACCESS_TOKEN,
         )
 
-        # 2단계: 게시
         publish_result = await asyncio.to_thread(
             publish_media,
             IG_USER_ID,
@@ -342,7 +347,6 @@ async def process_single_user_history_and_upload(result: Dict[str, Any]) -> Dict
         }
 
     except Exception as e:
-        # 실패 상태 업데이트
         crud_update_concierge_user_history_status(
             history_id=history_id,
             status="FAILED",
@@ -357,67 +361,35 @@ async def process_single_user_history_and_upload(result: Dict[str, Any]) -> Dict
         }
 
 
-
 # ==================================================================
 # 🔥 4) upload_instagram() → 병렬 처리 적용
 # ==================================================================
-async def upload_instagram(results: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    process_user_task() 결과 리스트를 받아
-    user_id 별로 Instagram 업로드를 병렬 처리.
-    - 이미지 저장
-    - concierge_user_history 기록
-    - Instagram 게시
-    까지 모두 수행한 뒤 요약 결과를 반환.
-    """
-
-    # 에러가 있는 항목은 업로드 대상에서 제외 (원하면 포함 로직 변경 가능)
-    valid_results = [
-        r for r in results
-        if r and not r.get("error")
-    ]
-
-    if not valid_results:
-        return {
-            "count": 0,
-            "results": [],
-        }
-
-    tasks = [
-        process_single_user_history_and_upload(r)
-        for r in valid_results
-    ]
-
-    # 병렬 실행
-    upload_results = await asyncio.gather(*tasks, return_exceptions=False)
-
-    return {
-        "count": len(upload_results),
-        "results": upload_results,
-    }
-
-# ==================================================================
-# 🔥 5) 최종 적용
-# ==================================================================
 @router.post("/auto/upload/instagram")
-async def concierge_auto_run():
+async def concierge_upload_instagram(req: ConciergeInstaUploadRequest):
     """
-    1) 지금~1시간 내 예약된 user_id 기준으로 이미지/문구 생성 (이미 구현된 test_interval 로직 재사용)
-    2) 그 결과를 그대로 upload_instagram()에 넘겨서
-       - 이미지 저장
-       - history 기록
-       - 인스타 업로드
-    까지 수행
+    AdsSwiper에서 템플릿 캡쳐한 최종 이미지를 받아
+    - history 저장
+    - concierge_user_history 기록
+    - Instagram 업로드
+    를 처리하는 엔드포인트
     """
-    # 이미 구현된 생성 파트 (예: service_concierge_generate_interval)
-    generation_results = await service_concierge_generate_interval()  # 내부에서 process_user_task 병렬 실행
+    # (원하면 서버 로그용)
+    print(
+        f"[concierge_upload_instagram] user_id={req.user_id}, "
+        f"caption_len={len(req.caption)}, channel={req.channel}, tag={req.register_tag}"
+    )
 
-    # 인스타 업로드 병렬 처리
-    upload_summary = await upload_instagram(generation_results["results"])
+    result = await process_single_user_history_and_upload_from_front(
+        user_id=req.user_id,
+        image_base64=req.image_base64,
+        caption=req.caption,
+        channel=req.channel,
+        register_tag=req.register_tag,
+    )
+    print(result)
 
-    return {
-        "generation_count": len(generation_results["results"]),
-        "upload": upload_summary,
-    }
+    if not result.get("success"):
+        # 클라이언트에서 실패 알 수 있게 에러 코드 반환
+        raise HTTPException(status_code=500, detail=result.get("error") or "업로드 실패")
 
-
+    return JSONResponse(content=result)
