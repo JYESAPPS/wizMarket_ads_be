@@ -21,7 +21,6 @@ from app.service.concierge import (
     select_concierge_detail as service_select_concierge_detail,
     get_report_store as service_get_report_store,
     concierge_add_new_store as service_concierge_add_new_store,
-    update_concierge_status as service_update_concierge_status,
     submit_concierge_excel as service_submit_concierge_excel,
     delete_concierge_user as service_delete_concierge_user,
     update_concierge as service_update_concierge,
@@ -112,47 +111,6 @@ def select_concierge_detail(user_id: int) -> Dict[str, Any]:
     """
     detail = service_select_concierge_detail(user_id)
     return detail
-
-
-
-# 승인 처리 후 DB 동기화 
-@router.post("/approve/concierge")
-def approve_concierge(request : AddConciergeStore):
-    
-    user_id = request.user_id
-    store_name = request.store_name
-    road_name = request.road_name
-
-    try:
-    # 기존 매장 조회
-        store_business_number = service_get_report_store(store_name, road_name)
-    except Exception as e:
-        return {
-            "messeage" : "매장 조회 오류"
-        }
-
-    try:
-    # 매장 없을 시 DB 복사
-        if not store_business_number :
-            result = service_concierge_add_new_store(request)
-            store_business_number = result.get("store_business_number")
-
-    except Exception as e:
-        return {
-            "messeage" : "매장 복사 오류"
-        }
-
-    # Report TB is_concierge 컬럼과 Concierge_User TB store_busienss_number, status 컬럼 업데이트
-    try:
-        service_update_concierge_status(user_id, store_business_number)
-
-    except Exception as e:
-        return {
-            "messeage" : "유저 업데이트 오류"
-        }
-    
-    return {"messeage" : "승인 성공"}
-
 
 
 
@@ -279,6 +237,7 @@ async def update_concierge_status(
     # 가게 정보
     store_name: str = Form(""),
     road_name: str = Form(""),
+    store_business_number: str = Form(""),
 
     # 메뉴
     menu_1: str = Form(""),
@@ -303,6 +262,7 @@ async def update_concierge_status(
         user_name=user_name,
         phone=phone,
         memo=memo,
+        store_business_number = store_business_number,
         main_category_code=main_category_code,
         sub_category_code=sub_category_code,
         detail_category_code=detail_category_code,
@@ -325,7 +285,7 @@ async def update_concierge_status(
 # ==================================================================
 
 # --- 하드코딩 리스트 ---
-user_id_list = [16, 27]
+user_id_list = [1, 7]
 store_business_number_list = ["JS0079", "JS0081"]
 menu_list = ["초밥", "찜닭"]
 road_name_list = ["경기도 안양시 동안구 평의길 8", "충청남도 금산군 금산읍 삼풍로 19"]

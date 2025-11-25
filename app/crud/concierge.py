@@ -387,6 +387,7 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cu.phone          AS phone,
                 cu.status         AS status,
                 cu.memo           AS memo,
+                cu.store_business_number AS store_business_number,
                 cs.store_name     AS store_name,
                 cs.road_name      AS road_name,
                 cs.big_category_code AS main_category_code,
@@ -487,9 +488,8 @@ def get_report_store(store_name, road_name):
 
 
 
-def update_report_is_concierge(store_business_number):
+def update_report_is_concierge(cursor, store_business_number):
     connection = get_re_db_connection()
-    cursor = connection.cursor(pymysql.cursors.DictCursor)
 
     try:
         if not connection.open:
@@ -501,7 +501,7 @@ def update_report_is_concierge(store_business_number):
             SET IS_CONCIERGE = 1
             WHERE store_business_number = %s
         """
-        cursor.execute(sql, (store_business_number))
+        cursor.execute(sql, (store_business_number,))
         connection.commit()
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
@@ -522,39 +522,26 @@ def update_report_is_concierge(store_business_number):
 
 
 
-def update_concierge_user_status(user_id, store_business_number):
-    connection = get_re_db_connection()
-    cursor = connection.cursor(pymysql.cursors.DictCursor)
+def update_concierge_user_status(
+    cursor: Cursor,
+    store_business_number: str,
+) -> None:
+    """
+    REPORT 테이블에서 해당 사업자번호에 대해 IS_CONCIERGE = 1 로 설정
+    - 커넥션/커밋/클로즈는 모두 서비스 레이어에서 처리
+    """
 
-    try:
-        if not connection.open:
-            raise HTTPException(status_code=500, detail="DB 연결이 열려있지 않습니다.")
 
-        # 🔹 STORE_BUSINESS_NUMBER 조회
-        sql = """
-            UPDATE CONCIERGE_USER
-            SET STORE_BUSINESS_NUMBER = %s,
-                STATUS = %s
-            WHERE user_id = %s
-        """
-        cursor.execute(sql, (store_business_number, "APPROVED", user_id))
-        connection.commit()
+    sql = """
+        UPDATE report
+           SET is_concierge = 1
+         WHERE store_business_number = %s
+    """
+    cursor.execute(sql, (store_business_number,))
 
-    except pymysql.MySQLError as e:
-        logger.error(f"MySQL Error: {e}")
-        raise HTTPException(status_code=500, detail="데이터베이스 오류가 발생했습니다.")
-    except Exception as e:
-        logger.error(f"Unexpected Error in is_concierge: {e}")
-        raise HTTPException(status_code=500, detail="알 수 없는 오류가 발생했습니다.")
-    finally:
-        try:
-            cursor.close()
-        except Exception:
-            pass
-        try:
-            connection.close()
-        except Exception:
-            pass
+    # 선택: 매칭되는 row 가 없으면 에러로 올리고 싶으면
+    if cursor.rowcount == 0:
+        raise ValueError("REPORT_NOT_FOUND")
 
 
 
@@ -613,7 +600,7 @@ def update_concierge_basic(
     """
     cursor.execute(
         sql_user,
-        (user_name, phone, memo, status, concierge_id, store_business_number),
+        (user_name, phone, memo, status, store_business_number, concierge_id),
     )
 
     if cursor.rowcount == 0:

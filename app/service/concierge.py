@@ -319,10 +319,6 @@ def concierge_add_new_store (store_name, road_name, large_category_code, medium_
         return {"success": False, "message": "서버 오류가 발생했습니다." , "store_business_number" : ""}
 
 
-def update_concierge_status(user_id, store_business_number):
-    crud_update_report_is_concierge(store_business_number)
-    crud_update_concierge_user_status(user_id, store_business_number)
-
 
 # 엑셀 업로드된 컨시어지 일괄 등록
 def submit_concierge_excel(rows) -> Dict[str, Any]:
@@ -470,7 +466,7 @@ async def update_concierge(
     user_name: str,
     phone: str,
     memo: str,
-    store_business_number,
+    store_business_number : str,
     main_category_code: Optional[str],
     sub_category_code: Optional[str],
     detail_category_code: Optional[str],
@@ -504,6 +500,9 @@ async def update_concierge(
             menu_3=menu_3,
         )
 
+        # 리포트 테이블 업데이트
+        crud_update_report_is_concierge(cursor, store_business_number)
+        
         # 🔹 파일 테이블에서 사용할 user_id (지금은 concierge_id와 같다고 가정)
         user_id_for_file = concierge_id
 
