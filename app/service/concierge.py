@@ -24,6 +24,7 @@ from app.crud.concierge import (
     submit_concierge_store as crud_submit_concierge_store,
     submit_concierge_image as crud_submit_concierge_image,
     select_concierge_list as crud_select_concierge_list,
+    get_concierge_system_list as crud_get_concierge_system_list,
     select_concierge_detail as crud_select_concierge_detail,
     get_report_store as crud_get_report_store,
     update_report_is_concierge as crud_update_report_is_concierge,
@@ -198,6 +199,10 @@ def select_concierge_list(
         apply_start=apply_start,
         apply_end=apply_end,
     )
+
+# 시스템용 리스트 조회
+def get_concierge_system_list():
+    return crud_get_concierge_system_list()
 
 
 # 상세 보기
@@ -502,7 +507,7 @@ async def update_concierge(
 
         # 리포트 테이블 업데이트
         crud_update_report_is_concierge(cursor, store_business_number)
-        
+
         # 🔹 파일 테이블에서 사용할 user_id (지금은 concierge_id와 같다고 가정)
         user_id_for_file = concierge_id
 
@@ -568,3 +573,4 @@ async def update_concierge(
     finally:
         cursor.close()
         connection.close()
+

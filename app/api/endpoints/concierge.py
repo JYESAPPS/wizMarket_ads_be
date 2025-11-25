@@ -18,6 +18,7 @@ from app.service.concierge import (
     is_concierge as service_is_concierge,
     submit_concierge as service_submit_concierge,
     select_concierge_list as service_select_concierge_list,
+    get_concierge_system_list as service_get_concierge_system_list,
     select_concierge_detail as service_select_concierge_detail,
     get_report_store as service_get_report_store,
     concierge_add_new_store as service_concierge_add_new_store,
@@ -100,6 +101,16 @@ def get_concierge_list(
         apply_end=apply_end,
     )
     return {"items": rows}
+
+
+
+# 시스템용 리스트 조회
+@router.get("/select/concierge/system/list")
+def get_concierge_system_list():
+    rows = service_get_concierge_system_list()
+    return {"items": rows}
+
+
 
 
 # 상세 페이지

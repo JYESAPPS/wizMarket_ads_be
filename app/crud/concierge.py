@@ -367,6 +367,62 @@ def select_concierge_list(
         close_connection(connection)
 
 
+
+# 시스템용 리스트 조회
+def get_concierge_system_list() -> List[dict]:
+
+    connection = get_re_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        sql = """
+            SELECT
+                cu.user_id          AS id,
+                cu.user_name        AS user_name,
+                cu.phone            AS phone,
+                cs.store_name       AS store_name,
+                cs.road_name        AS road_name,
+                cs.menu_1           AS menu_1,
+                cs.menu_2           AS menu_2,
+                cs.menu_3           AS menu_3,
+                COUNT(cf.file_id)   AS image_count,
+                cu.status           AS status,
+                cs.created_at       AS created_at
+            FROM CONCIERGE_USER cu
+            JOIN CONCIERGE_STORE cs
+                ON cs.user_id = cu.user_id
+            LEFT JOIN concierge_user_file cf
+                ON cf.user_id = cu.user_id
+            WHERE cu.status = 'APPROVED'
+            GROUP BY
+                cu.user_id,
+                cu.user_name,
+                cu.phone,
+                cs.store_name,
+                cs.road_name,
+                cs.menu_1,
+                cs.menu_2,
+                cs.menu_3,
+                cu.status,
+                cs.created_at
+            ORDER BY cs.created_at DESC
+        """
+
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        return rows
+
+    except pymysql.MySQLError as e:
+        print(f"[crud_select_concierge_list] DB error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
 # 상세 조회
 def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
     """
