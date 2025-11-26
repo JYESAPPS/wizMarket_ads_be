@@ -17,8 +17,8 @@ def get_notice(include_hidden: bool = False):
         where = "" if include_hidden else "WHERE NOTICE_POST = 'Y'"
         select_query = f"""
             SELECT 
-                NOTICE_NO, NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT,
-                NOTICE_FILE, VIEWS, CREATED_AT, UPDATED_AT
+                NOTICE_NO, NOTICE_POST, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT,
+                NOTICE_FILE, NOTICE_IMAGES, VIEWS, CREATED_AT, UPDATED_AT
             FROM notice
             {where}
             ORDER BY CREATED_AT DESC;
@@ -30,9 +30,11 @@ def get_notice(include_hidden: bool = False):
             AdsNotice(
                 notice_no=row["NOTICE_NO"],
                 notice_post=row["NOTICE_POST"],
+                notice_type=row["NOTICE_TYPE"],
                 notice_title=row["NOTICE_TITLE"],
                 notice_content=row["NOTICE_CONTENT"],
                 notice_file=row["NOTICE_FILE"],
+                notice_images=row["NOTICE_IMAGES"],
                 views=row["VIEWS"],
                 created_at=row["CREATED_AT"],
                 updated_at=row["UPDATED_AT"],
@@ -46,7 +48,7 @@ def get_notice(include_hidden: bool = False):
         if cursor:
             cursor.close()
 
-def create_notice(notice_post: str, notice_title: str, notice_content: str, notice_file: Optional[str] = None):
+def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: Optional[str] = None, notice_images_json: str = "[]"):
     connection = get_re_db_connection()
     cursor = None
 
@@ -54,11 +56,11 @@ def create_notice(notice_post: str, notice_title: str, notice_content: str, noti
         cursor = connection.cursor()
 
         insert_query = """
-            INSERT INTO NOTICE (NOTICE_POST, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO NOTICE (NOTICE_POST, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE, NOTICE_IMAGES)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
 
-        cursor.execute(insert_query, (notice_post or "Y", notice_title, notice_content, notice_file))
+        cursor.execute(insert_query, (notice_post or "Y", notice_type, notice_title, notice_content, notice_file, notice_images_json or "[]"))
         notice_id = cursor.lastrowid # 신규 공지사항 ID 가져오기
         commit(connection)  # 커스텀 commit 사용
 
@@ -101,7 +103,7 @@ def update_notice_clear_file(notice_no):
     finally:
         close_connection(connection)
 
-def update_notice(notice_no, notice_post, notice_title, notice_content):
+def update_notice(notice_no, notice_post, notice_type, notice_title, notice_content, notice_file):
     connection = get_re_db_connection()
 
     try:
@@ -110,13 +112,14 @@ def update_notice(notice_no, notice_post, notice_title, notice_content):
         update_query = """
             UPDATE NOTICE
             SET NOTICE_POST = %s,
+                NOTICE_TYPE = %s,
                 NOTICE_TITLE = %s,
                 NOTICE_CONTENT = %s,
                 UPDATED_AT = NOW()
             WHERE NOTICE_NO = %s
         """
 
-        cursor.execute(update_query, (notice_post or "Y", notice_title, notice_content, notice_no))
+        cursor.execute(update_query, (notice_post or "Y", notice_type, notice_title, notice_content, notice_no))
         commit(connection)  # 커스텀 commit 사용
 
     except pymysql.MySQLError as e:

@@ -51,8 +51,8 @@ def get_notice(
 #     notice = crud_get_notice()
 #     return notice
 
-def create_notice(notice_post: str, notice_title: str, notice_content: str, notice_file: str):
-    return crud_create_notice(notice_post, notice_title, notice_content, notice_file)
+def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: str):
+    return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file)
 
 
 SERVICE_DIR = Path(__file__).resolve().parent
@@ -98,23 +98,23 @@ def _extract_notice_file_path(row):
         return row.get("NOTICE_FILE") or row.get("notice_file")
     return getattr(row, "notice_file", None) or getattr(row, "NOTICE_FILE", None)
 
-def update_notice(notice_no: int, notice_post: str, notice_title: str, notice_content: str, new_path: str | None, remove_file: bool):
+def update_notice(notice_no: int, notice_post: str, notice_type: str, notice_title: str, notice_content: str):
     try:
-        crud_update_notice(notice_no, notice_post, notice_title, notice_content)
+        crud_update_notice(notice_no, notice_post, notice_type, notice_title, notice_content)
         
         # 파일 처리: 교체 > 삭제 > 유지
         old = crud_get_notice(notice_no)
         old_path = old["NOTICE_FILE"] if isinstance(old, dict) else getattr(old, "notice_file", None)
 
-        if new_path:  # 교체
-            crud_update_notice_set_file(notice_no, new_path)
-            if old_path:
-                delete_notice_image(old_path)
+        # if new_path:  # 교체
+        #     crud_update_notice_set_file(notice_no, new_path)
+        #     if old_path:
+        #         delete_notice_image(old_path)
 
-        elif remove_file:  # 삭제
-            crud_update_notice_clear_file(notice_no)
-            if old_path:
-                delete_notice_image(old_path)
+        # elif remove_file:  # 삭제
+        #     crud_update_notice_clear_file(notice_no)
+        #     if old_path:
+        #         delete_notice_image(old_path)
 
     except Exception as e:
         raise

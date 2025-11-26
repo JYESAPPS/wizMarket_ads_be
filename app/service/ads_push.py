@@ -78,12 +78,20 @@ CONCURRENCY   = int(os.getenv("PUSH_CONCURRENCY", "30"))  # 동시 요청 개수
 
 def select_notice_target(
     notice_id: int,
+    notice_type: str,
     notice_title: str,
     notice_content: str,
     notice_file: str | None = None,
+    notice_images: list[str] | None = None,
 ):
     try:
         targets: List[str] = crud_select_notice_target()
+
+        # 타입에 따라 타이틀에 태그를 붙여줌 (예: 이벤트 공지)
+        # if notice_type == "이벤트":
+        #     base_title = f"[이벤트] {notice_title}"
+        # else:
+        #     base_title = notice_title
 
         # (선택) 너무 긴 본문은 잘라서 전송
         safe_title = _truncate_for_fcm(notice_title, 128)

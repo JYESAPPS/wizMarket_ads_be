@@ -5,6 +5,7 @@ from datetime import datetime
 class AdsNotice(BaseModel):
     notice_no: int
     notice_post: str = "Y"
+    notice_type: str = "일반"
     notice_title: str
     notice_content: str
     notice_file: Optional[str] = None
@@ -18,12 +19,14 @@ class AdsNotice(BaseModel):
 
 class AdsNoticeCreateRequest(BaseModel):
     notice_post: str = "Y"
+    notice_type: str = "일반"
     notice_title: str
     notice_content: str
 
 class AdsNoticeUpdateRequest(BaseModel):
     notice_no: int
     notice_post: str = "Y"
+    notice_type: str = "일반"
     notice_title: str
     notice_content: str
     notice_file: Optional[str] = None

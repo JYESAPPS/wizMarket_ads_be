@@ -2,6 +2,7 @@ from fastapi import (
     APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, status, Query, Request, Response
 )
 import logging
+from typing import List
 
 from app.service.ads_notice import (
     save_notice_image as service_save_notice_image,
@@ -54,14 +55,29 @@ def get_notice_by_id(notice_no: int):
 async def create_notice(
     background_tasks: BackgroundTasks,
     notice_post: str = Form("Y"),
+    notice_type: str = Form("일반"),
     notice_title: str = Form(...),
     notice_content: str = Form(...),
     notice_file: UploadFile | None = File(None),
+    # notice_images: List[UploadFile] = File([])
 ):
     notice_id = None
     try:
-        path = await service_save_notice_image(notice_file)
-        notice_id = service_create_notice(notice_post, notice_title, notice_content, path)
+        # path = await service_save_notice_image(notice_file)
+        # 1) 대표 이미지 저장 (옵션)
+        notice_file_path: str | None = None
+        if notice_file is not None:
+            notice_file_path = await service_save_notice_image(notice_file)
+
+        # 2) 첨부 이미지들 저장 (최대 3개 정도로 제한)
+        # image_paths: list[str] = []
+        # for img in notice_images[:3]:
+        #     if not img:
+        #         continue
+        #     img_path = await service_save_notice_image(img)
+        #     image_paths.append(img_path)
+        
+        notice_id = service_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file=notice_file_path)
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"success": False, "message": "서버 오류가 발생했습니다."}
@@ -72,6 +88,7 @@ async def create_notice(
         background_tasks.add_task(
             service_select_notice_target,
             notice_id,
+            notice_type,
             notice_title,
             notice_content,
             notice_file=None,
