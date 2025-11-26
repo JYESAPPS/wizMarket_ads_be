@@ -35,6 +35,7 @@ from app.crud.concierge import (
     insert_concierge_image as crud_insert_concierge_image,
     get_user_id_list as crud_get_user_id_list,
     select_concierge_users_by_ids as select_concierge_users_by_ids,
+    select_history_list as crud_select_history_list
 )
 from app.service.regist_new_store import (
     get_city_id as service_get_city_id,
@@ -662,5 +663,22 @@ def get_concierge_user_info_map(user_id_list):
         }
     return info_map
 
+
+
+# 히스토리 조회
+def select_history_list(
+    keyword: Optional[str],
+    search_field: Optional[str],
+    status: Optional[str],
+    apply_start: Optional[str],
+    apply_end: Optional[str],
+):
+    return crud_select_history_list(
+        keyword=keyword,
+        search_field=search_field,
+        status=status,
+        apply_start=apply_start,
+        apply_end=apply_end,
+    )
 
 

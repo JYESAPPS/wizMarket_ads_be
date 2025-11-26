@@ -22,8 +22,7 @@ from app.service.concierge import (
     delete_concierge_user as service_delete_concierge_user,
     reserve_schedule as service_reserve_schedule,
     update_concierge as service_update_concierge,
-    get_user_id_list as service_get_user_id_list,
-    get_concierge_user_info_map as service_get_concierge_user_info_map,
+    select_history_list as service_select_history_list,
 )
 from app.service.ads_generate import (
     generate_content as service_generate_content,
@@ -304,5 +303,25 @@ async def update_concierge_status(
     )
 
     return result
+
+
+
+# 히스토리 조회
+@router.get("/select/concierge/history/list")
+def select_history_list(
+    keyword: str | None = Query(None),
+    search_field: str | None = Query(None),
+    status: str | None = Query(None),
+    apply_start: str | None = Query(None),
+    apply_end: str | None = Query(None),
+):
+    rows = service_select_history_list(
+        keyword=keyword,
+        search_field=search_field,
+        status=status,
+        apply_start=apply_start,
+        apply_end=apply_end,
+    )
+    return {"items": rows}
 
 

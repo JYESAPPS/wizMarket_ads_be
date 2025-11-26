@@ -447,7 +447,7 @@ async def concierge_upload_instagram(req: ConciergeInstaUploadRequest):
         channel=req.channel,
         register_tag=req.register_tag,
     )
-    print(result)
+    # print(result)
 
     if not result.get("success"):
         # 클라이언트에서 실패 알 수 있게 에러 코드 반환

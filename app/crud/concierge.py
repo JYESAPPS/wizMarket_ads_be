@@ -260,7 +260,7 @@ def submit_concierge_image(cursor, user_id: int, image_paths: Dict[str, str]) ->
 # 리스트 + 검색 조회
 def select_concierge_list(
     keyword: Optional[str] = None,
-    search_field: Optional[str] = None,      # "name" | "store_name" | None
+    search_field: Optional[str] = None,      # "all" | "name" | "store_name" | None
     status: Optional[str] = None,            # "PENDING" | "APPROVED" | "REJECTED" | None
     apply_start: Optional[str] = None,       # ISO datetime string
     apply_end: Optional[str] = None,         # ISO datetime string
@@ -268,7 +268,7 @@ def select_concierge_list(
     """
     컨시어지 신청 리스트 조회용 CRUD.
     - CONCIERGE_USER + CONCIERGE_STORE + concierge_user_file 조인
-    - keyword: 이름/매장명/도로명 LIKE 검색 (search_field에 따라 대상 변경)
+    - keyword: search_field에 따라 이름/매장명 LIKE 검색
     - status: 신청 상태 필터 (예: PENDING/APPROVED/REJECTED)
     - apply_start/apply_end: 신청일(생성일) 범위 필터
     """
@@ -289,7 +289,7 @@ def select_concierge_list(
                 cs.menu_2           AS menu_2,
                 cs.menu_3           AS menu_3,
                 COUNT(cf.file_id)   AS image_count,
-                cu.status           AS status,      -- 🔹 상태 컬럼 (실제 컬럼명에 맞게 조정)
+                cu.status           AS status,
                 cs.created_at       AS created_at
             FROM CONCIERGE_USER cu
             JOIN CONCIERGE_STORE cs
@@ -304,28 +304,31 @@ def select_concierge_list(
         # 🔹 keyword 조건
         if keyword:
             kw = f"%{keyword.strip()}%"
+            field = (search_field or "all").lower()  # 기본값: all
 
-            # search_field 에 따라 대상 컬럼 변경
-            if search_field == "name":
+            if field == "name":
+                # 이름만
                 where_clauses.append("cu.user_name LIKE %s")
                 params.append(kw)
-            elif search_field == "store_name":
+
+            elif field == "store_name":
+                # 매장명만
                 where_clauses.append("cs.store_name LIKE %s")
                 params.append(kw)
-            else:
-                # 기본: 이름 / 매장명 / 도로명 전체 검색
-                where_clauses.append(
-                    "(cu.user_name LIKE %s OR cs.store_name LIKE %s OR cs.road_name LIKE %s)"
-                )
-                params.extend([kw, kw, kw])
 
-        # 🔹 상태 조건 (PENDING / APPROVED / REJECTED 등)
+            else:
+                # ✅ 전체: 이름 OR 매장명
+                where_clauses.append(
+                    "(cu.user_name LIKE %s OR cs.store_name LIKE %s)"
+                )
+                params.extend([kw, kw])
+
+        # 🔹 상태 조건
         if status:
-            where_clauses.append("cu.status = %s")  # 상태 컬럼명은 스키마에 맞게 사용
+            where_clauses.append("cu.status = %s")
             params.append(status)
 
         # 🔹 신청일(생성일) 범위
-        # apply_start/apply_end 는 프론트에서 KST ISO 로 넘겨주는 걸 그대로 사용
         if apply_start and apply_end:
             where_clauses.append("cs.created_at BETWEEN %s AND %s")
             params.extend([apply_start, apply_end])
@@ -365,7 +368,6 @@ def select_concierge_list(
     finally:
         close_cursor(cursor)
         close_connection(connection)
-
 
 
 # 시스템용 리스트 조회
@@ -776,7 +778,7 @@ def get_user_id_list(same_day: bool, today_code: str, next_day_code: str, start_
     connection = get_re_db_connection()
     cursor = None
 
-    print(same_day, today_code, next_day_code, start_time_str, end_time_str)
+    # print(same_day, today_code, next_day_code, start_time_str, end_time_str)
 
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
@@ -858,5 +860,139 @@ def select_concierge_users_by_ids(user_id_list):
         close_cursor(cursor)
         close_connection(connection)
 
+
+# 히스토리 리스트 조회
+def select_history_list(
+    keyword: Optional[str] = None,
+    search_field: Optional[str] = None,      # "all" | "name" | "store_name" | None
+    status: Optional[str] = None,            # "PENDING" | "APPROVED" | "REJECTED" | None
+    apply_start: Optional[str] = None,       # ISO datetime string (KST)
+    apply_end: Optional[str] = None,         # ISO datetime string (KST)
+) -> List[dict]:
+    """
+    컨시어지 인스타 업로드 히스토리 리스트 조회용 CRUD.
+
+    - 한 매장(user_id)당 1행만 노출
+      → concierge_user_history 에서 insta_status='SUCCESS' 인 것 중
+        가장 최근(created_at MAX) 1건만 사용
+    - keyword: search_field 에 따라 이름/매장명 LIKE 검색
+    - status: 신청 상태 필터 (PENDING/APPROVED/REJECTED 등, cu.status 기준)
+    - apply_start/apply_end: 히스토리 생성일(ch.created_at) 범위 필터
+    """
+    connection = get_re_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        # 👇 핵심: user_id 별로 가장 최근 SUCCESS 히스토리 1건만 뽑는 서브쿼리
+        sql = """
+            SELECT
+                cu.user_id          AS id,
+                cu.user_name        AS user_name,
+                cu.phone            AS phone,
+                cs.store_name       AS store_name,
+                cs.road_name        AS road_name,
+                cs.menu_1           AS menu_1,
+                cs.menu_2           AS menu_2,
+                cs.menu_3           AS menu_3,
+                COUNT(cf.file_id)   AS image_count,
+                cu.status           AS status,
+                ch.created_at       AS created_at,
+                ch.image_path       AS image_path,
+                ch.register_tag     AS register_tag
+            FROM CONCIERGE_USER cu
+            JOIN CONCIERGE_STORE cs
+                ON cs.user_id = cu.user_id
+            -- 🔥 user_id별 최신 SUCCESS 히스토리 1건만 추출
+            JOIN (
+                SELECT h.user_id,
+                       h.created_at,
+                       h.image_path,
+                       h.register_tag
+                FROM concierge_user_history h
+                JOIN (
+                    SELECT user_id, MAX(created_at) AS latest_created_at
+                    FROM concierge_user_history
+                    WHERE insta_status = 'SUCCESS'
+                    GROUP BY user_id
+                ) latest
+                  ON latest.user_id = h.user_id
+                 AND latest.latest_created_at = h.created_at
+                WHERE h.insta_status = 'SUCCESS'
+            ) ch
+                ON ch.user_id = cu.user_id
+            LEFT JOIN concierge_user_file cf
+                ON cf.user_id = cu.user_id
+        """
+
+        where_clauses = []
+        params: list = []
+
+        # 🔹 keyword 조건
+        if keyword:
+            kw = f"%{keyword.strip()}%"
+            field = (search_field or "all").lower()  # 기본값: all
+
+            if field == "name":
+                where_clauses.append("cu.user_name LIKE %s")
+                params.append(kw)
+            elif field == "store_name":
+                where_clauses.append("cs.store_name LIKE %s")
+                params.append(kw)
+            else:
+                # ✅ 전체: 이름 OR 매장명
+                where_clauses.append(
+                    "(cu.user_name LIKE %s OR cs.store_name LIKE %s)"
+                )
+                params.extend([kw, kw])
+
+        # 🔹 상태 조건 (컨시어지 신청 상태)
+        if status:
+            where_clauses.append("cu.status = %s")
+            params.append(status)
+
+        # 🔹 히스토리 생성일 범위 (ch.created_at 기준)
+        if apply_start and apply_end:
+            where_clauses.append("ch.created_at BETWEEN %s AND %s")
+            params.extend([apply_start, apply_end])
+        elif apply_start:
+            where_clauses.append("ch.created_at >= %s")
+            params.append(apply_start)
+        elif apply_end:
+            where_clauses.append("ch.created_at <= %s")
+            params.append(apply_end)
+
+        if where_clauses:
+            sql += "\nWHERE " + " AND ".join(where_clauses)
+
+        sql += """
+            GROUP BY
+                cu.user_id,
+                cu.user_name,
+                cu.phone,
+                cs.store_name,
+                cs.road_name,
+                cs.menu_1,
+                cs.menu_2,
+                cs.menu_3,
+                cu.status,
+                ch.created_at,
+                ch.image_path,
+                ch.register_tag
+            ORDER BY ch.created_at DESC
+        """
+
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        return rows
+
+    except pymysql.MySQLError as e:
+        print(f"[crud_select_history_list] DB error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
 
 
