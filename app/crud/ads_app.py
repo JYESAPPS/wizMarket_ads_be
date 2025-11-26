@@ -4,7 +4,7 @@ from app.db.connect import (
 import random
 import logging
 import pymysql
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Tuple
 from fastapi import HTTPException
 
@@ -150,11 +150,16 @@ def get_user_record(user_id):
     try:
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  # ✅ DictCursor 사용 # and upload_check = 1 
-            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path, prompt, insta_copyright, copyright FROM user_record WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT start_date, end_date, age, style, title, channel, upload_type, image_path, created_at, prompt, insta_copyright, copyright FROM user_record WHERE user_id = %s", (user_id,))
             rows = cursor.fetchall()
 
         if not rows:
             return None
+        
+        for r in rows:
+            ca = r.get("created_at")
+            if isinstance(ca, (datetime, date)):
+                r["created_at"] = ca.strftime("%Y-%m-%d %H:%M:%S")
 
         return rows  # ✅ 딕셔너리 접근
 
@@ -290,7 +295,7 @@ def get_user_recent_reco(request):
         connection = get_re_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("""
-                SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, prompt, repeat_time, upload_time, alert_check, insta_copyright, copyright
+                SELECT user_record_id, start_date, end_date, age, style, title, channel, image_path, prompt, repeat_time, upload_time, alert_check, insta_copyright, copyright, created_at
                 FROM user_record
                 WHERE user_id = %s 
                     AND upload_type = %s
