@@ -512,6 +512,24 @@ def insert_token_deduction_history(user_id: int, token_grant: int, token_subscri
     finally:
         connection.close()
 
+def upsert_token_usage(user_id: int, grant_date, token_grant: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+            INSERT INTO TOKEN_USAGE (user_id, usage_date, used_tokens)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                used_tokens = used_tokens + VALUES(used_tokens),
+                updated_at = CURRENT_TIMESTAMP
+            """, (user_id, grant_date, token_grant))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"토큰 사용 기록 실패: {e}")
+    finally:
+        connection.close()
+
 # 토큰 차감 기록 가져오기
 def get_token_deduction_history(user_id: int):
     connection = get_re_db_connection()

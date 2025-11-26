@@ -17,6 +17,7 @@ from app.crud.ads_ticket import (
     get_subscription_info as crud_get_subscription_info,
     update_subscription_info as crud_update_subscription_info,
     get_token_onetime as crud_get_token_onetime,
+    upsert_token_usage as crud_upsert_token_usage,
 )
 
 from datetime import datetime
@@ -171,7 +172,7 @@ def deduct_token(user_id):
         token_onetime -= 1
         used_type = "onetime"
 
-    # 차감 기록 DB 저장
+    # 차감 기록 DB 저장 (ticket_token)
     crud_insert_token_deduction_history(
         user_id=user_id,
         token_grant=1,
@@ -179,6 +180,13 @@ def deduct_token(user_id):
         token_onetime=token_onetime,
         valid_until=valid_until,
         grant_date=datetime.now()
+    )
+
+    # 사용 기록 DB 저장 (token_usage)
+    crud_upsert_token_usage(
+        user_id,
+        grant_date=datetime.now(),
+        token_grant=1
     )
 
     return {
