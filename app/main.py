@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import (
-    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, ads_ticket, ads_push, ads_reserve, ads_faq, cms, help, admin,
+    ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, 
+    ads_ticket, ads_token_purchase, ads_push, ads_reserve, ads_faq, cms, help, admin,
     auth_name, play_store_test, concierge, concierge_auto_upload
 )
 from app.api.endpoints import webhook
@@ -103,6 +104,7 @@ app.include_router(ads_user.router, prefix="/back/ads")
 app.include_router(ads_app.router, prefix="/back/ads")
 app.include_router(ads_plan.router, prefix="/back/plan")
 app.include_router(ads_ticket.router, prefix="/back/ticket")
+app.include_router(ads_token_purchase.router, prefix="./back/token")
 app.include_router(ads_push.router, prefix="/back/push")
 app.include_router(ads_reserve.router, prefix="/back/reserve")
 app.include_router(ads_faq.router, prefix="/back/faq")
