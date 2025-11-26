@@ -55,30 +55,53 @@ def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_
     return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file)
 
 
-SERVICE_DIR = Path(__file__).resolve().parent
-NOTICE_DIR  = (SERVICE_DIR.parent / "static/images/notice").resolve()
-PUBLIC_PREFIX = "/static/images/notice"
+UPLOAD_ROOT = "/app/uploads"  # 이미 쓰고 있는 값
+
+NOTICE_SUBDIR = "notice"
+NOTICE_DIR = Path(UPLOAD_ROOT) / NOTICE_SUBDIR
 NOTICE_DIR.mkdir(parents=True, exist_ok=True)
+
 MAX_BYTES = 10 * 1024 * 1024  # 10MB
 
 async def save_notice_image(file: UploadFile | None) -> str | None:
+    """
+    공지 이미지 1장을 저장하고,
+    DB에 넣을 상대 경로(예: 'notice/abcd1234.png')를 반환.
+    실제 파일은 UPLOAD_ROOT/notice/... 에 저장됨.
+    """
     if not file or not file.filename:
         return None
+
+    # 1) mime 체크
     if not (file.content_type or "").startswith("image/"):
-        raise HTTPException(400, "이미지 파일만 업로드할 수 있습니다.")
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+
     data = await file.read()
     if len(data) > MAX_BYTES:
-        raise HTTPException(400, "최대 10MB까지 업로드 가능합니다.")
+        raise HTTPException(status_code=400, detail="최대 10MB까지 업로드 가능합니다.")
 
-    # 확장자 보정
+    # 2) 확장자 보정
     ext = Path(file.filename).suffix.lower()
     if not ext:
         kind = imghdr.what(None, h=data)  # 'jpeg','png' 등
-        ext = f".{('jpg' if kind == 'jpeg' else kind or 'jpg')}"
+        if kind == "jpeg":
+            ext = ".jpg"
+        elif kind:
+            ext = f".{kind}"
+        else:
+            ext = ".jpg"
 
+    # 3) 파일명 생성 (notice_id 필요 X)
     name = f"{uuid4().hex}{ext}"
-    (NOTICE_DIR / name).write_bytes(data)
-    return f"{PUBLIC_PREFIX}/{name}"
+
+    # 4) 실제 저장 경로
+    save_path = NOTICE_DIR / name
+    save_path.write_bytes(data)
+
+    # 5) DB에 저장할 논리 경로 (concierge와 동일 패턴)
+    storage_path = f"{NOTICE_SUBDIR}/{name}"  # 'notice/abcd1234.png'
+
+    return storage_path
 
 def delete_notice_image(public_path: str | None) -> None:
     if not public_path:
