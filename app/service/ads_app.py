@@ -317,7 +317,14 @@ async def insert_upload_record(request, file: UploadFile | None):
     if file is not None:
         image_path = save_blob_image(file, user_id, channel)
     else:
-        image_path = save_base64_image(request.image, user_id, channel)
+        # JSON으로 들어온 경우: base64 또는 URL
+        img = request.image
+        if not img:
+            raise HTTPException(status_code=400, detail="이미지 데이터가 없습니다.")
+        if img.startswith("data:image/"):
+            image_path = save_base64_image(request.image, user_id, channel) # dataURL(base64)
+        else:
+            image_path = img  # 퍼블릭 URL이 들어온 경우 (예: http://wizmarket.ai:8000/uploads/image/user/...)
 
     # 이후 로직은 그대로
     success = crud_insert_upload_record(
