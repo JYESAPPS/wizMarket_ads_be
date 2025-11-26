@@ -106,6 +106,7 @@ def get_history(user_id: int):
 def get_token(user_id: int):
     try:
         token = service_get_token(user_id)
+        # print(token)
         return token
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
@@ -129,15 +130,19 @@ def deduct_token_endpoint(request: InsertTokenRequest):
 
         return {
             "used_type": data["used_type"],
-            "remaining_tokens": data["token_onetime"] + data["token_subscription"],
-            "total_tokens": data["total_tokens"]
+            # 새 서비스에서 총 잔여 토큰은 remaining_tokens_total 로 리턴
+            "remaining_tokens": data["remaining_tokens_total"],
+            # total_tokens 를 "차감 이후 총 토큰"으로 계속 쓰고 싶으면 이렇게 맞추기
+            "total_tokens": data["remaining_tokens_total"],
         }
+
     except ValueError as ve:
         logger.error(f"[400 Error] {str(ve)}")
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        logger.error(f"[500 Error] {str(e)}")  # ✅ 에러 로그 출력
+        logger.error(f"[500 Error] {str(e)}")
         raise HTTPException(status_code=500, detail=f"토큰 차감 중 오류 발생: {str(e)}")
+
     
 @router.get("/token/history")
 def get_token_history(user_id: int):

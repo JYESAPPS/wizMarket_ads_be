@@ -12,7 +12,7 @@ def crud_get_latest_subscription_purchase(
     today: date,
 ) -> Optional[dict]:
     """
-    tansaction_type != '단건' 이면서,
+    transaction_type != '단건' 이면서,
     - remaining_tokens > 0
     - (start_date, end_date 기준으로 오늘 사용 가능)
     인 것 중에서 '가장 최근' 한 건 조회
@@ -22,7 +22,7 @@ def crud_get_latest_subscription_purchase(
             purchase_id,
             user_id,
             ticket_id,
-            tansaction_type,
+            transaction_type,
             purchased_tokens,
             remaining_tokens,
             start_date,
@@ -31,7 +31,7 @@ def crud_get_latest_subscription_purchase(
             updated_at
         FROM TOKEN_PURCHASE
         WHERE user_id = %s
-          AND tansaction_type <> '단건'
+          AND transaction_type IN ('subscription', 'unsubscribe', 'change')
           AND remaining_tokens > 0
           AND (start_date IS NULL OR start_date <= %s)
           AND (end_date   IS NULL OR end_date   >= %s)
@@ -52,7 +52,7 @@ def crud_get_latest_onetime_purchase(
     user_id: int,
 ) -> Optional[dict]:
     """
-    tansaction_type = '단건'
+    transaction_type = '단건'
     - remaining_tokens > 0
     인 것 중에서 '가장 최근' 한 건 조회
     """
@@ -61,7 +61,7 @@ def crud_get_latest_onetime_purchase(
             purchase_id,
             user_id,
             ticket_id,
-            tansaction_type,
+            transaction_type,
             purchased_tokens,
             remaining_tokens,
             start_date,
@@ -70,7 +70,7 @@ def crud_get_latest_onetime_purchase(
             updated_at
         FROM TOKEN_PURCHASE
         WHERE user_id = %s
-          AND tansaction_type = '단건'
+          AND transaction_type = 'one_time'
           AND remaining_tokens > 0
         ORDER BY
             created_at DESC,
@@ -130,12 +130,17 @@ def crud_get_user_total_remaining_tokens(
     user_id: int,
 ) -> int:
     """
-    해당 유저의 TOKEN_PURCHASE 남은 토큰 전체 합계 조회.
+    현재 시점에 '사용 가능한' 토큰 합계.
+    - subscription / unsubscribe / change / one_time 포함
+    - expired 는 제외
     """
     sql = """
         SELECT COALESCE(SUM(remaining_tokens), 0) AS total_remaining
         FROM TOKEN_PURCHASE
         WHERE user_id = %s
+          AND transaction_type IN ('subscription', 'unsubscribe', 'change', 'one_time')
+          AND (start_date IS NULL OR start_date <= CURDATE())
+          AND (end_date   IS NULL OR end_date   >= CURDATE())
     """
     cursor.execute(sql, (user_id,))
     row = cursor.fetchone()
@@ -143,9 +148,7 @@ def crud_get_user_total_remaining_tokens(
     if not row:
         return 0
 
-    # DictCursor 기준
     if isinstance(row, dict):
         return int(row.get("total_remaining") or 0)
-
-    # tuple 등 다른 커서일 경우 대비
     return int(row[0] or 0)
+

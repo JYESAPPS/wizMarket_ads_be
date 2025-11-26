@@ -6,6 +6,9 @@ from fastapi import HTTPException
 import pymysql
 import logging
 from datetime import datetime
+from typing import Optional
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -365,65 +368,6 @@ def get_valid_history(user_id):
     finally:
         connection.close()
 
-def get_valid_ticket(user_id):
-    try:
-        connection = get_re_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT t.TICKET_NAME, t.BILLING_CYCLE, p.EXPIRE_DATE
-                FROM ticket_payment p
-                JOIN ticket t
-                ON t.TICKET_ID = p.TICKET_ID           
-                WHERE p.USER_ID = %s
-                AND p.EXPIRE_DATE IS NOT NULL
-                AND p.EXPIRE_DATE >= CURDATE()
-                ORDER BY p.EXPIRE_DATE DESC
-                LIMIT 1
-            """, (user_id))
-            result = cursor.fetchone()
-
-        if result is None:
-            return None
-        return {
-            "ticket_name": result[0],
-            "billing_cycle": result[1],
-            "expire": result[2]
-        }
-            
-    except Exception as e:
-        logger.error(f"get_history error: {e}")
-        return []
-    finally:
-        connection.close()     
-
-def get_token_onetime(user_id):
-    try:
-        connection = get_re_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT t.TICKET_NAME, t.BILLING_CYCLE
-                FROM ticket_payment p
-                JOIN ticket t
-                ON t.TICKET_ID = p.TICKET_ID           
-                WHERE p.USER_ID = %s
-                AND p.TICKET_ID = %s
-                ORDER BY p.PAYMENT_ID DESC
-                LIMIT 1
-            """, (user_id, 1))
-            result = cursor.fetchone()
-
-        if result is None:
-            return None
-        return {
-            "ticket_name": result[0],
-            "billing_cycle": result[1],
-        }
-            
-    except Exception as e:
-        logger.error(f"get_history error: {e}")
-        return 0
-    finally:
-        connection.close()
 
 # 구독 토큰 차감
 def update_subscription_token(user_id: int):
@@ -487,30 +431,6 @@ def insert_payment_history(user_id: int, ticket_id: int = 0, payment_method: str
     finally:
         connection.close()
 
-# 토큰 차감 시 ticket_token에 기록
-def insert_token_deduction_history(user_id: int, token_grant: int, token_subscription: int, token_onetime: int, valid_until, grant_date):
-    connection = get_re_db_connection()
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO ticket_token (
-                    GRANT_TYPE, USER_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, VALID_UNTIL, GRANT_DATE
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                0,  # GRANT_TYPE = 0 for deduction
-                user_id,
-                token_grant,
-                token_subscription,
-                token_onetime,
-                valid_until,
-                grant_date
-            ))
-        connection.commit()
-    except Exception as e:
-        connection.rollback()
-        raise RuntimeError(f"차감 기록 실패: {e}")
-    finally:
-        connection.close()
 
 def upsert_token_usage(user_id: int, grant_date, token_grant: int):
     connection = get_re_db_connection()
@@ -554,3 +474,86 @@ def get_token_deduction_history(user_id: int):
             return cursor.fetchall()
     finally:
         connection.close()
+
+
+# app/crud/token.py 안에 추가
+
+def get_valid_ticket(
+    cursor: pymysql.cursors.Cursor,
+    user_id: int,
+) -> Optional[dict]:
+    """
+    구독 계열 티켓 정보 (subscription / unsubscribe / change)
+    오늘 기준 유효한 것 중 가장 최근 1건
+    """
+    sql = """
+        SELECT
+            tp.purchase_id,
+            tp.user_id,
+            tp.ticket_id,
+            tp.transaction_type,
+            tp.purchased_tokens,
+            tp.remaining_tokens,
+            tp.start_date,
+            tp.end_date,
+            tp.created_at,
+            tp.updated_at,
+            t.TICKET_NAME   AS ticket_name,
+            t.BILLING_CYCLE AS billing_cycle,
+            t.TICKET_TYPE   AS ticket_type,
+            t.TOKEN_AMOUNT  AS ticket_token_amount
+        FROM TOKEN_PURCHASE tp
+        JOIN TICKET t
+          ON t.TICKET_ID = tp.ticket_id
+        WHERE tp.user_id = %s
+          AND tp.transaction_type IN ('subscription', 'unsubscribe', 'change')
+          AND (tp.start_date IS NULL OR tp.start_date <= CURDATE())
+          AND (tp.end_date   IS NULL OR tp.end_date   >= CURDATE())
+        ORDER BY
+            tp.end_date DESC,
+            tp.created_at DESC,
+            tp.purchase_id DESC
+        LIMIT 1
+    """
+    cursor.execute(sql, (user_id,))
+    return cursor.fetchone()
+
+
+def get_token_onetime(
+    cursor: pymysql.cursors.Cursor,
+    user_id: int,
+) -> Optional[dict]:
+    """
+    단건(one_time)으로 구매한 티켓 중 가장 최근 1건.
+    (remaining_tokens 조건은 걸지 않음 - 최근에 어떤 단건 상품을 샀는지 보여주기용)
+    """
+    sql = """
+        SELECT
+            tp.purchase_id,
+            tp.user_id,
+            tp.ticket_id,
+            tp.transaction_type,
+            tp.purchased_tokens,
+            tp.remaining_tokens,
+            tp.start_date,
+            tp.end_date,
+            tp.created_at,
+            tp.updated_at,
+            t.TICKET_NAME   AS ticket_name,
+            t.BILLING_CYCLE AS billing_cycle,
+            t.TICKET_TYPE   AS ticket_type,
+            t.TOKEN_AMOUNT  AS ticket_token_amount
+        FROM TOKEN_PURCHASE tp
+        JOIN TICKET t
+          ON t.TICKET_ID = tp.ticket_id
+        WHERE tp.user_id = %s
+          AND tp.transaction_type = 'one_time'
+        ORDER BY
+            tp.created_at DESC,
+            tp.purchase_id DESC
+        LIMIT 1
+    """
+    cursor.execute(sql, (user_id,))
+    return cursor.fetchone()
+
+
