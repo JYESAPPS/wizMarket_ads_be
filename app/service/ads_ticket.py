@@ -19,11 +19,23 @@ from app.crud.ads_ticket import (
     get_token_onetime as crud_get_token_onetime,
     upsert_token_usage as crud_upsert_token_usage,
 )
+from app.crud.ads_token_deduct import (
+    crud_get_latest_subscription_purchase,
+    crud_get_latest_onetime_purchase,
+    crud_decrement_purchase_token,
+    crud_upsert_token_usage,
+    crud_get_user_total_remaining_tokens,
+)
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from datetime import date
 from fastapi import HTTPException
+from app.db.connect import (
+    commit, close_connection, rollback, close_cursor, get_re_db_connection
+)
+import pymysql
+from typing import Optional
 
 
 # ticket_payment에 추가
@@ -141,62 +153,189 @@ def get_valid_ticket(user_id):
     }
 
 # 차감 함수
-def deduct_token(user_id):
-    sub_data  = crud_get_latest_token_subscription(user_id) # 정기 토큰 + 만료일
-    token_onetime = crud_get_latest_token_onetime(user_id) # 단건 토큰
+# def deduct_token(user_id):
+#     # 구독에서 차감 대상 찾기
 
-    token_subscription = sub_data["sub"]
-    valid_until = sub_data["valid"]
 
-    # None 대응
-    if sub_data is None:
-        token_subscription = 0
-        valid_until = None
-    else:
-        token_subscription = sub_data.get("sub") or 0
-        valid_until = sub_data.get("valid")
+#     # 단건에서 차감 대상 찾기
 
-    if token_onetime is None:
-        token_onetime = 0
+#     # 해당 purcahse_id의 남은 토큰 1개 차감
 
-    total = token_subscription + token_onetime
-    if total < 1:
-        raise ValueError("사용 가능한 토큰이 없습니다.")
+#     # 사용량 upsert
+
+#     # 남은 토큰 수량 반환
+
+
+
+
+#     sub_data  = crud_get_latest_token_subscription(user_id) # 정기 토큰 + 만료일
+#     token_onetime = crud_get_latest_token_onetime(user_id) # 단건 토큰
+
+#     token_subscription = sub_data["sub"]
+#     valid_until = sub_data["valid"]
+
+#     # None 대응
+#     if sub_data is None:
+#         token_subscription = 0
+#         valid_until = None
+#     else:
+#         token_subscription = sub_data.get("sub") or 0
+#         valid_until = sub_data.get("valid")
+
+#     if token_onetime is None:
+#         token_onetime = 0
+
+#     total = token_subscription + token_onetime
+#     if total < 1:
+#         raise ValueError("사용 가능한 토큰이 없습니다.")
     
-    # 차감
-    used_type = None
-    if token_subscription > 0:
-        token_subscription -= 1
-        used_type = "subscription"
-    elif token_onetime > 0:
-        token_onetime -= 1
-        used_type = "onetime"
+#     # 차감
+#     used_type = None
+#     if token_subscription > 0:
+#         token_subscription -= 1
+#         used_type = "subscription"
+#     elif token_onetime > 0:
+#         token_onetime -= 1
+#         used_type = "onetime"
 
-    # 차감 기록 DB 저장 (ticket_token)
-    crud_insert_token_deduction_history(
-        user_id=user_id,
-        token_grant=1,
-        token_subscription=token_subscription,
-        token_onetime=token_onetime,
-        valid_until=valid_until,
-        grant_date=datetime.now()
-    )
+#     # 차감 기록 DB 저장 (ticket_token)
+#     crud_insert_token_deduction_history(
+#         user_id=user_id,
+#         token_grant=1,
+#         token_subscription=token_subscription,
+#         token_onetime=token_onetime,
+#         valid_until=valid_until,
+#         grant_date=datetime.now()
+#     )
 
-    # 사용 기록 DB 저장 (token_usage)
-    crud_upsert_token_usage(
-        user_id,
-        grant_date=datetime.now(),
-        token_grant=1
-    )
+#     # 사용 기록 DB 저장 (token_usage)
+#     crud_upsert_token_usage(
+#         user_id,
+#         grant_date=datetime.now(),
+#         token_grant=1
+#     )
 
-    return {
-        'user_id': user_id,
-        'used_type': used_type,
-        'token_subscription': token_subscription,
-        'token_onetime': token_onetime,
-        "remaining_tokens": token_subscription + token_onetime,
-        "total_tokens": total
-    }
+#     return {
+#         'user_id': user_id,
+#         'used_type': used_type,
+#         'token_subscription': token_subscription,
+#         'token_onetime': token_onetime,
+#         "remaining_tokens": token_subscription + token_onetime,
+#         "total_tokens": total
+#     }
+
+class NoTokenError(Exception):
+    """사용 가능한 토큰이 없을 때 사용하는 도메인 예외"""
+    pass
+
+
+def deduct_token(user_id: int, usage_date: Optional[date] = None) -> dict:
+    """
+    TOKEN_PURCHASE / TOKEN_USAGE 기반 토큰 차감 서비스.
+
+    로직:
+      1) tansaction_type != '단건' 인 구매(구독/정기)에서 남은 토큰 차감 시도
+      2) 실패 시, tansaction_type = '단건' 인 구매에서 차감 시도
+      3) 둘 다 실패하면 NoTokenError 발생
+      4) 성공 시 TOKEN_USAGE(usage_date 기준)에 used_tokens += 1 (upsert)
+
+    모든 작업은 하나의 커넥션 + 하나의 트랜잭션 안에서 처리.
+    """
+    if usage_date is None:
+        usage_date = date.today()
+
+    conn = get_re_db_connection()
+    cursor = None
+
+    try:
+        # 필요하면 autocommit 꺼주기 (환경에 따라 생략 가능)
+        try:
+            conn.autocommit(False)
+        except AttributeError:
+            # 어떤 커넥터는 autocommit 속성이 없을 수 있으니 안전하게 무시
+            pass
+
+        # Dict 형태로 결과를 받고 싶다면 DictCursor 사용
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        today = usage_date
+
+        # 1) 구독/정기(비단건) 쪽에서 차감 가능한 가장 최근 purchase 찾기
+        subscription_purchase = crud_get_latest_subscription_purchase(
+            cursor=cursor,
+            user_id=user_id,
+            today=today,
+        )
+
+        # 2) 단건 쪽에서 차감 가능한 가장 최근 purchase 찾기
+        onetime_purchase = crud_get_latest_onetime_purchase(
+            cursor=cursor,
+            user_id=user_id,
+        )
+
+        used_type: Optional[str] = None
+        used_purchase: Optional[dict] = None
+
+        # 3-A) 구독/정기에서 먼저 차감 시도
+        if subscription_purchase is not None:
+            ok = crud_decrement_purchase_token(
+                cursor=cursor,
+                purchase_id=subscription_purchase["purchase_id"],
+            )
+            if ok:
+                used_type = "subscription"
+                used_purchase = subscription_purchase
+
+        # 3-B) 구독에서 못 뺐으면(행이 없거나 UPDATE 실패) 단건에서 재시도
+        if used_purchase is None and onetime_purchase is not None:
+            ok = crud_decrement_purchase_token(
+                cursor=cursor,
+                purchase_id=onetime_purchase["purchase_id"],
+            )
+            if ok:
+                used_type = "onetime"
+                used_purchase = onetime_purchase
+
+        # 3-C) 둘 다 실패 → 사용 가능한 토큰 없음
+        if used_purchase is None:
+            raise NoTokenError("사용 가능한 토큰이 없습니다.")
+
+        # 4) TOKEN_USAGE upsert (같은 트랜잭션 안에서)
+        crud_upsert_token_usage(
+            cursor=cursor,
+            user_id=user_id,
+            usage_date=today,
+            used_delta=1,
+        )
+
+        # 5) (옵션) 전체 남은 토큰 합계 조회
+        total_remaining = crud_get_user_total_remaining_tokens(
+            cursor=cursor,
+            user_id=user_id,
+        )
+
+        # 6) 커밋
+        commit(conn)
+
+        return {
+            "user_id": user_id,
+            "used_type": used_type,               # "subscription" / "onetime"
+            "used_tokens": 1,
+            "usage_date": today.isoformat(),
+            "purchase_id": used_purchase["purchase_id"],
+            "remaining_tokens_total": total_remaining,
+        }
+
+    except Exception:
+        # NoTokenError 포함 모든 예외 롤백 후 다시 던짐
+        rollback(conn)
+        raise
+    finally:
+        if cursor is not None:
+            close_cursor(cursor)
+        close_connection(conn)
+
+
 
 def get_token_deduction_history(user_id: int):
     rows = crud_get_token_deduction_history(user_id)
