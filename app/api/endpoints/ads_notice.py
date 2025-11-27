@@ -3,6 +3,8 @@ from fastapi import (
 )
 import logging
 from typing import List
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 from app.service.ads_notice import (
     save_notice_image as service_save_notice_image,
@@ -72,6 +74,7 @@ async def create_notice(
         notice_file_path: str | None = None
         if notice_file is not None:
             notice_file_path = await service_save_notice_file(notice_file)
+            notice_file_org = notice_file.filename or None
 
         # 2) 첨부 이미지들 저장 (모두 저장)
         image_paths: list[str] = []
@@ -89,6 +92,7 @@ async def create_notice(
             notice_title=notice_title,
             notice_content=notice_content,
             notice_file=notice_file_path,
+            notice_file_org=notice_file_org,
             notice_images=image_paths,
             notice_push=notice_push,
         )
@@ -205,3 +209,28 @@ async def notice_views(notice_no: int):
         raise HTTPException(status_code=404, detail="Notice not found")
     # 데코레이터에 204를 지정했어도, 안전하게 명시 반환
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+
+# 공지사항 파일 다운로드
+UPLOAD_ROOT = "/app/uploads"   # 이미 쓰고 있는 값
+
+@router.get("/notice/file/{notice_no}")
+def download_notice_file(notice_no: int):
+    row = get_notice_by_id(notice_no)  # 이미 쓰는 crud 함수
+    if not row or not row.get("NOTICE_FILE"):
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    rel_path = row["NOTICE_FILE"]         # 예: "notice/e23f1....txt"
+    file_path = Path(UPLOAD_ROOT) / rel_path
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    orig_name = row.get("NOTICE_FILE_ORG") or file_path.name
+
+    # filename= 을 주면 Content-Disposition: attachment; filename=... 로 내려감
+    return FileResponse(
+        path=file_path,
+        media_type="application/octet-stream",
+        filename=orig_name,
+    )

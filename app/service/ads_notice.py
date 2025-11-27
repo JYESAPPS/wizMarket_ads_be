@@ -51,8 +51,8 @@ def get_notice(
 #     notice = crud_get_notice()
 #     return notice
 
-def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: str, notice_images, notice_push):
-    return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file, notice_images, notice_push)
+def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: str, notice_file_org, notice_images, notice_push):
+    return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file, notice_file_org, notice_images, notice_push)
 
 
 
@@ -139,7 +139,9 @@ async def save_notice_file(file: UploadFile | None) -> str | None:
 #################################################################
 
 
-async def update_notice(
+# app/service/notice_service.py
+
+async def service_update_notice(
     notice_no: int,
     notice_post: str,
     notice_push: str,
@@ -151,30 +153,36 @@ async def update_notice(
     existing_images_json: str,
     notice_images_uploads: List[UploadFile],
 ) -> None:
-    # 1) 기존 공지 존재 여부 체크 (있으면 가져오고, 없어도 에러)
+    # 1) 기존 공지 가져오기
     row = crud_get_notice_by_id(notice_no)
     if not row:
         raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다.")
 
-    old_file: Optional[str] = row.get("NOTICE_FILE")
+    old_file_path: str | None = row.get("NOTICE_FILE")
+    old_file_org: str | None = row.get("NOTICE_FILE_ORG")
 
-    # 2) 첨부파일 처리 (단일)
-    new_file_path: Optional[str] = old_file
+    # 2) 첨부파일 처리 (경로 + 원본파일명)
+    new_file_path = old_file_path
+    new_file_org = old_file_org
+
     if notice_file_upload is not None:
+        # 새 파일 업로드 → 경로 + 원본명 둘 다 교체
         new_file_path = await save_notice_file(notice_file_upload)
+        new_file_org = notice_file_upload.filename or None
     elif remove_file:
+        # 삭제 체크 → 둘 다 삭제
         new_file_path = None
+        new_file_org = None
+    # 둘 다 아니면 기존 값 유지
 
-    # 3) 첨부 이미지 처리 (부분 변경용)
-    #    - FE가 보내준 existing_images_json은 "최종으로 남길 기존 이미지 리스트"라고 본다.
+    # 3) 첨부 이미지 처리 (부분 변경)
     try:
-        images_list: List[str] = json.loads(existing_images_json or "[]")
+        images_list = json.loads(existing_images_json or "[]")
         if not isinstance(images_list, list):
             images_list = []
     except Exception:
         images_list = []
 
-    # 4) 새로 업로드된 이미지들 추가
     for img in notice_images_uploads:
         if not img or not img.filename:
             continue
@@ -182,7 +190,7 @@ async def update_notice(
         if path:
             images_list.append(path)
 
-    # 5) crud UPDATE
+    # 4) CRUD UPDATE 호출
     crud_update_notice(
         notice_no=notice_no,
         notice_post=notice_post,
@@ -191,8 +199,10 @@ async def update_notice(
         notice_title=notice_title,
         notice_content=notice_content,
         notice_file=new_file_path,
+        notice_file_org=new_file_org,      # 🔹 추가
         notice_images=images_list,
     )
+
 
 
 

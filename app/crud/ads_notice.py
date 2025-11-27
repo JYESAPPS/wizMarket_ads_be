@@ -19,7 +19,7 @@ def get_notice(include_hidden: bool = False):
         select_query = f"""
             SELECT 
                 NOTICE_NO, NOTICE_POST, NOTICE_PUSH, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT,
-                NOTICE_FILE, NOTICE_IMAGES, VIEWS, CREATED_AT, UPDATED_AT
+                NOTICE_FILE, NOTICE_FILE_ORG, NOTICE_IMAGES, VIEWS, CREATED_AT, UPDATED_AT
             FROM notice
             {where}
             ORDER BY CREATED_AT DESC;
@@ -53,6 +53,7 @@ def get_notice(include_hidden: bool = False):
                     notice_title=row["NOTICE_TITLE"],
                     notice_content=row["NOTICE_CONTENT"],
                     notice_file=row["NOTICE_FILE"],
+                    notice_file_org=row.get("NOTICE_FILE_ORG"),
                     notice_images=images,  # 🔹 여기 list[str] 넣어줌
                     views=row["VIEWS"],
                     created_at=row["CREATED_AT"],
@@ -76,6 +77,7 @@ def create_notice(
     notice_title: str,
     notice_content: str,
     notice_file: Optional[str] = None,
+    notice_file_org = str | None,
     notice_images: Optional[List[str]] = None,
     notice_push: str = "Y",
 ):
@@ -90,8 +92,8 @@ def create_notice(
         cursor = connection.cursor()
 
         insert_query = """
-            INSERT INTO NOTICE (NOTICE_POST, NOTICE_PUSH, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE, NOTICE_IMAGES)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO NOTICE (NOTICE_POST, NOTICE_PUSH, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE, NOTICE_FILE_ORG, NOTICE_IMAGES)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         # 리스트를 JSON 문자열로 변환
@@ -106,6 +108,7 @@ def create_notice(
                 notice_title,
                 notice_content,
                 notice_file,
+                notice_file_org,
                 notice_images_json,
             ),
         )
@@ -136,6 +139,8 @@ def get_notice_by_id(notice_no: int) -> dict | None:
         close_connection(conn)
 
 
+# crud_notice.py
+
 def update_notice(
     notice_no: int,
     notice_post: str,
@@ -144,6 +149,7 @@ def update_notice(
     notice_title: str,
     notice_content: str,
     notice_file: Optional[str],
+    notice_file_org: Optional[str],
     notice_images: Optional[List[str]],
 ):
     conn = get_re_db_connection()
@@ -160,6 +166,7 @@ def update_notice(
                 NOTICE_TITLE = %s,
                 NOTICE_CONTENT = %s,
                 NOTICE_FILE = %s,
+                NOTICE_FILE_ORG = %s,
                 NOTICE_IMAGES = %s,
                 UPDATED_AT = NOW()
             WHERE NOTICE_NO = %s
@@ -175,6 +182,7 @@ def update_notice(
                 notice_title,
                 notice_content,
                 notice_file,
+                notice_file_org,     # 🔹 여기
                 images_json,
                 notice_no,
             ),
@@ -182,12 +190,13 @@ def update_notice(
         commit(conn)
     except pymysql.MySQLError as e:
         rollback(conn)
-        print(f"Database error in update_notice: {e}")
+        logger.error(f"Database error in update_notice: {e}")
         raise
     finally:
         close_cursor(cursor)
         close_connection(conn)
 
+# 삭제 
 def delete_notice(notice_no: int):
     connection = get_re_db_connection()
 
