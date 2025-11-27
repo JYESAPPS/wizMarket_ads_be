@@ -26,22 +26,42 @@ def get_notice(include_hidden: bool = False):
         """
         cursor.execute(select_query)
         rows = cursor.fetchall()
+        
+        notices: list[AdsNotice] = []
+        for row in rows:
+            raw_images = row["NOTICE_IMAGES"] or "[]"
 
-        return [
-            AdsNotice(
-                notice_no=row["NOTICE_NO"],
-                notice_post=row["NOTICE_POST"],
-                notice_push=row["NOTICE_PUSH"],
-                notice_type=row["NOTICE_TYPE"],
-                notice_title=row["NOTICE_TITLE"],
-                notice_content=row["NOTICE_CONTENT"],
-                notice_file=row["NOTICE_FILE"],
-                notice_images=row["NOTICE_IMAGES"],
-                views=row["VIEWS"],
-                created_at=row["CREATED_AT"],
-                updated_at=row["UPDATED_AT"],
-            ) for row in rows
-        ]
+            # 🔹 문자열이면 JSON 파싱, 아니면 리스트로 간주
+            if isinstance(raw_images, str):
+                try:
+                    images = json.loads(raw_images)
+                    if not isinstance(images, list):
+                        images = []
+                except Exception:
+                    images = []
+            elif isinstance(raw_images, list):
+                images = raw_images
+            else:
+                images = []
+
+            notices.append(
+                AdsNotice(
+                    notice_no=row["NOTICE_NO"],
+                    notice_post=row["NOTICE_POST"],
+                    notice_push=row["NOTICE_PUSH"],
+                    notice_type=row["NOTICE_TYPE"],
+                    notice_title=row["NOTICE_TITLE"],
+                    notice_content=row["NOTICE_CONTENT"],
+                    notice_file=row["NOTICE_FILE"],
+                    notice_images=images,  # 🔹 여기 list[str] 넣어줌
+                    views=row["VIEWS"],
+                    created_at=row["CREATED_AT"],
+                    updated_at=row["UPDATED_AT"],
+                )
+            )
+
+        return notices
+
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
