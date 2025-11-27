@@ -141,7 +141,7 @@ async def save_notice_file(file: UploadFile | None) -> str | None:
 
 # app/service/notice_service.py
 
-async def service_update_notice(
+async def update_notice(
     notice_no: int,
     notice_post: str,
     notice_push: str,
