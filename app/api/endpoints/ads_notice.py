@@ -6,6 +6,7 @@ from typing import List
 
 from app.service.ads_notice import (
     save_notice_image as service_save_notice_image,
+    save_notice_file as service_save_notice_file,
     get_notice as service_get_notice,
     create_notice as service_create_notice,
     update_notice as service_update_notice,
@@ -55,49 +56,67 @@ def get_notice_by_id(notice_no: int):
 async def create_notice(
     background_tasks: BackgroundTasks,
     notice_post: str = Form("Y"),
+    notice_push: str = Form("Y"),
     notice_type: str = Form("일반"),
     notice_title: str = Form(...),
     notice_content: str = Form(...),
+    # 하단 첨부파일(단일)
     notice_file: UploadFile | None = File(None),
-    # notice_images: List[UploadFile] = File([])
+    # 상단 첨부 이미지(여러 장)
+    notice_images: List[UploadFile] = File([]),
 ):
     notice_id = None
+
     try:
-        # path = await service_save_notice_image(notice_file)
-        # 1) 대표 이미지 저장 (옵션)
+        # 1) 단일 첨부파일 저장
         notice_file_path: str | None = None
         if notice_file is not None:
-            notice_file_path = await service_save_notice_image(notice_file)
+            notice_file_path = await service_save_notice_file(notice_file)
 
-        # 2) 첨부 이미지들 저장 (최대 3개 정도로 제한)
-        # image_paths: list[str] = []
-        # for img in notice_images[:3]:
-        #     if not img:
-        #         continue
-        #     img_path = await service_save_notice_image(img)
-        #     image_paths.append(img_path)
-        
-        notice_id = service_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file=notice_file_path)
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "서버 오류가 발생했습니다."}
-    
-    push_enqueued = True
-    try:
-        # 공지사항 등록 푸시
-        background_tasks.add_task(
-            service_select_notice_target,
-            notice_id,
-            notice_type,
-            notice_title,
-            notice_content,
-            notice_file=None,
+        # 2) 첨부 이미지들 저장 (모두 저장)
+        image_paths: list[str] = []
+        for img in notice_images:
+            if not img or not img.filename:
+                continue
+            img_path = await service_save_notice_image(img)
+            if img_path:
+                image_paths.append(img_path)
+
+        # 3) DB INSERT (파일/이미지 경로 포함)
+        notice_id = service_create_notice(
+            notice_post=notice_post,
+            notice_type=notice_type,
+            notice_title=notice_title,
+            notice_content=notice_content,
+            notice_file=notice_file_path,
+            notice_images=image_paths,
+            notice_push=notice_push,
         )
 
+    except HTTPException:
+        # 파일 검증 실패 등은 그대로 클라이언트로 전달
+        raise
     except Exception as e:
-        push_enqueued = False
-        logger.error(f"Unexpected error: {str(e)}")
-        return {"success": False, "message": "푸시 알림 전송에 실패했습니다."}
+        logger.error(f"Unexpected error in create_notice: {str(e)}")
+        return {"success": False, "message": "서버 오류가 발생했습니다."}
+
+    # 4) 푸시 알림 (옵션) - notice_push가 'Y'일 때만 전송
+    push_enqueued = False
+    if notice_push == "Y":
+        try:
+            background_tasks.add_task(
+                service_select_notice_target,
+                notice_id,
+                notice_type,
+                notice_title,
+                notice_content,
+                notice_file=None,  # 필요하면 이미지 경로도 넘기기
+            )
+            push_enqueued = True
+        except Exception as e:
+            push_enqueued = False
+            logger.error(f"Unexpected error while enqueue push: {str(e)}")
+            # 공지 자체는 이미 저장된 상태
 
     return {
         "success": True,
@@ -106,19 +125,40 @@ async def create_notice(
         "push_enqueued": push_enqueued,
     }
 
+
 # 공지사항 수정
 @router.post("/edit/notice/{notice_no}", status_code=200)
 async def update_notice(
     notice_no: int,
     notice_post: str = Form("Y"),
+    notice_push: str = Form("Y"),
+    notice_type: str = Form("일반"),
     notice_title: str = Form(...),
     notice_content: str = Form(...),
+
+    # 단일 첨부파일 (이미지 아닐 수도 있음)
     notice_file: UploadFile | None = File(None),
     remove_file: bool = Form(False),
+
+    # 🔹 남겨둘 기존 첨부 이미지 목록 (JSON 문자열, 예: '["notice/a.png","notice/b.png"]')
+    existing_images: str = Form("[]"),
+
+    # 🔹 새로 추가할 첨부 이미지들 (이미지 파일)
+    notice_images: List[UploadFile] = File([]),
 ):
     try:
-        path = await service_save_notice_image(notice_file)
-        service_update_notice(notice_no, notice_post, notice_title, notice_content, new_path=path, remove_file=remove_file)
+        await service_update_notice(
+            notice_no=notice_no,
+            notice_post=notice_post,
+            notice_push=notice_push,
+            notice_type=notice_type,
+            notice_title=notice_title,
+            notice_content=notice_content,
+            notice_file_upload=notice_file,
+            remove_file=remove_file,
+            existing_images_json=existing_images,
+            notice_images_uploads=notice_images,
+        )
         return {"success": True, "message": "공지사항이 수정되었습니다."}
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")

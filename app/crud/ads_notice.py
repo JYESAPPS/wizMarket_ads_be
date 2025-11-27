@@ -6,6 +6,7 @@ from app.schemas.ads_notice import AdsNotice
 from typing import List, Optional
 import pymysql
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def get_notice(include_hidden: bool = False):
         where = "" if include_hidden else "WHERE NOTICE_POST = 'Y'"
         select_query = f"""
             SELECT 
-                NOTICE_NO, NOTICE_POST, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT,
+                NOTICE_NO, NOTICE_POST, NOTICE_PUSH, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT,
                 NOTICE_FILE, NOTICE_IMAGES, VIEWS, CREATED_AT, UPDATED_AT
             FROM notice
             {where}
@@ -30,6 +31,7 @@ def get_notice(include_hidden: bool = False):
             AdsNotice(
                 notice_no=row["NOTICE_NO"],
                 notice_post=row["NOTICE_POST"],
+                notice_push=row["NOTICE_PUSH"],
                 notice_type=row["NOTICE_TYPE"],
                 notice_title=row["NOTICE_TITLE"],
                 notice_content=row["NOTICE_CONTENT"],
@@ -48,7 +50,19 @@ def get_notice(include_hidden: bool = False):
         if cursor:
             cursor.close()
 
-def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: Optional[str] = None, notice_images_json: str = "[]"):
+def create_notice(
+    notice_post: str,
+    notice_type: str,
+    notice_title: str,
+    notice_content: str,
+    notice_file: Optional[str] = None,
+    notice_images: Optional[List[str]] = None,
+    notice_push: str = "Y",
+):
+    """
+    NOTICE 테이블에 한 건 INSERT 후 NOTICE_NO 반환.
+    NOTICE_IMAGES는 이미지 경로 리스트를 JSON 문자열로 저장.
+    """
     connection = get_re_db_connection()
     cursor = None
 
@@ -56,18 +70,32 @@ def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_
         cursor = connection.cursor()
 
         insert_query = """
-            INSERT INTO NOTICE (NOTICE_POST, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE, NOTICE_IMAGES)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO NOTICE (NOTICE_POST, NOTICE_PUSH, NOTICE_TYPE, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_FILE, NOTICE_IMAGES)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
-        cursor.execute(insert_query, (notice_post or "Y", notice_type, notice_title, notice_content, notice_file, notice_images_json or "[]"))
-        notice_id = cursor.lastrowid # 신규 공지사항 ID 가져오기
+        # 리스트를 JSON 문자열로 변환
+        notice_images_json = json.dumps(notice_images or [])
+
+        cursor.execute(
+            insert_query,
+            (
+                notice_post or "Y",
+                notice_push,
+                notice_type,
+                notice_title,
+                notice_content,
+                notice_file,
+                notice_images_json,
+            ),
+        )
+        notice_id = cursor.lastrowid  # 신규 공지사항 ID
         commit(connection)  # 커스텀 commit 사용
 
         return notice_id
 
     except pymysql.MySQLError as e:
-        rollback(connection)  # 커스텀 rollback 사용
+        rollback(connection)
         print(f"Database error: {e}")
         raise
 
@@ -75,61 +103,70 @@ def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_
         close_cursor(cursor)
         close_connection(connection)
 
-def update_notice_set_file(notice_no, path: str):
-    connection = get_re_db_connection()
+def get_notice_by_id(notice_no: int) -> dict | None:
+    conn = get_re_db_connection()
+    cursor = None
     try:
-        with connection.cursor() as cursor:
-            sql = """
-                UPDATE NOTICE
-                SET NOTICE_FILE=%s, UPDATED_AT=NOW()
-                WHERE NOTICE_NO=%s
-            """
-            cursor.execute(sql, (path, notice_no))
-        commit(connection)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM NOTICE WHERE NOTICE_NO = %s", (notice_no,))
+        row = cursor.fetchone()
+        return row
     finally:
-        close_connection(connection)
+        close_cursor(cursor)
+        close_connection(conn)
 
-def update_notice_clear_file(notice_no):
-    connection = get_re_db_connection()
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                UPDATE NOTICE
-                SET NOTICE_FILE=NULL, UPDATED_AT=NOW()
-                WHERE NOTICE_NO=%s
-            """
-            cursor.execute(sql, (notice_no,))
-        commit(connection)
-    finally:
-        close_connection(connection)
 
-def update_notice(notice_no, notice_post, notice_type, notice_title, notice_content, notice_file):
-    connection = get_re_db_connection()
+def update_notice(
+    notice_no: int,
+    notice_post: str,
+    notice_push: str,
+    notice_type: str,
+    notice_title: str,
+    notice_content: str,
+    notice_file: Optional[str],
+    notice_images: Optional[List[str]],
+):
+    conn = get_re_db_connection()
+    cursor = None
 
     try:
-        cursor = connection.cursor()
-
-        update_query = """
+        cursor = conn.cursor()
+        sql = """
             UPDATE NOTICE
-            SET NOTICE_POST = %s,
+            SET
+                NOTICE_POST = %s,
+                NOTICE_PUSH = %s,
                 NOTICE_TYPE = %s,
                 NOTICE_TITLE = %s,
                 NOTICE_CONTENT = %s,
+                NOTICE_FILE = %s,
+                NOTICE_IMAGES = %s,
                 UPDATED_AT = NOW()
             WHERE NOTICE_NO = %s
         """
+        images_json = json.dumps(notice_images or [])
 
-        cursor.execute(update_query, (notice_post or "Y", notice_type, notice_title, notice_content, notice_no))
-        commit(connection)  # 커스텀 commit 사용
-
+        cursor.execute(
+            sql,
+            (
+                notice_post or "Y",
+                notice_push or "Y",
+                notice_type,
+                notice_title,
+                notice_content,
+                notice_file,
+                images_json,
+                notice_no,
+            ),
+        )
+        commit(conn)
     except pymysql.MySQLError as e:
-        rollback(connection)  # 커스텀 rollback 사용
-        print(f"Database error: {e}")
+        rollback(conn)
+        print(f"Database error in update_notice: {e}")
         raise
-
     finally:
         close_cursor(cursor)
-        close_connection(connection)
+        close_connection(conn)
 
 def delete_notice(notice_no: int):
     connection = get_re_db_connection()

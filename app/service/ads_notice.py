@@ -1,15 +1,15 @@
 from app.crud.ads_notice import (
     get_notice as crud_get_notice,
     create_notice as crud_create_notice,
+    get_notice_by_id as crud_get_notice_by_id,
     update_notice as crud_update_notice,
     delete_notice as crud_delete_notice,
     get_notice_read as crud_get_notice_read,
     insert_notice_read as crud_insert_notice_read,
-    update_notice_set_file as crud_update_notice_set_file,
-    update_notice_clear_file as crud_update_notice_clear_file,
     notice_views as crud_notice_views,
 )
-
+import json
+from typing import List, Optional
 from pathlib import Path
 from typing import Optional
 from fastapi import UploadFile, HTTPException, Request
@@ -51,10 +51,12 @@ def get_notice(
 #     notice = crud_get_notice()
 #     return notice
 
-def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: str):
-    return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file)
+def create_notice(notice_post: str, notice_type: str, notice_title: str, notice_content: str, notice_file: str, notice_images, notice_push):
+    return crud_create_notice(notice_post, notice_type, notice_title, notice_content, notice_file, notice_images, notice_push)
 
 
+
+####### 파일 저장 처리 ##########
 UPLOAD_ROOT = "/app/uploads"  # 이미 쓰고 있는 값
 
 NOTICE_SUBDIR = "notice"
@@ -65,14 +67,14 @@ MAX_BYTES = 10 * 1024 * 1024  # 10MB
 
 async def save_notice_image(file: UploadFile | None) -> str | None:
     """
-    공지 이미지 1장을 저장하고,
-    DB에 넣을 상대 경로(예: 'notice/abcd1234.png')를 반환.
-    실제 파일은 UPLOAD_ROOT/notice/... 에 저장됨.
+    공지 관련으로 업로드되는 이미지 1장 저장.
+    DB에는 'notice/파일명.ext' 형태의 상대 경로를 저장.
     """
+    print(f"service_save_notice_image called with file: {file}")
     if not file or not file.filename:
+        print("no file provided")
         return None
 
-    # 1) mime 체크
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
 
@@ -80,10 +82,9 @@ async def save_notice_image(file: UploadFile | None) -> str | None:
     if len(data) > MAX_BYTES:
         raise HTTPException(status_code=400, detail="최대 10MB까지 업로드 가능합니다.")
 
-    # 2) 확장자 보정
     ext = Path(file.filename).suffix.lower()
     if not ext:
-        kind = imghdr.what(None, h=data)  # 'jpeg','png' 등
+        kind = imghdr.what(None, h=data)
         if kind == "jpeg":
             ext = ".jpg"
         elif kind:
@@ -91,15 +92,15 @@ async def save_notice_image(file: UploadFile | None) -> str | None:
         else:
             ext = ".jpg"
 
-    # 3) 파일명 생성 (notice_id 필요 X)
     name = f"{uuid4().hex}{ext}"
+    print(f"Generated file name: {name}")
 
-    # 4) 실제 저장 경로
     save_path = NOTICE_DIR / name
     save_path.write_bytes(data)
+    print(f"Saved file to: {save_path}")
 
-    # 5) DB에 저장할 논리 경로 (concierge와 동일 패턴)
-    storage_path = f"{NOTICE_SUBDIR}/{name}"  # 'notice/abcd1234.png'
+    storage_path = f"{NOTICE_SUBDIR}/{name}"   # notice/abcd1234.png
+    print(f"Storage path for DB: {storage_path}")
 
     return storage_path
 
@@ -114,34 +115,89 @@ def delete_notice_image(public_path: str | None) -> None:
         except Exception:
             pass  # 실패는 치명적 아님(로그만 남겨도 OK)
 
-def _extract_notice_file_path(row):
-    if row is None:
+
+# 일반 파일(첨부파일) 저장 - 이미지가 아니어도 됨
+async def save_notice_file(file: UploadFile | None) -> str | None:
+    print(f"service_save_notice_file called with file: {file}")
+    if not file or not file.filename:
+        print("no file provided")
         return None
-    if isinstance(row, dict):
-        return row.get("NOTICE_FILE") or row.get("notice_file")
-    return getattr(row, "notice_file", None) or getattr(row, "NOTICE_FILE", None)
 
-def update_notice(notice_no: int, notice_post: str, notice_type: str, notice_title: str, notice_content: str):
+    data = await file.read()
+    if len(data) > MAX_BYTES:
+        raise HTTPException(status_code=400, detail="최대 10MB까지 업로드 가능합니다.")
+
+    # 확장자는 원본 파일명 기준으로만 사용
+    ext = Path(file.filename).suffix.lower() or ""
+    name = f"{uuid4().hex}{ext}"
+    save_path = NOTICE_DIR / name
+    save_path.write_bytes(data)
+
+    storage_path = f"{NOTICE_SUBDIR}/{name}"
+    return storage_path
+
+#################################################################
+
+
+async def update_notice(
+    notice_no: int,
+    notice_post: str,
+    notice_push: str,
+    notice_type: str,
+    notice_title: str,
+    notice_content: str,
+    notice_file_upload: UploadFile | None,
+    remove_file: bool,
+    existing_images_json: str,
+    notice_images_uploads: List[UploadFile],
+) -> None:
+    # 1) 기존 공지 존재 여부 체크 (있으면 가져오고, 없어도 에러)
+    row = crud_get_notice_by_id(notice_no)
+    if not row:
+        raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다.")
+
+    old_file: Optional[str] = row.get("NOTICE_FILE")
+
+    # 2) 첨부파일 처리 (단일)
+    new_file_path: Optional[str] = old_file
+    if notice_file_upload is not None:
+        new_file_path = await save_notice_file(notice_file_upload)
+    elif remove_file:
+        new_file_path = None
+
+    # 3) 첨부 이미지 처리 (부분 변경용)
+    #    - FE가 보내준 existing_images_json은 "최종으로 남길 기존 이미지 리스트"라고 본다.
     try:
-        crud_update_notice(notice_no, notice_post, notice_type, notice_title, notice_content)
-        
-        # 파일 처리: 교체 > 삭제 > 유지
-        old = crud_get_notice(notice_no)
-        old_path = old["NOTICE_FILE"] if isinstance(old, dict) else getattr(old, "notice_file", None)
+        images_list: List[str] = json.loads(existing_images_json or "[]")
+        if not isinstance(images_list, list):
+            images_list = []
+    except Exception:
+        images_list = []
 
-        # if new_path:  # 교체
-        #     crud_update_notice_set_file(notice_no, new_path)
-        #     if old_path:
-        #         delete_notice_image(old_path)
+    # 4) 새로 업로드된 이미지들 추가
+    for img in notice_images_uploads:
+        if not img or not img.filename:
+            continue
+        path = await save_notice_image(img)
+        if path:
+            images_list.append(path)
 
-        # elif remove_file:  # 삭제
-        #     crud_update_notice_clear_file(notice_no)
-        #     if old_path:
-        #         delete_notice_image(old_path)
+    # 5) crud UPDATE
+    crud_update_notice(
+        notice_no=notice_no,
+        notice_post=notice_post,
+        notice_push=notice_push,
+        notice_type=notice_type,
+        notice_title=notice_title,
+        notice_content=notice_content,
+        notice_file=new_file_path,
+        notice_images=images_list,
+    )
 
-    except Exception as e:
-        raise
 
+
+
+# 삭제
 def delete_notice(notice_no: int):
     old = crud_get_notice(notice_no)
     old_path = old["NOTICE_FILE"] if isinstance(old, dict) else getattr(old, "notice_file", None)

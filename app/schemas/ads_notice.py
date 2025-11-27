@@ -5,6 +5,7 @@ from datetime import datetime
 class AdsNotice(BaseModel):
     notice_no: int
     notice_post: str = "Y"
+    notice_push: str = "Y"
     notice_type: str = "일반"
     notice_title: str
     notice_content: str
