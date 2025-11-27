@@ -94,8 +94,17 @@ def add_new_store(data, city_id, district_id, sub_district_id, longitude, latitu
     return sucess, store_business_number
 
 
+# 리스트 인덱스 보호
+def safe_get(lst, idx, default=None):
+    if not lst:
+        return default
+    return lst[idx] if 0 <= idx < len(lst) else default
+
+
+# 매장 복사
 def copy_new_store(store_business_number):
     try : 
+        # print(f"[copy_new_store] start, store_business_number={store_business_number}")
         # 매장 데이터 꺼내오기
         sub_district_id, store_name, road_name, small_category_name, small_category_code, longitude, latitude = crud_get_store_data(store_business_number)
 
@@ -224,7 +233,7 @@ def copy_new_store(store_business_number):
         # 해당 소분류 시군구에서 1등 읍면동
         # 1. 상위 5개 데이터 조회
         top_rows = crud_get_top5_sub_district(district_id, nice_biz_map_data_ref_date, rep_id)
-
+        # print(f"[copy_new_store] top_rows len = {len(top_rows)}")
         # 2. ID 리스트
         ids = [row["SUB_DISTRICT_ID"] for row in top_rows]
         ids += [None] * (5 - len(ids))
@@ -244,8 +253,9 @@ def copy_new_store(store_business_number):
         top5 = f"{names[4]},{sales[4]}" if names[4] and sales[4] else None
 
         
-        # 뜨는 업종 MAX 날짜 값
+        # 2) 전국 뜨는 업종 TOP5
         top5_rising = crud_get_rising_nation()
+        # print(f"[copy_new_store] top5_rising len = {len(top5_rising)}")
 
         top1_district_id = top5_rising[0]["DISTRICT_ID"]
         top1_sub_district_id = top5_rising[0]["SUB_DISTRICT_ID"]
@@ -296,7 +306,9 @@ def copy_new_store(store_business_number):
         nation_top4 = f"{nation_top4_district_name},{nation_top4_sub_district_name},{nation_top4_name},{top4_growth}"
         nation_top5 = f"{nation_top5_district_name},{nation_top5_sub_district_name},{nation_top5_name},{top5_growth}"
 
+        # 3) 지역 뜨는 업종 TOP3
         local_rising_top3 = crud_get_rising(sub_district_id)
+        # print(f"[copy_new_store] local_rising_top3 len = {len(local_rising_top3)}")
 
         local_top1_district_id = local_rising_top3[0]["DISTRICT_ID"]
         local_top1_sub_district_id = local_rising_top3[0]["SUB_DISTRICT_ID"]
@@ -331,40 +343,43 @@ def copy_new_store(store_business_number):
         local_top3 = f"{local_top3_district_name},{local_top3_sub_district_name},{local_top3_name},{local_top3_growth}"
 
 
-        hot_place_top5 = crud_get_hot_place(district_id, loc_info_ref_date)
+        # 4) 핫플 TOP5
+        hot_place_top5 = crud_get_hot_place(district_id, loc_info_ref_date) or []
 
-        hot_place_top1_sub_district_id = hot_place_top5[0]["SUB_DISTRICT_ID"]
-        hot_place_top1_j_score = hot_place_top5[0]["J_SCORE_NON_OUTLIERS"]
+        row1 = safe_get(hot_place_top5, 0, {})
+        row2 = safe_get(hot_place_top5, 1, {})
+        row3 = safe_get(hot_place_top5, 2, {})
+        row4 = safe_get(hot_place_top5, 3, {})
+        row5 = safe_get(hot_place_top5, 4, {})
 
-        hot_place_top2_sub_district_id = hot_place_top5[1]["SUB_DISTRICT_ID"]
-        hot_place_top2_j_score = hot_place_top5[1]["J_SCORE_NON_OUTLIERS"]
+        hot_place_top1_sub_district_id = row1.get("SUB_DISTRICT_ID")
+        hot_place_top1_j_score = row1.get("J_SCORE_NON_OUTLIERS")
 
-        hot_place_top3_sub_district_id = hot_place_top5[2]["SUB_DISTRICT_ID"]
-        hot_place_top3_j_score = hot_place_top5[2]["J_SCORE_NON_OUTLIERS"]
+        hot_place_top2_sub_district_id = row2.get("SUB_DISTRICT_ID")
+        hot_place_top2_j_score = row2.get("J_SCORE_NON_OUTLIERS")
 
-        hot_place_top4_sub_district_id = hot_place_top5[3]["SUB_DISTRICT_ID"]
-        hot_place_top4_j_score = hot_place_top5[3]["J_SCORE_NON_OUTLIERS"]
+        hot_place_top3_sub_district_id = row3.get("SUB_DISTRICT_ID")
+        hot_place_top3_j_score = row3.get("J_SCORE_NON_OUTLIERS")
 
-        hot_place_top5_sub_district_id = hot_place_top5[4]["SUB_DISTRICT_ID"]
-        hot_place_top5_j_score = hot_place_top5[4]["J_SCORE_NON_OUTLIERS"]
+        hot_place_top4_sub_district_id = row4.get("SUB_DISTRICT_ID")
+        hot_place_top4_j_score = row4.get("J_SCORE_NON_OUTLIERS")
 
-        hot_place_top1_sub_district_name = crud_get_sub_district_name_nation(hot_place_top1_sub_district_id)
-        hot_place_top2_sub_district_name = crud_get_sub_district_name_nation(hot_place_top2_sub_district_id)
-        hot_place_top3_sub_district_name = crud_get_sub_district_name_nation(hot_place_top3_sub_district_id)
-        hot_place_top4_sub_district_name = crud_get_sub_district_name_nation(hot_place_top4_sub_district_id)
-        hot_place_top5_sub_district_name = crud_get_sub_district_name_nation(hot_place_top5_sub_district_id)
+        hot_place_top5_sub_district_id = row5.get("SUB_DISTRICT_ID")
+        hot_place_top5_j_score = row5.get("J_SCORE_NON_OUTLIERS")
 
-        hot_place_top1_move_pop, hot_place_top1_sales = crud_get_hot_place_loc_info(hot_place_top1_sub_district_id, loc_info_ref_date)
-        hot_place_top2_move_pop, hot_place_top2_sales = crud_get_hot_place_loc_info(hot_place_top2_sub_district_id, loc_info_ref_date)
-        hot_place_top3_move_pop, hot_place_top3_sales = crud_get_hot_place_loc_info(hot_place_top3_sub_district_id, loc_info_ref_date)
-        hot_place_top4_move_pop, hot_place_top4_sales = crud_get_hot_place_loc_info(hot_place_top4_sub_district_id, loc_info_ref_date)
-        hot_place_top5_move_pop, hot_place_top5_sales = crud_get_hot_place_loc_info(hot_place_top5_sub_district_id, loc_info_ref_date)
+        # ID가 있는 것만 조회하고, 없으면 None 처리
+        def get_hot_place_info(sub_district_id, j_score):
+            if not sub_district_id or j_score is None:
+                return None
+            name = crud_get_sub_district_name_nation(sub_district_id)
+            move_pop, sales = crud_get_hot_place_loc_info(sub_district_id, loc_info_ref_date)
+            return f"{name},{move_pop},{sales},{j_score}"
 
-        hot_place_top1_info = f"{hot_place_top1_sub_district_name},{hot_place_top1_move_pop},{hot_place_top1_sales},{hot_place_top1_j_score}"
-        hot_place_top2_info = f"{hot_place_top2_sub_district_name},{hot_place_top2_move_pop},{hot_place_top2_sales},{hot_place_top2_j_score}"
-        hot_place_top3_info = f"{hot_place_top3_sub_district_name},{hot_place_top3_move_pop},{hot_place_top3_sales},{hot_place_top3_j_score}"
-        hot_place_top4_info = f"{hot_place_top4_sub_district_name},{hot_place_top4_move_pop},{hot_place_top4_sales},{hot_place_top4_j_score}"
-        hot_place_top5_info = f"{hot_place_top5_sub_district_name},{hot_place_top5_move_pop},{hot_place_top5_sales},{hot_place_top5_j_score}"
+        hot_place_top1_info = get_hot_place_info(hot_place_top1_sub_district_id, hot_place_top1_j_score)
+        hot_place_top2_info = get_hot_place_info(hot_place_top2_sub_district_id, hot_place_top2_j_score)
+        hot_place_top3_info = get_hot_place_info(hot_place_top3_sub_district_id, hot_place_top3_j_score)
+        hot_place_top4_info = get_hot_place_info(hot_place_top4_sub_district_id, hot_place_top4_j_score)
+        hot_place_top5_info = get_hot_place_info(hot_place_top5_sub_district_id, hot_place_top5_j_score)
 
 
         # 리포트에 넣기
