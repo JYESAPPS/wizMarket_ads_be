@@ -217,18 +217,22 @@ UPLOAD_ROOT = "/app/uploads"   # 이미 쓰고 있는 값
 
 @router.get("/notice/file/{notice_no}")
 def download_notice_file(notice_no: int):
-    row = get_notice_by_id(notice_no)  # 이미 쓰는 crud 함수
-    if not row or not row.get("NOTICE_FILE"):
+    row = get_notice_by_id(notice_no)  # 여기서 AdsNotice가 반환되는 상태
+
+    # 🔹 None 이거나 notice_file이 비어 있으면 404
+    if not row or not row.notice_file:
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
-    rel_path = row["NOTICE_FILE"]         # 예: "notice/e23f1....txt"
-    file_path = Path(UPLOAD_ROOT) / rel_path
+    # DB에 저장된 상대 경로 (예: "notice/e23f1....txt")
+    rel_path = row.notice_file
+
+    file_path = Path(UPLOAD_ROOT) / rel_path  # /app/uploads/notice/xxxx.txt
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
-    orig_name = row.get("NOTICE_FILE_ORG") or file_path.name
+    # 원본 파일명 컬럼을 추가했다면 여기서 사용
+    orig_name = getattr(row, "notice_file_org", None) or file_path.name
 
-    # filename= 을 주면 Content-Disposition: attachment; filename=... 로 내려감
     return FileResponse(
         path=file_path,
         media_type="application/octet-stream",
