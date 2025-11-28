@@ -613,6 +613,37 @@ def logout_user(user_id: str) -> bool:
 
 
 
+def insert_delete_reason(reason_id, reason_label, reason_detail):
+    conn = None
+    try:
+        conn = get_re_db_connection()  # ✅ 함수 호출 누락 주의: () 필요
+        with conn.cursor() as cur:
+            sql = """
+                INSERT INTO DELETE_REASON (
+                    reason_id,
+                    reason_label,
+                    reason_detail
+                )
+                VALUES (%s, %s, %s)
+            """
+            # reason_detail은 None이어도 그대로 넣으면 NULL로 들어감
+            cur.execute(sql, (reason_id, reason_label, reason_detail))
+        conn.commit()
+        return True
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.exception(f"[crud_delete_user][insert_delete_reason] {e}")
+        return False
+
+    finally:
+        if conn:
+            conn.close()
+
+
+
+
 def delete_user(user_id: str) -> bool:
 
     conn = get_re_db_connection()

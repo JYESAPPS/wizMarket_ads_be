@@ -58,6 +58,9 @@ class SNSRegisterRequest(BaseModel):
 
 class UserDelete(BaseModel):
     user_id: str
+    reason_id: str
+    reason_label : str
+    reason_detail : Optional[str]
 
 
 

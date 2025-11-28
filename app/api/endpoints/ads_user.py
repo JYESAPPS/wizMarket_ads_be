@@ -16,6 +16,7 @@ from app.service.ads_user import (
     logout_user as service_logout_user,
     stop_user as service_stop_user,
     unstop_user as service_unstop_user,
+    insert_delete_reason as service_insert_delete_reason
 )
 
 
@@ -235,8 +236,16 @@ def delete_user(request: UserDelete):
     """
     try:
         user_id = request.user_id
+
+        reason_id = request.reason_id
+        reason_label = request.reason_label
+        reason_detail = request.reason_detail
+
         if not user_id:
             raise HTTPException(status_code=400, detail="Missing user_id")
+        
+        # 탈퇴 사유 인서트
+        service_insert_delete_reason(reason_id, reason_label, reason_detail)
 
         # 탈퇴 로직 구현 (예: DB에서 사용자 삭제)
         success = service_delete_user(user_id)

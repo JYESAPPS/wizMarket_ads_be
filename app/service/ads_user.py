@@ -12,7 +12,7 @@ from app.crud.ads_user import (
     update_user as crud_update_user,
     stop_user as crud_stop_user,
     unstop_user as crud_unstop_user,
-
+    
 )
 
 from app.crud.ads_app import (
@@ -21,6 +21,7 @@ from app.crud.ads_app import (
     upsert_user_info_accounts as crud_upsert_user_info_accounts,
     logout_user as crud_logout_user,
     delete_user as crud_delete_user,
+    insert_delete_reason as crud_insert_delete_reason
 )
 
 
@@ -101,6 +102,12 @@ def unstop_user(user_id: str):
     sucess = crud_unstop_user(user_id)
     return sucess
 
+
+
+
+# 탈퇴 사유 인서트
+def insert_delete_reason(reason_id, reason_label, reason_detail):
+    crud_insert_delete_reason(reason_id, reason_label, reason_detail)
 
 
 def delete_user(user_id: str):
