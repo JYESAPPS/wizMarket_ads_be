@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.endpoints import (
     ads, ads_test, ads_notice, ads_user, ads_login, ads_app, ads_plan, 
     ads_ticket, ads_token_purchase, ads_push, ads_reserve, ads_faq, cms, help, admin,
-    auth_name, play_store_test, concierge, concierge_auto_upload
+    auth_name, play_store_test, concierge, concierge_auto_upload, policy
 )
 from app.api.endpoints import webhook
 
@@ -116,6 +116,9 @@ app.include_router(play_store_test.router, prefix="/back")
 app.include_router(concierge.router, prefix="/back")
 app.include_router(concierge_auto_upload.router, prefix="/back")
 app.include_router(admin.router, prefix="/back")
+app.include_router(policy.router, prefix="/back")
+
+
 
 if __name__ == "__main__":
     import uvicorn
