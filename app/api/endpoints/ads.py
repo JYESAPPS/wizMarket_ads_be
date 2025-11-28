@@ -47,6 +47,7 @@ from app.service.ads_login import (
     select_insta_account as service_select_insta_account,
     select_user_id as service_select_user_id,
     select_login_provider as service_select_login_provider,
+    select_business_name as service_select_business_name,
 )
 
 
@@ -93,6 +94,7 @@ def select_ads_init_info(store_business_number: str):
         all_image_list = service_get_style_image(init_data)
         # insta_info = service_select_insta_account(store_business_number)
         login_provider = service_select_login_provider(user_id)
+        business_name = service_select_business_name(user_id)
         
 
         # print(ai_age, ai_data)
@@ -107,6 +109,7 @@ def select_ads_init_info(store_business_number: str):
             ai_age = ai_age,
             ai_data = ai_data,
             login_provider= login_provider,
+            business_name=business_name,
         )
 
     except HTTPException as http_ex:

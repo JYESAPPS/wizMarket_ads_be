@@ -143,6 +143,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     ai_age: str
     ai_data: Optional[List[int]] = None
     login_provider: str
+    business_name: Optional[str]
     # today_tip: str
 
 # 문구 생성

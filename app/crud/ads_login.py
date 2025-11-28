@@ -627,6 +627,36 @@ def select_login_provider(user_id):
         cursor.close()
         connection.close()
 
+def select_business_name(user_id):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT business_name
+                FROM business_verification
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                return None
+
+            return result['business_name']
+
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
 
 # user_info에 성명, 생년월일 삽입
 def insert_init_info(user_id, name, birth):
