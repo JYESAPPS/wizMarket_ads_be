@@ -18,19 +18,30 @@ def safe_ext(filename: str) -> str:
     return os.path.splitext(filename)[1].lower() or ""
 
 
+ALLOWED_MIME_PREFIX = "image/"
+MAX_BYTES = 10 * 1024 * 1024  # 10MB
+
+UPLOAD_ROOT = "/app/uploads"  # 이미 쓰던 값 재사용
+
+
+def safe_ext(filename: str) -> str:
+    # 간단 확장자 추출
+    return os.path.splitext(filename)[1].lower() or ""
+
+
 async def save_help_image(
     file: UploadFile,
-) -> str:
+) -> tuple[str, str]:
     """
     1:1 문의용 이미지 업로드.
 
-    - 실제 저장 경로: /app/uploads/help[/user_{user_id}]/파일명
-    - 반환 값: DB용 상대 경로 (예: "help/20251201_142355_a1b2c3d4.png")
-              또는 user 지정 시: "help/user_13/20251201_142355_a1b2c3d4.png"
+    - 실제 저장 경로: /app/uploads/help/파일명
+    - 반환 값: (DB용 상대 경로, 원본 파일명)
+      예: ("help/20251201_142355_a1b2c3d4.png", "스크린샷.png")
     """
 
     if not file:
-        return ""
+        return "", ""
 
     # MIME 타입 체크
     if not file.content_type or not file.content_type.startswith(ALLOWED_MIME_PREFIX):
@@ -41,12 +52,8 @@ async def save_help_image(
     if len(contents) > MAX_BYTES:
         raise HTTPException(status_code=400, detail="파일 용량은 최대 10MB 입니다.")
 
-    # ───── 실제 저장 디렉토리 구성 ─────
-    # 기본: /app/uploads/help
-    # 옵션: /app/uploads/help/user_{user_id}
+    # 실제 저장 디렉토리: /app/uploads/help
     parts = ["help"]
-
-    # 디스크 상 실제 경로
     save_dir = os.path.join(UPLOAD_ROOT, *parts)
     os.makedirs(save_dir, exist_ok=True)
 
@@ -64,8 +71,11 @@ async def save_help_image(
 
     # DB에 저장할 상대 경로 ("help/...", OS 구분자 통일)
     storage_path = os.path.join(*parts, filename).replace("\\", "/")
-    print(f"[HELP_UPLOAD] save_dir={save_dir}, filename={filename}")
-    return storage_path
+
+    # 원본 파일명 (없으면 저장된 이름 사용)
+    original_name = file.filename or filename
+
+    return storage_path, original_name
 
 async def create_help(
     payload: HelpCreate,
@@ -74,12 +84,25 @@ async def create_help(
     file3: Optional[UploadFile],
 ) -> Dict[str, Any]:
 
-    a1 = await save_help_image(file1) if file1 else None
-    a2 = await save_help_image(file2) if file2 else None
-    a3 = await save_help_image(file3) if file3 else None
+    if file1:
+        a1, o1 = await save_help_image(file1)
+    else:
+        a1, o1 = None, None
+
+    if file2:
+        a2, o2 = await save_help_image(file2)
+    else:
+        a2, o2 = None, None
+
+    if file3:
+        a3, o3 = await save_help_image(file3)
+    else:
+        a3, o3 = None, None
 
     safe_payload = payload.model_copy(update={"name": payload.name or ""})
+
     return insert_help(
         payload=safe_payload,
         attachments=(a1, a2, a3),
+        origins=(o1, o2, o3),   # 🔹 origin1,2,3 용
     )

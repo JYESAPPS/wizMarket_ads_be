@@ -28,6 +28,9 @@ class HelpOut(BaseModel):
     attachment1: Optional[str] = None
     attachment2: Optional[str] = None
     attachment3: Optional[str] = None
+    origin1: Optional[str] = None
+    origin2: Optional[str] = None
+    origin3: Optional[str] = None
     status: Literal["pending", "answered", "closed"]
     created_at: datetime
     updated_at: datetime

@@ -10,6 +10,7 @@ def list_help(status: Optional[str], limit: int = 50, offset: int = 0) -> List[D
     sql_base = """
         SELECT id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
+               origin1, origin2, origin3, 
                status, answer, answered_at,
                created_at, updated_at
         FROM help
@@ -67,16 +68,18 @@ def insert_help(
     *,
     payload: HelpCreate,
     attachments: Tuple[Optional[str], Optional[str], Optional[str]],
+    origins: tuple[Optional[str], Optional[str], Optional[str]],
 ) -> Dict[str, Any]:
     sql_ins = """
         INSERT INTO help
             (name, email, phone, category, title, content,
-             attachment1, attachment2, attachment3, status)
+             attachment1, origin1, attachment2, origin2, attachment3, origin3, status)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
     """
     sql_sel = """
         SELECT id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
+               origin1, origin2, origin3,
                status, answer, answered_at,
                created_at, updated_at
         FROM help
@@ -84,6 +87,7 @@ def insert_help(
         LIMIT 1
     """
     a1, a2, a3 = attachments
+    o1, o2, o3 = origins
     conn = get_re_db_connection()  # ← 통일
     cur = None
     try:
@@ -97,7 +101,7 @@ def insert_help(
                 payload.category,
                 payload.title,
                 payload.content,
-                a1, a2, a3
+                a1, o1, a2, o2, a3, o3
             ),
         )
         new_id = cur.lastrowid
