@@ -64,7 +64,7 @@ async def save_help_image(
 
     # DB에 저장할 상대 경로 ("help/...", OS 구분자 통일)
     storage_path = os.path.join(*parts, filename).replace("\\", "/")
-
+    print(f"[HELP_UPLOAD] save_dir={save_dir}, filename={filename}")
     return storage_path
 
 async def create_help(
