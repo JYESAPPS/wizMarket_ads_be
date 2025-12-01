@@ -19,6 +19,21 @@ def get_help_list(
 ):
     return crud_list_help(status=status, limit=limit, offset=offset)
 
+@router.get("/user/{user_id}", response_model=List[HelpOut])
+def get_help_list_by_user(
+    user_id: int,
+    status: Optional[str] = Query(None, pattern="^(pending|answered|closed)$"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    # 👉 crud_list_help 에 user_id 필터 추가(아래 2번 참고)
+    return crud_list_help(
+        status=status,
+        limit=limit,
+        offset=offset,
+        user_id=user_id,
+    )
+    
 # 상세
 @router.get("/{help_id}", response_model=HelpOut)
 def get_help_detail(help_id: int):
@@ -43,18 +58,20 @@ def patch_help_status(help_id: int, payload: HelpStatusUpdate = Body(...)):
 @router.post("/", response_model=HelpOut)
 async def create_help(
     user_id: Optional[int] = Form(None),
-    name: str = Form(...),
+    name: Optional[str] = Form(None),
     email: str = Form(...),
     phone: Optional[str] = Form(None),
     category: str = Form(...),
+    title: str = Form(...),
     content: str = Form(...),
-    consent_personal: bool = Form(...),
+    # consent_personal: bool = Form(...),
+    consent_personal: int = Form(...),
     file1: Optional[UploadFile] = File(None),
     file2: Optional[UploadFile] = File(None),
     file3: Optional[UploadFile] = File(None),
 ):
     payload = HelpCreate(
         user_id=user_id, name=name, email=email, phone=phone,
-        category=category, content=content, consent_personal=consent_personal
+        category=category, title=title, content=content, consent_personal=consent_personal
     )
     return await service_create_help(payload=payload, file1=file1, file2=file2, file3=file3)

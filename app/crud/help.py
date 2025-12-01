@@ -6,34 +6,38 @@ from app.db.connect import (
 from app.schemas.help import HelpCreate, HelpOut, HelpStatusUpdate
 
 # 목록
-def list_help(status: Optional[str], limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
-    sql_all = """
-        SELECT id, user_id, name, email, phone, category, content,
-                attachment1, attachment2, attachment3,
-                status, consent_personal, answer, answered_at,
-                created_at, updated_at
+def list_help(status: Optional[str], limit: int = 50, offset: int = 0,  user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    sql_base = """
+        SELECT id, user_id, name, email, phone, category, title, content,
+               attachment1, attachment2, attachment3,
+               status, consent_personal, answer, answered_at,
+               created_at, updated_at
         FROM help
-        ORDER BY created_at DESC
-        LIMIT %s OFFSET %s
     """
-    sql_by_status = """
-        SELECT id, user_id, name, email, phone, category, content,
-                attachment1, attachment2, attachment3,
-                status, consent_personal, answer, answered_at,
-                created_at, updated_at
-        FROM help
-        WHERE status = %s
-        ORDER BY created_at DESC
-        LIMIT %s OFFSET %s
-    """
-    conn = get_re_db_connection()  # ← 통일
+
+    # 동적 WHERE 절 구성
+    where_clauses = []
+    params: list[Any] = []
+
+    if status:
+        where_clauses.append("status = %s")
+        params.append(status)
+
+    if user_id is not None:
+        where_clauses.append("user_id = %s")
+        params.append(user_id)
+
+    if where_clauses:
+        sql_base += " WHERE " + " AND ".join(where_clauses)
+
+    sql_base += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
+
+    conn = get_re_db_connection()
     cur = None
     try:
         cur = conn.cursor(pymysql.cursors.DictCursor)
-        if status:
-            cur.execute(sql_by_status, (status, limit, offset))
-        else:
-            cur.execute(sql_all, (limit, offset))
+        cur.execute(sql_base, params)
         rows = cur.fetchall() or []
         return rows
     finally:
@@ -43,7 +47,7 @@ def list_help(status: Optional[str], limit: int = 50, offset: int = 0) -> List[D
 # 상세
 def get_help(help_id: int) -> Optional[Dict[str, Any]]:
     sql = """
-        SELECT id, user_id, name, email, phone, category, content,
+        SELECT id, user_id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
                status, consent_personal, answer, answered_at,
                created_at, updated_at
@@ -70,12 +74,12 @@ def insert_help(
 ) -> Dict[str, Any]:
     sql_ins = """
         INSERT INTO help
-            (user_id, name, email, phone, category, content,
+            (user_id, name, email, phone, category, title, content,
              attachment1, attachment2, attachment3, status, consent_personal)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s)
     """
     sql_sel = """
-        SELECT id, user_id, name, email, phone, category, content,
+        SELECT id, user_id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
                status, consent_personal, answer, answered_at,
                created_at, updated_at
@@ -88,14 +92,16 @@ def insert_help(
     cur = None
     try:
         cur = conn.cursor()
+        safe_name = payload.name or ""
         cur.execute(
             sql_ins,
             (
                 payload.user_id,
-                payload.name,          # ← 컬럼 순서와 정확히 매칭
+                safe_name,          # ← 컬럼 순서와 정확히 매칭
                 payload.email,
                 payload.phone,
                 payload.category,
+                payload.title,
                 payload.content,
                 a1, a2, a3,
                 1 if payload.consent_personal else 0,

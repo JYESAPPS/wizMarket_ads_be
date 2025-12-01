@@ -59,7 +59,8 @@ async def create_help(
     a2 = await save_image(file2, UPLOAD_BASE_DIR) if file2 else None
     a3 = await save_image(file3, UPLOAD_BASE_DIR) if file3 else None
 
+    safe_payload = payload.model_copy(update={"name": payload.name or ""})
     return insert_help(
-        payload=payload,
+        payload=safe_payload,
         attachments=(a1, a2, a3),
     )

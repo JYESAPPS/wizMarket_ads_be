@@ -4,10 +4,11 @@ from datetime import datetime
 
 class HelpCreate(BaseModel):
     user_id: Optional[int] = None
-    name: str
+    name: Optional[str] = None
     email: str
     phone: Optional[str] = None
     category: str
+    title: Optional[str] = None
     content: str
     consent_personal: bool
 
@@ -18,10 +19,11 @@ class HelpStatusUpdate(BaseModel):
 class HelpOut(BaseModel):
     id: int
     user_id: Optional[int] = None
-    name: str
+    name: Optional[str] = None
     email: str
     phone: Optional[str] = None        # DB가 NULL일 수 있으므로 Optional
     category: str
+    title: Optional[str] = None
     content: str
     answer: Optional[str] = None
     answered_at: Optional[datetime] = None
