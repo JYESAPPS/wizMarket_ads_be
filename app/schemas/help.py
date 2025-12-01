@@ -3,14 +3,12 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class HelpCreate(BaseModel):
-    user_id: Optional[int] = None
     name: Optional[str] = None
     email: str
     phone: Optional[str] = None
     category: str
     title: Optional[str] = None
     content: str
-    consent_personal: bool
 
 class HelpStatusUpdate(BaseModel):
     status: Literal["pending", "answered", "closed"]

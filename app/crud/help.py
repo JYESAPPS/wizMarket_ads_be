@@ -6,11 +6,11 @@ from app.db.connect import (
 from app.schemas.help import HelpCreate, HelpOut, HelpStatusUpdate
 
 # 목록
-def list_help(status: Optional[str], limit: int = 50, offset: int = 0,  user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def list_help(status: Optional[str], limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
     sql_base = """
-        SELECT id, user_id, name, email, phone, category, title, content,
+        SELECT id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
-               status, consent_personal, answer, answered_at,
+               status, answer, answered_at,
                created_at, updated_at
         FROM help
     """
@@ -22,10 +22,6 @@ def list_help(status: Optional[str], limit: int = 50, offset: int = 0,  user_id:
     if status:
         where_clauses.append("status = %s")
         params.append(status)
-
-    if user_id is not None:
-        where_clauses.append("user_id = %s")
-        params.append(user_id)
 
     if where_clauses:
         sql_base += " WHERE " + " AND ".join(where_clauses)
@@ -47,9 +43,9 @@ def list_help(status: Optional[str], limit: int = 50, offset: int = 0,  user_id:
 # 상세
 def get_help(help_id: int) -> Optional[Dict[str, Any]]:
     sql = """
-        SELECT id, user_id, name, email, phone, category, title, content,
+        SELECT id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
-               status, consent_personal, answer, answered_at,
+               status, answer, answered_at,
                created_at, updated_at
           FROM help
          WHERE id = %s
@@ -74,37 +70,34 @@ def insert_help(
 ) -> Dict[str, Any]:
     sql_ins = """
         INSERT INTO help
-            (user_id, name, email, phone, category, title, content,
-             attachment1, attachment2, attachment3, status, consent_personal)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s)
+            (name, email, phone, category, title, content,
+             attachment1, attachment2, attachment3, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
     """
     sql_sel = """
-        SELECT id, user_id, name, email, phone, category, title, content,
+        SELECT id, name, email, phone, category, title, content,
                attachment1, attachment2, attachment3,
-               status, consent_personal, answer, answered_at,
+               status, answer, answered_at,
                created_at, updated_at
-          FROM help
-         WHERE id = %s
-         LIMIT 1
+        FROM help
+        WHERE id = %s
+        LIMIT 1
     """
     a1, a2, a3 = attachments
     conn = get_re_db_connection()  # ← 통일
     cur = None
     try:
         cur = conn.cursor()
-        safe_name = payload.name or ""
         cur.execute(
             sql_ins,
             (
-                payload.user_id,
-                safe_name,          # ← 컬럼 순서와 정확히 매칭
+                payload.name,          # ← 컬럼 순서와 정확히 매칭
                 payload.email,
                 payload.phone,
                 payload.category,
                 payload.title,
                 payload.content,
-                a1, a2, a3,
-                1 if payload.consent_personal else 0,
+                a1, a2, a3
             ),
         )
         new_id = cur.lastrowid

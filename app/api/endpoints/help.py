@@ -57,21 +57,18 @@ def patch_help_status(help_id: int, payload: HelpStatusUpdate = Body(...)):
 # 생성 (프론트 "등록하기"에서 호출)
 @router.post("/", response_model=HelpOut)
 async def create_help(
-    user_id: Optional[int] = Form(None),
     name: Optional[str] = Form(None),
     email: str = Form(...),
     phone: Optional[str] = Form(None),
     category: str = Form(...),
     title: str = Form(...),
     content: str = Form(...),
-    # consent_personal: bool = Form(...),
-    consent_personal: int = Form(...),
     file1: Optional[UploadFile] = File(None),
     file2: Optional[UploadFile] = File(None),
     file3: Optional[UploadFile] = File(None),
 ):
     payload = HelpCreate(
-        user_id=user_id, name=name, email=email, phone=phone,
-        category=category, title=title, content=content, consent_personal=consent_personal
+        name=name, email=email, phone=phone,
+        category=category, title = title, content=content
     )
     return await service_create_help(payload=payload, file1=file1, file2=file2, file3=file3)
