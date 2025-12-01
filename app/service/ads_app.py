@@ -379,7 +379,7 @@ def save_base64_image(base64_str: str, user_id: int, channel_code: str, save_dir
 
         # ▶ URL 생성: UPLOAD_ROOT 기준 상대경로 → /uploads/...
         rel = file_path.relative_to(UPLOAD_ROOT).as_posix()  # image/user/...
-        url = f"http://wizmarket.ai:8000/uploads/{rel}"
+        url = f"http://wizmarket.ai/uploads/{rel}"
         print(f"[save_base64_image] OK write -> {file_path}  URL={url}")
         return url
 
@@ -394,7 +394,7 @@ def save_blob_image(
     user_id: int,
     channel_code: str,
     save_dir: str | None = None,
-    base_url: str = "http://wizmarket.ai:8000",
+    base_url: str = "http://wizmarket.ai",
 ) -> str:
     if not file:
         raise HTTPException(status_code=400, detail="file이 없습니다.")
