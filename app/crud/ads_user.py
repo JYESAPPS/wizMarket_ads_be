@@ -116,7 +116,7 @@ def get_store(store_name, road_name):
         select_query = f"""
             SELECT
                 STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME_ADDRESS, FLOOR_INFO, 
-                SMALL_CATEGORY_NAME
+                LARGE_CATEGORY_NAME, MEDIUM_CATEGORY_NAME, SMALL_CATEGORY_NAME
             FROM LOCAL_STORE
             WHERE {" AND ".join(where)}
             ORDER BY STORE_NAME ASC
