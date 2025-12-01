@@ -106,7 +106,7 @@ def get_history(user_id: int):
 def get_token(user_id: int):
     try:
         token = service_get_token(user_id)
-        # print(token)
+        print(token)
         return token
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
