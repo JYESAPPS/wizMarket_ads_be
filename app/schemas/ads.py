@@ -137,7 +137,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     temp: float
     register_tag: Optional[str] = None
     custom_menu: Optional[str] = None
-    image_list: RandomImage  # ✅ 여기에 추가
+    image_list: List[RandomImage] = [] 
     all_image_list: List[RandomImage]
     insta_info: Optional[InstaAccount] = None  # ← 추가
     ai_age: str

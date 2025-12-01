@@ -333,11 +333,11 @@ def select_login_provider(user_id):
 
 def select_business_name(user_id):
     business_name = crud_select_business_name(user_id)
-    print(
-        "[select_business_name] user_id:", user_id,
-        "| value:", business_name,
-        "| type:", type(business_name)
-    )
+    # print(
+    #     "[select_business_name] user_id:", user_id,
+    #     "| value:", business_name,
+    #     "| type:", type(business_name)
+    # )
 
     return business_name
 
