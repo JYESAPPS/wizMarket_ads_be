@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 from fastapi.responses import JSONResponse
-from typing import List
+from datetime import date
+from typing import List, Optional
 import logging
 from app.schemas.ads_ticket import (
     InsertPayRequest,
@@ -17,6 +18,7 @@ from app.service.ads_ticket import (
     deduct_token as service_deduct_token,
     get_token_deduction_history as service_get_token_deduction_history,
     update_subscription_info as service_update_subscription_info,
+    get_token_usage_history as service_get_token_usage_history
 )
 from app.service.play_store import (
     verify_play_store_purchase as service_verify_play_store_purchase
@@ -152,3 +154,14 @@ def get_token_history(user_id: int):
     except Exception as e:
         logger.error(f"[토큰 차감 이력 오류] {e}")
         raise HTTPException(status_code=500, detail="토큰 차감 이력 조회 중 오류 발생")
+    
+
+
+@router.get("/usage/history")
+def read_token_usage_history(user_id:int):
+    """
+    현재 로그인한 유저의 토큰 사용 기록(날짜별)을 내려줍니다.
+    - TOKEN_USAGE.user_id 기준
+    - usage_date 내림차순
+    """
+    return service_get_token_usage_history(user_id)

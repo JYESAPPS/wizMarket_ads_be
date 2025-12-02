@@ -476,6 +476,59 @@ def get_token_deduction_history(user_id: int):
         connection.close()
 
 
+
+
+
+# 토큰 차감 기록 일별 가져오기
+def get_token_usage_history(user_id: int):
+    conn = None
+    try:
+        conn = get_re_db_connection()
+
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            sql = """
+                -- 1) 사용 기록 (TOKEN_USAGE)
+                SELECT
+                    'use' AS event_type,
+                    usage_date AS event_time,   -- 언제 썼는지
+                    NULL AS purchase_id,
+                    0 AS purchased_tokens,
+                    used_tokens
+                FROM TOKEN_USAGE
+                WHERE user_id = %s
+
+                UNION ALL
+
+                -- 2) 구매 기록 (TOKEN_PURCHASE)
+                SELECT
+                    'purchase' AS event_type,
+                    created_at AS event_time,   -- 언제 결제(구매)했는지
+                    purchase_id,
+                    COALESCE(purchased_tokens, 0) AS purchased_tokens,
+                    0 AS used_tokens
+                FROM TOKEN_PURCHASE
+                WHERE user_id = %s
+
+                ORDER BY event_time DESC
+            """
+            cur.execute(sql, (user_id, user_id))
+            rows = cur.fetchall()
+            return rows
+
+    except Exception as e:
+        logger.error(f"[get_token_history] DB error: {e}")
+        return []
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+
+
+
+
+
+
 # app/crud/token.py 안에 추가
 
 def get_valid_ticket(

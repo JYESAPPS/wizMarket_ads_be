@@ -20,6 +20,7 @@ from app.crud.ads_ticket import (
     upsert_token_usage as crud_upsert_token_usage,
     get_valid_ticket as crud_get_valid_ticket,
     get_token_onetime as crud_get_token_onetime,
+    get_token_usage_history as crud_get_token_usage_history
 )
 from app.crud.ads_token_deduct import (
     crud_get_latest_subscription_purchase,
@@ -323,3 +324,10 @@ def get_token_deduction_history(user_id: int):
         })
 
     return result
+
+
+
+def get_token_usage_history(user_id):
+    return crud_get_token_usage_history(user_id)
+
+
