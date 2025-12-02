@@ -1589,8 +1589,8 @@ def generate_template_event(request : ManualApp):
 def get_user_info(request : UserInfo):
     try:
         user_id = int(request.userId)
-        if request.register_tag is not None:
-            service_update_register_tag(user_id, request.register_tag)
+        # if request.register_tag is not None:
+        #     service_update_register_tag(user_id, request.register_tag)
         info, record = service_get_user_info(user_id)
         ticket_info = service_get_valid_ticket(user_id)
 
