@@ -1651,7 +1651,7 @@ def get_user_info(request : UserInfo):
 # 유저 정보 업데이트
 @router.post("/update/user/info")
 def update_user_info(request : UserInfoUpdate):
-    ok = service_update_user_info(request.user_id, request)
+    ok = service_update_user_info(request.user_id, request.register_tag)
     return JSONResponse({"success": ok}, status_code=200 if ok else 500)
     # try:
     #     user_id = int(request.user_id)

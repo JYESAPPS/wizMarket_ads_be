@@ -25,6 +25,7 @@ class DecryptReq(BaseModel):
     # 옵션(기본 서버 설정 사용)
     enc_algo_cd: Optional[str] = None
     enc_iv: Optional[str] = None
+    user_id : int
 
 class DecryptRes(BaseModel):
     rsp_cd: str

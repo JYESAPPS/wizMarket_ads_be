@@ -43,6 +43,27 @@ def register_user(user_id, password):
     
 
 
+# 본인인증 후 user 이름, 번호 업데이트
+def update_user_name_phone(user_id, name, phone):
+    
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO USER_INFO (user_id, name, phone)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, name, phone))
+        connection.commit()
+        return True  # ✅ 성공 시 True 반환
+
+    except Exception as e:
+        print(f"회원 정보 삽입 오류: {e}")
+        return False
+
+
+
+
 def stop_user(user_id: str, reason: str) -> bool:
 
     conn = get_re_db_connection()

@@ -508,33 +508,9 @@ def service_insert_user_info(user_id, request):
     return crud_insert_user_info(user_id, request)
 
 # 유저 정보 업데이트
-def update_user_info(user_id, request):
+def update_user_info(user_id, register_tag):
     try:
-        profile_base64 = request.profile_image
-
-        # 이미지 저장 경로 설정
-        folder_path = f"app/uploads/image/user/user_{user_id}/profile"
-        image_path = os.path.join(folder_path, f"{user_id}_profile.png")
-
-        # 폴더 생성
-        os.makedirs(folder_path, exist_ok=True)
-
-        # 기존 이미지 삭제
-        if os.path.exists(image_path):
-            os.remove(image_path)
-
-        # base64 이미지 처리
-        if profile_base64 and profile_base64.startswith("data:image"):
-            header, encoded = profile_base64.split(",", 1)
-            encoded = encoded.replace(" ", "+")
-            image_data = base64.b64decode(encoded)
-
-            with open(image_path, "wb") as f:
-                f.write(image_data)
-
-        # ✅ 사용자 정보 DB 업데이트
-        # success = crud_update_user_info(user_id, request)
-        success = crud_upsert_user_info(user_id, request)
+        success = crud_upsert_user_info(user_id, register_tag)
         return success
 
     except Exception:

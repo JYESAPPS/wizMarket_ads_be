@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any, List
 from app.crud.ads_user import (
     check_user_id as crud_check_user_id,
     register_user as crud_register_user,
+    update_user_name_phone as service_update_user_name_phone,
     get_store as crud_get_store,
     insert_business_info as crud_insert_business_info,
     update_user as crud_update_user,
@@ -32,6 +33,15 @@ def check_user_id(user_id):
 
 def register_user(user_id, password):
     crud_register_user(user_id, password)
+
+
+
+# 본인인증 후 user 업데이트
+def update_user_name_phone(user_id, name, phone):
+    service_update_user_name_phone(user_id, name, phone)
+
+
+
 
 # 매장 조회
 def get_store(store_name, road_name):

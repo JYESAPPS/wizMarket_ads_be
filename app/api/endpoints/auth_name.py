@@ -9,6 +9,9 @@ from app.schemas.auth_name import StartReq, StartRes, DecryptReq, DecryptRes
 from app.core.settings import settings, POPUP_START_URL
 from app.service.auth_name import get_access_token
 from app.utils.kcb_crypto import derive_personal_key_from_enc_key, aes_cbc_pkcs7_b64_decrypt, _hex_iv_to_bytes
+from app.service.ads_user import (
+    update_user_name_phone as service_update_user_name_phone
+)
 
 
 log = logging.getLogger("kcb")
@@ -201,5 +204,11 @@ def kcb_decrypt(req: DecryptReq):
         # 실제 응답의 키 이름은 계정/옵션별로 다를 수 있어 아래처럼 OR로 안전 처리
         "telco":  (data.get("cmcm_tp_cd") or data.get("mbl_tel_corp_cd") or data.get("tel_com_cd")),
     }
+
+    name = user["name"]
+    phone = user["phone"]
+
+    # DB에 이름, 번호 저장
+    service_update_user_name_phone(req.user_id, name, phone)
 
     return {"rsp_cd": "B000", "user": user, "raw": data}

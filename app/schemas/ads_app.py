@@ -225,18 +225,8 @@ class UserInfoInsert(BaseModel):
 
 class UserInfoUpdate(BaseModel):
     user_id: Optional[str] = None
-    birth_year: Optional[int] = None
-    gender: Optional[str] = None
-    nickname: Optional[str] = None
-    phone: Optional[str] = None
-    profile_image: Optional[str] = None
     register_tag: Optional[str] = None
-    insta_account: Optional[str] = None
-    kakao_account: Optional[str] = None
-    blog_account: Optional[str] = None
-    band_account: Optional[str] = None
-    x_account: Optional[str] = None
-    address: Optional[str] = None
+
 
 
 class UserRecentRecord(BaseModel):
