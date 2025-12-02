@@ -61,19 +61,26 @@ def register_user(request: UserRegisterRequest):
 # 매장 정보 검색 : 있으면 목록 반환, 없으면 null 반환
 @router.post("/store/match")
 def match_store(request: StoreMatch):
-    try: 
+    try:
         store_name = request.store_name
         road_name = request.road_name
 
-        store_info = service_get_store(store_name, road_name)
+        # service_get_store 가 위에서 만든 get_store를 alias 하고 있다고 가정
+        result = service_get_store(store_name, road_name)
 
-        if not store_info:
-            return None
+        # service에서 이미 result / store_info 형식을 맞춰서 내려줌
+        return result
 
-        return store_info
     except Exception as e:
-        print(f"중복 검사 오류: {e}")
-        return {"available": False}
+        print(f"매장 조회 오류: {e}")
+        # 예외 상황에서도 동일한 응답 형태 유지
+        return {
+            "result": False,
+            "store_info": {
+                "ROAD_NAME_ADDRESS": request.road_name,
+            },
+            "detail": "매장 조회 중 오류가 발생했습니다.",
+        }
 
 
 # 기존 매장 추가 정보 처리

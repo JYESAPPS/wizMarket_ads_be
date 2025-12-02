@@ -25,6 +25,9 @@ from app.crud.ads_app import (
     insert_delete_reason as crud_insert_delete_reason
 )
 
+from app.crud.concierge import (
+    normalize_addr_full
+)
 
 
 def check_user_id(user_id):
@@ -45,7 +48,27 @@ def update_user_name_phone(user_id, name, phone):
 
 # 매장 조회
 def get_store(store_name, road_name):
-    return crud_get_store(store_name, road_name)
+    # 주소 정규화
+    normalized_road = normalize_addr_full(road_name)
+
+    # 주소 검색
+    rows = crud_get_store(store_name, normalized_road)
+
+    if rows and len(rows) > 0:
+        # 성공: rows 배열 그대로 store_info에
+        return {
+            "result": "success",
+            "store_info": rows,
+        }
+    else:
+        # 실패: ROAD_NAME_ADDRESS만 담아서 반환
+        return {
+            "result": False,
+            "store_info": {
+                "ROAD_NAME_ADDRESS": normalized_road,
+            },
+        }
+
 
 # 기존 매장 관련 정보 등록
 def register_store_info(request, store_business_number):
