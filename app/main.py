@@ -83,6 +83,9 @@ def start_scheduler():
         CronTrigger(minute="*", timezone="Asia/Seoul"),
         id="push_job",
         replace_existing=True,
+        max_instances=1,       # 동시에 한 개만 실행
+        coalesce=True,         # 밀린 작업은 하나로 합치기
+        misfire_grace_time=30,
     )
     if not scheduler.running:
         scheduler.start()

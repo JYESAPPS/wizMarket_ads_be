@@ -58,25 +58,52 @@ def send_push_fcm_v1(device_token: str, title: str, body: str):
     except Exception as e:
         return 500, {"error": str(e)}
 
+CONCURRENCY   = int(os.getenv("PUSH_CONCURRENCY", "30"))  # 동시 요청 개수
+
 
 def select_user_id_token():
-    user_id_token = crud_select_recent_id_token()
+    try:
+        rows = crud_select_recent_id_token()
 
-    for user in user_id_token:
-        user_id = user.user_id
-        device_token = user.device_token
+        # (user_id, device_token) 목록 만들기 + 빈 토큰 제외
+        targets: list[tuple[int, str]] = []
+        for row in rows:
+            user_id = row.user_id
+            device_token = row.device_token
 
-        if not device_token:
-            continue
+            if not device_token:
+                continue
 
-        if is_user_due_for_push(user_id):
-            send_push_fcm_v1(
-                device_token=device_token,
+            targets.append((user_id, device_token))
+
+        # 필요하면 중복 제거 (user_id 기준 또는 token 기준)
+        # 여기서는 (user_id, token) 쌍으로 중복 제거
+        uniq = list({(uid, tkn) for uid, tkn in targets})
+
+        def _send_for_user(uid: int, tkn: str):
+            # 예약 발송 대상인지 체크
+            if not is_user_due_for_push(uid):
+                return
+
+            return send_push_fcm_v1(
+                device_token=tkn,
                 title="[예약 알림]",
-                body="지금 홍보를 시작해보세요!"
+                body="지금 홍보를 시작해보세요!",
             )
 
-CONCURRENCY   = int(os.getenv("PUSH_CONCURRENCY", "30"))  # 동시 요청 개수
+        # notice처럼 병렬 처리
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
+            futs = [ex.submit(_send_for_user, uid, tkn) for uid, tkn in uniq]
+
+            for fut in as_completed(futs):
+                try:
+                    fut.result()
+                except Exception as e:
+                    logger.warning(f"[reserve push] one user failed: {e}")
+
+    except Exception:
+        logger.exception("reserve push batch failed")
+
 
 def select_notice_target(
     notice_id: int,

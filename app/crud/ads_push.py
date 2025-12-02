@@ -51,24 +51,26 @@ def select_user_id_token() -> List[AllUserDeviceToken]:
         try: conn.close()
         except: pass
 
-
+# 예약 알림 조회 : 푸시 허용한 모든 대상의 모든 기기
 def select_recent_id_token() -> List[AllUserDeviceToken]:
     conn = get_re_db_connection()
     cur = conn.cursor(pymysql.cursors.DictCursor)
     try:
         sql = """
-            SELECT ud.USER_ID, TRIM(ud.DEVICE_TOKEN) AS DEVICE_TOKEN
+            SELECT 
+                ud.USER_ID,
+                TRIM(ud.DEVICE_TOKEN) AS DEVICE_TOKEN
             FROM wiz_report.user_device AS ud
-            JOIN (
-            SELECT USER_ID, MAX(last_seen) AS max_last_seen
-            FROM wiz_report.user_device
-            WHERE USER_ID IS NOT NULL
-                AND DEVICE_TOKEN IS NOT NULL
-                AND TRIM(DEVICE_TOKEN) <> ''
-            GROUP BY USER_ID
-            ) s
-            ON ud.USER_ID = s.USER_ID
-            AND ud.last_seen = s.max_last_seen;
+            JOIN wiz_report.USER_PUSH AS up
+                ON up.USER_ID = ud.USER_ID
+            WHERE 
+                up.marketing_opt = 1
+                AND ud.USER_ID IS NOT NULL
+                AND ud.DEVICE_TOKEN IS NOT NULL
+                AND TRIM(ud.DEVICE_TOKEN) <> ''
+            ORDER BY 
+                ud.USER_ID,
+                ud.last_seen DESC;
         """
         cur.execute(sql)
         rows = cur.fetchall() or []
@@ -178,17 +180,23 @@ def select_notice_target():
     cur = conn.cursor(pymysql.cursors.DictCursor)
     try:
         sql = """
-        SELECT d.device_token
-        FROM user_device AS d
-        INNER JOIN user_push AS p
-            ON p.user_id = d.user_id
-        WHERE
-            p.notice = 1
-            AND d.is_active = 1
-            AND d.device_token IS NOT NULL
-            AND d.device_token <> ''
-        GROUP BY d.user_id, d.device_token
-        ORDER BY d.user_id, MAX(d.last_seen) DESC
+            SELECT 
+                d.device_token
+            FROM user_device AS d
+            INNER JOIN user_push AS p
+                ON p.user_id = d.user_id
+            WHERE
+                p.notice = 1
+                AND p.marketing_opt = 1
+                AND d.is_active = 1
+                AND d.device_token IS NOT NULL
+                AND d.device_token <> ''
+            GROUP BY 
+                d.user_id, 
+                d.device_token
+            ORDER BY 
+                d.user_id, 
+                MAX(d.last_seen) DESC;
         """
         cur.execute(sql)
         rows = cur.fetchall() or []
@@ -204,6 +212,7 @@ def select_notice_target():
         except: pass
         try: conn.close()
         except: pass
+
 
 # 마케팅 수신 상태 조회
 def select_marketing_opt(user_id: int):
