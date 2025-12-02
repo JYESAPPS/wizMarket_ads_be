@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from app.schemas.ads_user import (
-    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest, UserDelete, AddRequest, UserStop, UserUnstop
+    UserRegisterRequest, StoreMatch, StoreAddInfo, SNSRegisterRequest, UserDelete, AddRequest, UserStop, UserUnstop, UserLogout
 )
 
 from app.service.ads_user import (
@@ -202,7 +202,7 @@ def register_sns(request: SNSRegisterRequest):
 
 
 @router.post("/user/logout")
-def logout_user(request: UserDelete):
+def logout_user(request: UserLogout):
     """
     회원 로그 아웃
     - request: { user_id }

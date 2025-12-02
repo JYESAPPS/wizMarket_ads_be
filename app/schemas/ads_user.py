@@ -55,6 +55,8 @@ class SNSRegisterRequest(BaseModel):
     status: str = Field(..., description="유저 상태, 예: active")
     accounts: Optional[List[SNSAccount]] = None
 
+class UserLogout(BaseModel):
+    user_id: str
 
 class UserDelete(BaseModel):
     user_id: str
