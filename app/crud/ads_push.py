@@ -204,3 +204,61 @@ def select_notice_target():
         except: pass
         try: conn.close()
         except: pass
+
+# 마케팅 수신 상태 조회
+def select_marketing_opt(user_id: int):
+    connection = get_re_db_connection()
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        if connection.open:
+            query = """
+                SELECT marketing_opt
+                FROM USER_PUSH
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (user_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                # return {"marketing_opt": 0}
+                raise HTTPException(status_code=404, detail="USER_PUSH 레코드 없음")
+
+            return row
+
+    except Exception as e:
+        logger.error(f"[마케팅 수신 여부 조회 오류] {e}")
+        raise HTTPException(status_code=500, detail="마케팅 수신 여부 조회 실패")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+
+# 마케팅 수신 동의 수정
+def update_marketing_opt(opt, user_id):
+    conn = get_re_db_connection()
+    cur = conn.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        conn.autocommit(False)
+        user_sql = '''
+            UPDATE USER_PUSH
+            SET marketing_opt = %s
+            WHERE user_id = %s;
+        '''
+        cur.execute(user_sql, (opt, user_id))
+        conn.commit()
+        return True
+    
+    except Exception as e:
+        conn.rollback()
+        logger.exception(f"마케팅 수신 상태 변경 저장 중 오류 발생: {e}")
+        return False
+    finally:
+        cur.close()
+        conn.close()

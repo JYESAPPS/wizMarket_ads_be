@@ -25,3 +25,7 @@ class UserReserve(BaseModel):
     repeat_type: str
     weekly_days: Optional[str] = None
     monthly_days: Optional[str] = None
+
+class MarketingOpt(BaseModel):
+    user_id: int
+    opt: int

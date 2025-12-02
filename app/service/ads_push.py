@@ -12,6 +12,8 @@ from app.crud.ads_push import (
     is_user_due_for_push,
     select_recent_id_token as crud_select_recent_id_token,
     select_notice_target as crud_select_notice_target,
+    select_marketing_opt as crud_select_marketing_opt,
+    update_marketing_opt as crud_update_marketing_opt,
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -135,3 +137,11 @@ def _truncate_for_fcm(text: str, limit: int = 1024) -> str:
     if not text:
         return ""
     return text if len(text) <= limit else (text[:limit-1] + "…")
+
+# 마케팅 수신 상태 조회
+def get_marketing_opt(user_id):
+    return crud_select_marketing_opt(user_id)
+
+# 마케팅 수신 상태 수정
+def update_marketing_opt(opt, user_id):
+    return crud_update_marketing_opt(opt, user_id)
