@@ -768,3 +768,27 @@ def insert_push(user_id):
     except Exception as e:
         print(f"푸시 알림 정보 삽입 오류: {e}")
         return False
+    
+
+
+# 자동 로그인 설정
+def update_auto_login(user_id, auto_login):
+    try:
+        new_status = "active" if auto_login == 1 else "auto_off"
+
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE USER
+                SET status = %s
+                WHERE user_id = %s
+            """
+            cursor.execute(sql, (new_status, user_id))
+
+        connection.commit()
+        return True 
+
+    except Exception as e:
+        print(f"회원 정보 업데이트 오류: {e}")
+        return False
+

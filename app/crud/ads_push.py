@@ -213,28 +213,28 @@ def select_marketing_opt(user_id: int):
     try:
         if connection.open:
             query = """
-                SELECT marketing_opt
-                FROM USER_PUSH
-                WHERE user_id = %s
+                SELECT 
+                    up.marketing_opt,
+                    u.status AS auto_login_status
+                FROM USER_PUSH AS up
+                JOIN USER AS u ON u.user_id = up.user_id
+                WHERE up.user_id = %s
             """
             cursor.execute(query, (user_id,))
             row = cursor.fetchone()
 
             if not row:
-                # return {"marketing_opt": 0}
-                raise HTTPException(status_code=404, detail="USER_PUSH 레코드 없음")
+                raise HTTPException(status_code=404, detail="USER_PUSH or USER 레코드 없음")
 
             return row
 
     except Exception as e:
-        logger.error(f"[마케팅 수신 여부 조회 오류] {e}")
-        raise HTTPException(status_code=500, detail="마케팅 수신 여부 조회 실패")
+        logger.error(f"[설정 정보 조회 오류] {e}")
+        raise HTTPException(status_code=500, detail="설정 정보 조회 실패")
 
     finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        cursor.close()
+        connection.close()
 
 
 

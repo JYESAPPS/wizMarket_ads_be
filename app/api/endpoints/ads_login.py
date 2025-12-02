@@ -32,6 +32,7 @@ from app.service.ads_login import (
     get_logout_user as service_get_logout_user,
     update_logout_status as service_update_logout_status,
     update_last_seen as service_update_last_seen,
+    update_auto_login as service_update_auto_login
 )
 
 from app.service.ads_app import (
@@ -448,3 +449,16 @@ def confirm_permission_once(install_id):
         raise HTTPException(status_code=500, detail="권한 동의 처리에 실패했습니다.")
     return {"success": success}
 
+
+# 자동 로그인 설정
+@router.post("/auto/login/update")
+def update_auto_login(payload: dict):
+    user_id = payload.get("user_id")
+    auto_login = payload.get("auto_login")  # 1 or 0
+
+    if user_id is None or auto_login not in (0, 1):
+        raise HTTPException(status_code=400, detail="잘못된 요청")
+    
+    success = service_update_auto_login(user_id, auto_login)
+
+    return success

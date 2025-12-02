@@ -24,6 +24,7 @@ from app.crud.ads_login import (
     insert_push as crud_insert_push,
     select_login_provider as crud_select_login_provider,
     select_business_name as crud_select_business_name,
+    update_auto_login as crud_update_auto_login
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -364,3 +365,6 @@ def get_permission_confirmed(user_id: int):
 def update_permission_confirmed(install_id: str):
     return crud_update_permission_confirmed(install_id)
 
+def update_auto_login(user_id, auto_login):
+    success = crud_update_auto_login(user_id, auto_login)
+    return success
