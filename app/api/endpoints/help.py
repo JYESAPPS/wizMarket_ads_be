@@ -58,7 +58,7 @@ def patch_help_status(help_id: int, payload: HelpStatusUpdate = Body(...)):
 @router.post("/", response_model=HelpOut)
 async def create_help(
     name: Optional[str] = Form(None),
-    email: str = Form(...),
+    email: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     category: str = Form(...),
     title: str = Form(...),
