@@ -25,7 +25,9 @@ def get_android_publisher():
 
 # 단건 소모성 / 구독 SKU만 관리
 CONSUMABLE_PRODUCT_IDS = {
-    "wm_basic_n",  # 단건(소모성)
+    "wm_basic_n",      # 단건(소모성)
+    "wm_standard_n",   # 단건(소모성 추가)
+    "wm_premium_n",    # 단건(소모성 추가)
 }
 
 SUBSCRIPTION_PRODUCT_IDS = {
