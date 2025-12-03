@@ -605,7 +605,7 @@ def select_login_provider(user_id):
     try:
         if connection.open:
             query = """
-                SELECT login_provider
+                SELECT login_provider, popup
                 FROM user
                 WHERE user_id = %s
             """
@@ -615,7 +615,7 @@ def select_login_provider(user_id):
             if not result:
                 return None
 
-            return result['login_provider']
+            return result["login_provider"], result["popup"]
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")
@@ -791,4 +791,3 @@ def update_auto_login(user_id, auto_login):
     except Exception as e:
         print(f"회원 정보 업데이트 오류: {e}")
         return False
-

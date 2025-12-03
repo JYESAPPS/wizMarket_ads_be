@@ -387,3 +387,30 @@ def update_ads_image(ads_id: int, image_url: str, final_image_url: str):
 
 
 
+def update_popup(user_id: int, popup: bool):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            popup_int = 1 if popup else 0
+            query = """
+                UPDATE `user`
+                SET popup = %s
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (popup_int, user_id))
+            connection.commit()
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        connection.rollback()
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        connection.rollback()
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+
