@@ -24,7 +24,8 @@ from app.crud.ads_login import (
     insert_push as crud_insert_push,
     select_login_provider as crud_select_login_provider,
     select_business_name as crud_select_business_name,
-    update_auto_login as crud_update_auto_login
+    update_auto_login as crud_update_auto_login,
+    get_login_provider as crud_get_login_provider,
 )
 from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
@@ -55,6 +56,16 @@ def check_install_id(install_id: str):
         return False
     return crud_check_install_id(install_id)
 
+
+def get_login_provider(install_id: str):
+    if install_id is None:
+        return None
+
+    install_id = install_id.strip()
+    if not install_id:
+        return None
+
+    return crud_get_login_provider(install_id)
 
 
 def ads_login(email, temp_pw):
