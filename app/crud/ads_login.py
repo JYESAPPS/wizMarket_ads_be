@@ -96,7 +96,32 @@ def check_install_id(install_id: str) -> bool:
         except:
             pass
 
+# 최근 로그인 소셜 계정 판별
+def get_login_provider(install_id: str) -> str | None:
+    conn = get_re_db_connection()
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            sql = """
+                SELECT u.login_provider
+                FROM user_device AS ud
+                JOIN `user` AS u
+                    ON ud.user_id = u.user_id
+                WHERE ud.installation_id = %s
+                ORDER BY ud.updated_at DESC
+                LIMIT 1
+            """
+            cur.execute(sql, (install_id,))
+            row = cur.fetchone()
 
+            if not row:
+                return None
+
+            return row.get("login_provider")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
 
 
 def ads_login(email: str, temp_pw: str):

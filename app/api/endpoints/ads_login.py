@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, Apple, User, UserUpdate,
     TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister,
-    InstallCheckResponse
+    InstallCheckResponse, LoginProviderResponse
 )
 
 
@@ -32,7 +32,8 @@ from app.service.ads_login import (
     get_logout_user as service_get_logout_user,
     update_logout_status as service_update_logout_status,
     update_last_seen as service_update_last_seen,
-    update_auto_login as service_update_auto_login
+    update_auto_login as service_update_auto_login,
+    get_login_provider as service_get_login_provider,
 )
 
 from app.service.ads_app import (
@@ -51,7 +52,12 @@ def check_install_id(install_id: str):
 
     return {"exists": bool(exists)}
 
-
+# login_provider 조회
+@router.get("/recent/login", response_model=LoginProviderResponse)
+def check_install_id(install_id: str):
+    # install_id 으로 가장 최근 로그인 계정 SNS 확인
+    login_provider: Optional[str] = service_get_login_provider(install_id)
+    return {"login_provider": login_provider}
 
 
 

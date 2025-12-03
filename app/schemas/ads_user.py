@@ -5,6 +5,8 @@ from typing import Optional, List
 class InstallCheckResponse(BaseModel):
     exists: bool
 
+class LoginProviderResponse(BaseModel):
+    login_provider: Optional[str] = None
 
 class UserRegisterRequest(BaseModel):
     email: str
