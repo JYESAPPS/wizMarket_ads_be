@@ -32,6 +32,9 @@ from app.crud.ads_ticket import (
     get_token_amount as crud_get_token_amount,
     insert_onetime as crud_insert_onetime,
 )
+from app.crud.ads_app import (
+    update_user_status_only as crud_update_user_status_only
+)
 import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
@@ -379,3 +382,8 @@ def update_permission_confirmed(install_id: str):
 def update_auto_login(user_id, auto_login):
     success = crud_update_auto_login(user_id, auto_login)
     return success
+
+
+# USER TB status 만 수정
+def update_user_status_only(user_id, status):
+    crud_update_user_status_only(user_id, status)

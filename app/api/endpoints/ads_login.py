@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
     UserRegisterRequest, ImageListRequest, KaKao, Google, Naver, Apple, User, UserUpdate,
     TokenRefreshRequest, TokenRefreshResponse, InitUserInfo, NaverExchange, DeviceRegister,
-    InstallCheckResponse, LoginProviderResponse
+    InstallCheckResponse, LoginProviderResponse, RegisterSteps
 )
 
 
@@ -34,10 +34,15 @@ from app.service.ads_login import (
     update_last_seen as service_update_last_seen,
     update_auto_login as service_update_auto_login,
     get_login_provider as service_get_login_provider,
+    update_user_status_only as service_update_user_status_only,
 )
 
 from app.service.ads_app import (
     get_user_profile as service_get_user_profile,
+)
+
+from app.service.ads_push import (
+    update_marketing_opt as service_update_marketing_opt
 )
 
 
@@ -468,3 +473,17 @@ def update_auto_login(payload: dict):
     success = service_update_auto_login(user_id, auto_login)
 
     return success
+
+
+# 회원가입 중 약관 동의 : USER_PUSH(marketing_opt:0/1), USER(status: agreed)
+@router.post("/agreed/terms")
+def agreed_terms(request: RegisterSteps):
+    user_id = request.user_id
+    status = request.user_status
+
+    # USER TB (status) update 먼저
+    service_update_user_status_only(user_id, status)
+
+    if status=="agreed" :
+        result = service_update_marketing_opt(request.opt, user_id)
+        return {"result": result}

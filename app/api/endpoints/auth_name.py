@@ -12,6 +12,9 @@ from app.utils.kcb_crypto import derive_personal_key_from_enc_key, aes_cbc_pkcs7
 from app.service.ads_user import (
     update_user_name_phone as service_update_user_name_phone
 )
+from app.service.ads_login import (
+    update_user_status_only as service_update_user_status_only
+)
 
 
 log = logging.getLogger("kcb")
@@ -210,5 +213,8 @@ def kcb_decrypt(req: DecryptReq):
 
     # DB에 이름, 번호 저장
     service_update_user_name_phone(req.user_id, name, phone)
+
+    # USER TB에 status : verified로 변경
+    service_update_user_status_only(req.user_id, status="verified")
 
     return {"rsp_cd": "B000", "user": user, "raw": data}

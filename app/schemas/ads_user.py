@@ -136,3 +136,8 @@ class TokenRefreshResponse(BaseModel):
 class DeviceRegister(BaseModel):
     install_id: str
     push_token: str
+
+class RegisterSteps(BaseModel):
+    user_id: Optional[int] = None
+    user_status: Optional[str] = None
+    opt: Optional[int] = None
