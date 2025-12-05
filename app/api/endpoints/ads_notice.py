@@ -71,6 +71,7 @@ async def create_notice(
 
     try:
         # 1) 단일 첨부파일 저장
+        notice_file_org: str | None = None 
         notice_file_path: str | None = None
         if notice_file is not None:
             notice_file_path = await service_save_notice_file(notice_file)
