@@ -4,7 +4,7 @@ from datetime import datetime
 
 class HelpCreate(BaseModel):
     name: Optional[str] = None
-    email: str
+    email: Optional[str] = None
     phone: Optional[str] = None
     category: str
     title: Optional[str] = None

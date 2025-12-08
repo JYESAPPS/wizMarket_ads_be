@@ -67,14 +67,16 @@ def get_help(help_id: int) -> Optional[Dict[str, Any]]:
 def insert_help(
     *,
     payload: HelpCreate,
-    attachments: Tuple[Optional[str], Optional[str], Optional[str]],
+    attachments: tuple[Optional[str], Optional[str], Optional[str]],
     origins: tuple[Optional[str], Optional[str], Optional[str]],
 ) -> Dict[str, Any]:
     sql_ins = """
         INSERT INTO help
             (name, email, phone, category, title, content,
              attachment1, origin1, attachment2, origin2, attachment3, origin3, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+        VALUES (%s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s,
+                %s)
     """
     sql_sel = """
         SELECT id, name, email, phone, category, title, content,
@@ -86,22 +88,31 @@ def insert_help(
         WHERE id = %s
         LIMIT 1
     """
-    a1, a2, a3 = attachments
-    o1, o2, o3 = origins
-    conn = get_re_db_connection()  # ← 통일
+
+    # 🔹 기본값 정리
+    email = payload.email or ""       # None, "" → ""
+    phone = payload.phone or ""       # 필요 없으면 그냥 payload.phone 써도 됨
+
+    a1, a2, a3 = attachments or (None, None, None)
+    o1, o2, o3 = origins or (None, None, None)
+
+    conn = get_re_db_connection()
     cur = None
     try:
         cur = conn.cursor()
         cur.execute(
             sql_ins,
             (
-                payload.name,          # ← 컬럼 순서와 정확히 매칭
-                payload.email,
-                payload.phone,
+                payload.name,
+                email,
+                phone,
                 payload.category,
                 payload.title,
                 payload.content,
-                a1, o1, a2, o2, a3, o3
+                a1, o1,
+                a2, o2,
+                a3, o3,
+                "pending",   # 🔹 status
             ),
         )
         new_id = cur.lastrowid
@@ -113,8 +124,11 @@ def insert_help(
         row = cur.fetchone()
         if not row:
             raise RuntimeError("inserted row not found")
+
+        # phone이 NULL이면 None으로 유지 (이미 DictCursor에서 None일 것)
         if row.get("phone") is None:
             row["phone"] = None
+
         return row
     except Exception:
         rollback(conn)
