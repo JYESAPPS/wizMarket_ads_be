@@ -22,7 +22,8 @@ from app.crud.ads_app import (
     upsert_user_info_accounts as crud_upsert_user_info_accounts,
     logout_user as crud_logout_user,
     delete_user as crud_delete_user,
-    insert_delete_reason as crud_insert_delete_reason
+    insert_delete_reason as crud_insert_delete_reason,
+    upsert_user_info as crud_upsert_user_info,
 )
 
 from app.crud.concierge import (
@@ -80,8 +81,8 @@ def register_store_info(request, store_business_number):
     # store_business_number를 userTB에 업데이트
     success2 = crud_update_user(user_id, store_business_number, request.status)
 
-    # register_tag를 user_info TB에 업데이트
-    success3 = crud_update_register_tag(user_id, request.register_tag)
+    # register_tag를 user_info TB에 UPSERT
+    success3, _ = crud_upsert_user_info(user_id, request.register_tag)
 
     return success1 and success2 and success3
 
