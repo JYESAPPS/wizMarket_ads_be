@@ -347,14 +347,14 @@ def select_login_provider(user_id):
     return login_provider, popup
 
 def select_business_name(user_id):
-    business_name = crud_select_business_name(user_id)
+    business_name, created_at = crud_select_business_name(user_id)
     # print(
     #     "[select_business_name] user_id:", user_id,
     #     "| value:", business_name,
     #     "| type:", type(business_name)
     # )
 
-    return business_name
+    return business_name, created_at
 
 def update_init_info(user_id, name, birth):
     try:

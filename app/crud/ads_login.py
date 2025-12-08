@@ -660,7 +660,7 @@ def select_business_name(user_id):
     try:
         if connection.open:
             query = """
-                SELECT business_name
+                SELECT business_name, created_at
                 FROM business_verification
                 WHERE user_id = %s
             """
@@ -670,7 +670,7 @@ def select_business_name(user_id):
             if not result:
                 return None
 
-            return result['business_name']
+            return result['business_name'], result['created_at']
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")

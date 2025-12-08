@@ -139,12 +139,13 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     custom_menu: Optional[str] = None
     image_list: List[RandomImage] = [] 
     all_image_list: List[RandomImage]
-    insta_info: Optional[InstaAccount] = None  # ← 추가
+    insta_info: Optional[InstaAccount] = None
     ai_age: str
     ai_data: Optional[List[int]] = None
     login_provider: str
     popup: bool
     business_name: Optional[str]
+    register_date: Optional[datetime] = None
     # today_tip: str
 
 # 문구 생성
