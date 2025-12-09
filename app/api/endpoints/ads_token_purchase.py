@@ -34,8 +34,10 @@ def insert_payment(request: InsertPayRequest):
     if request.platform == "android" : 
         verify = service_verify_play_store_purchase(request)
     
-    else :
-        verify = ""
+    # ios 앱 스토어 검증 X
+    elif request.platform == "ios" :
+        verify = {"success": True}
+
 
     # 구매 검증 분기 처리
     if verify.get("success"):
