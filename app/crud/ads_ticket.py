@@ -368,6 +368,33 @@ def get_valid_history(user_id):
     finally:
         connection.close()
 
+#사용자의 결제 내역 조회
+def get_purchase_history(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    t.TICKET_NAME, 
+                    t.TICKET_PRICE,
+                    t.TOKEN_AMOUNT,
+                    p.transaction_type, 
+                    p.created_at
+                FROM ticket t 
+                JOIN token_purchase p
+                ON t.TICKET_ID = p.TICKET_ID
+                WHERE p.USER_ID = %s
+                ORDER BY p.purchase_id DESC
+            """, (user_id))
+            rows = cursor.fetchall()
+            return rows
+
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()
+
 
 # 구독 토큰 차감
 def update_subscription_token(user_id: int):
