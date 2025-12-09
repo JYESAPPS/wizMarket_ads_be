@@ -92,7 +92,7 @@ def generate_template(request: AutoAppMain):
         elif channel == 5:
             channel_text = "문자메시지"
         elif channel == 6:
-            channel_text = "네이버밴드"
+            channel_text = "네이버 밴드"
         elif channel == 7:
             channel_text = "X(트위터)"
 
@@ -519,13 +519,13 @@ def generate_template_regen(request: AutoAppRegen):
         elif channel == "2":
             channel_text = "인스타그램 스토리"
         elif channel == "3":
-            channel_text = "인스타그램 피드 게시글"
+            channel_text = "인스타그램 게시물"
         elif channel == "4":
             channel_text = "블로그"
         elif channel == "5":
             channel_text = "문자메시지"
         elif channel == "6":
-            channel_text = "네이버밴드"
+            channel_text = "네이버 밴드"
         elif channel == "7":
             channel_text = "X(트위터)"
         else :
@@ -1176,7 +1176,7 @@ def generate_template_manual(request : ManualApp):
         elif channel == "문자메시지":
             channel_text = "5"
             sub_channel = ""
-        elif channel == "네이버밴드":
+        elif channel == "네이버 밴드":
             channel_text = "6"
             sub_channel = ""
         elif channel == "X(트위터)":
@@ -1406,7 +1406,7 @@ def generate_template_event(request : ManualApp):
         elif channel == "문자메시지":
             channel_text = "5"
             sub_channel = ""
-        elif channel == "네이버밴드":
+        elif channel == "네이버 밴드":
             channel_text = "6"
             sub_channel = ""
         elif channel == "X(트위터)":
@@ -1924,7 +1924,7 @@ async def generate_template_manual_camera(
         # 인스타 문구 처리
         insta_copyright = ''
         detail_content = ''
-        if channel in ["인스타그램", "인스타 게시물", "블로그", "네이버밴드", "X(트위터)"]:
+        if channel in ["인스타그램", "인스타 게시물", "블로그", "네이버 밴드", "X(트위터)"]:
             try:
 
                 copyright_prompt = f'''

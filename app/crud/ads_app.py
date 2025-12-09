@@ -520,7 +520,7 @@ CHANNEL_TO_COLUMN = {
     "인스타그램": "insta_account",
     "블로그": "blog_account",
     "X": "x_account",
-    "네이버밴드": "band_account",
+    "네이버 밴드": "band_account",
     "카카오": "kakao_account",
     "카카오톡": "kakao_account",
     # "페이스북": 없음 → 스킵(테이블에 컬럼이 없음)
