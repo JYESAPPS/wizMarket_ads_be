@@ -122,10 +122,8 @@ def get_history_100(user_id):
 
 #결제 내역 조회
 def get_history(user_id):
-    all_history = crud_get_history(user_id)
-    valid_history = crud_get_valid_history(user_id)
     purchase_history = crud_get_purchase_history(user_id)
-    return {"all": all_history, "valid": valid_history, "purchase": purchase_history}
+    return {"purchase": purchase_history}
 
 
 
