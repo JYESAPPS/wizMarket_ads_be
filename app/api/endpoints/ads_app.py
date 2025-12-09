@@ -118,8 +118,8 @@ def generate_template(request: AutoAppMain):
             menu = request.detail_category_name
 
         theme = ""
-        if title == 1: theme = "매장홍보"
-        elif title ==2: theme = "상품소개"
+        if title == 1: theme = "매장 홍보"
+        elif title ==2: theme = "상품 소개"
         else: theme = "이벤트"
 
         today = datetime.now()
@@ -532,7 +532,7 @@ def generate_template_regen(request: AutoAppRegen):
             channel_text = "네이버 블로그"
 
         theme = ""
-        if title == "1" : theme = "매장홍보"
+        if title == "1" : theme = "매장 홍보"
         elif title =="2": theme = "상품소개"
         else: theme = "이벤트"
 
@@ -704,9 +704,9 @@ def generate_template_regen(request: AutoAppRegen):
             print(f"Error occurred: {e}, 인스타 생성 오류")
 
         # 반환 전 프론트와 맞춰주기
-        if title == "매장홍보":
+        if title == "매장 홍보":
             title = "1"
-        elif title == "상품소개":
+        elif title == "상품 소개":
             title = "2"
         elif title == "이벤트":
             title = "3"
@@ -962,7 +962,7 @@ def generate_template_regen_manual(request: CameraGenCopy):
         '''
 
         base_ctx = f"{store_name} 매장, 업종/상품: {category}"
-        if theme == "매장홍보":
+        if theme == "매장 홍보":
             task = "매장 방문 욕구를 높이는 카피"
             focus = "매장 경험·분위기·가치"
         elif theme == "상품소개":
@@ -1336,9 +1336,9 @@ def generate_template_manual(request : ManualApp):
             print(f"Error occurred: {e}, 인스타 생성 오류")
 
         # 반환 전 프론트와 맞춰주기
-        if theme == "매장홍보":
+        if theme == "매장 홍보":
             title = "1"
-        elif theme == "상품소개":
+        elif theme == "상품 소개":
             title = "2"
         elif theme == "이벤트":
             title = "3"
@@ -1542,9 +1542,9 @@ def generate_template_event(request : ManualApp):
             print(f"Error occurred: {e}, 인스타 생성 오류")
 
         # 반환 전 프론트와 맞춰주기
-        if theme == "매장홍보":
+        if theme == "매장 홍보":
             title = "1"
-        elif theme == "상품소개":
+        elif theme == "상품 소개":
             title = "2"
         elif theme == "이벤트":
             title = "3"

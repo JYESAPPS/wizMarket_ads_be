@@ -209,7 +209,7 @@ async def process_user_task(idx: int, user_id_list, user_info_map):
         7: "X(트위터)",
     }.get(channel_number, "")
 
-    theme = {1: "매장홍보", 2: "상품소개"}.get(title_number, "이벤트")
+    theme = {1: "매장 홍보", 2: "상품 소개"}.get(title_number, "이벤트")
 
     # ------------------------------
     # 3) 문구 생성

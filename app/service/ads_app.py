@@ -875,8 +875,8 @@ async def cartoon_image(image_bytes: bytes, index: int = 0,
 def validation_test(title, channel, female_text, style):
         # 매핑 정의
     title_map = {
-        "매장홍보": "1",
-        "상품소개": "2",
+        "매장 홍보": "1",
+        "상품 소개": "2",
         "이벤트": "3",
     }
 
