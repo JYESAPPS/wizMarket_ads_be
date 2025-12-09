@@ -108,17 +108,20 @@ def unstop_user(user_id: str) -> bool:
         return False
 
 
-# 매장 조회 : 가게명 LIKE, 도로명 ==
+# 매장 조회 : 가게명 LIKE, 도로명 == 
+# USER TB와 LEFT JOIN해서 이미 가입된 매장 판별
 def get_store(store_name, road_name):
-    connection = get_db_connection()
-    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    ls_conn = get_db_connection()  # LOCAL_STORE (test 컴포넌트)
+    ls_cur = ls_conn.cursor(pymysql.cursors.DictCursor)
+
+    user_conn = None
+    user_cur = None
 
     try:
-        # 입력 정리
+        # ─ 1) LOCAL_STORE 조회 ─────────────────────────────
         sn = (store_name or "").strip()
         rn = (road_name or "").strip()
 
-        # LIKE 패턴 생성 (%,_ 이스케이프 + 양쪽 %)
         def to_like(s: str) -> str:
             s = s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             return f"%{s}%"
@@ -128,29 +131,85 @@ def get_store(store_name, road_name):
             where.append("STORE_NAME LIKE %s")
             params.append(to_like(sn))
         if rn:
-            where.append("ROAD_NAME_ADDRESS LIKE %s")
-            params.append(to_like(rn))
+            where.append("ROAD_NAME_ADDRESS = %s")
+            params.append(rn)
 
         if not where:
             return []
 
         select_query = f"""
             SELECT
-                STORE_BUSINESS_NUMBER, STORE_NAME, ROAD_NAME_ADDRESS, FLOOR_INFO, 
-                LARGE_CATEGORY_NAME, MEDIUM_CATEGORY_NAME, SMALL_CATEGORY_NAME
+                STORE_BUSINESS_NUMBER,
+                STORE_NAME,
+                ROAD_NAME_ADDRESS,
+                FLOOR_INFO,
+                LARGE_CATEGORY_NAME,
+                MEDIUM_CATEGORY_NAME,
+                SMALL_CATEGORY_NAME
             FROM LOCAL_STORE
             WHERE {" AND ".join(where)}
             ORDER BY STORE_NAME ASC
         """
+        ls_cur.execute(select_query, tuple(params))
+        rows = ls_cur.fetchall()
 
-        cursor.execute(select_query, tuple(params))
-        rows = cursor.fetchall()
+        if not rows:
+            return []
+
+        # ─ 2) store_business_number 모아서 USER 쿼리 ────────
+        #   (LEFT JOIN 처럼, 없는 매장은 그대로 user_* None 으로 남김)
+        bs_list = list({
+            r["STORE_BUSINESS_NUMBER"]
+            for r in rows
+            if r.get("STORE_BUSINESS_NUMBER")
+        })
+
+        if not bs_list:
+            return rows
+
+        user_conn = get_re_db_connection()  # wiz_report 스키마
+        user_cur = user_conn.cursor(pymysql.cursors.DictCursor)
+
+        placeholders = ",".join(["%s"] * len(bs_list))
+        user_query = f"""
+            SELECT user_id, store_business_number
+            FROM USER
+            WHERE store_business_number IN ({placeholders})
+        """
+        user_cur.execute(user_query, bs_list)
+        user_rows = user_cur.fetchall()
+
+        # store_business_number -> user 정보 매핑
+        user_map = {}
+        for u in user_rows:
+            sbn = u["store_business_number"]
+            # 한 매장에 여러 user가 있을 수 있으면 여기서 로직 조정(첫번째만 사용 등)
+            if sbn not in user_map:
+                user_map[sbn] = u
+
+        # ─ 3) LOCAL_STORE row에 user 정보 merge ───────────
+        for r in rows:
+            sbn = r["STORE_BUSINESS_NUMBER"]
+            u = user_map.get(sbn)
+
+            if u:
+                r["user_id"] = u["user_id"]
+            else:
+                # LEFT JOIN에서 NULL 나오는 것과 동일한 효과
+                r["user_id"] = None
+
         return rows
 
     finally:
-        if cursor:
-            cursor.close()
-        connection.close()
+        if ls_cur:
+            ls_cur.close()
+        if ls_conn:
+            ls_conn.close()
+        if user_cur:
+            user_cur.close()
+        if user_conn:
+            user_conn.close()
+
 
 
 # business_verification에 대표자, 사업자등록번호 추가

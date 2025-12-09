@@ -75,11 +75,11 @@ def get_store(store_name, road_name):
 def register_store_info(request, store_business_number):
     user_id = request.user_id
 
-    # 사업자 정보 (번호, 대표자)는 business_verification
-    success1 = crud_insert_business_info(user_id, request.business_name, request.business_number)
-
     # store_business_number를 userTB에 업데이트
-    success2 = crud_update_user(user_id, store_business_number, request.status)
+    success1 = crud_update_user(user_id, store_business_number, request.status)
+
+    # 사업자 정보 (번호, 대표자)는 business_verification
+    success2 = crud_insert_business_info(user_id, request.business_name, request.business_number)
 
     # register_tag를 user_info TB에 UPSERT
     success3, _ = crud_upsert_user_info(user_id, request.register_tag)
