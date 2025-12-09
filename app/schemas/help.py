@@ -18,7 +18,7 @@ class HelpOut(BaseModel):
     id: int
     user_id: Optional[int] = None
     name: Optional[str] = None
-    email: str
+    email: str | None = None
     phone: Optional[str] = None        # DB가 NULL일 수 있으므로 Optional
     category: str
     title: Optional[str] = None
@@ -33,5 +33,9 @@ class HelpOut(BaseModel):
     origin3: Optional[str] = None
     status: Literal["pending", "answered", "closed"]
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
     # consent_personal을 응답에 꼭 노출할 필요가 없으면 생략해도 OK
+
+class InquiryListAppRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None

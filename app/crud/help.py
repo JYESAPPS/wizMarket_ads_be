@@ -165,3 +165,46 @@ def update_help_status(help_id: int, status: str, answer: Optional[str] = None):
         close_cursor(cur)
         close_connection(conn)
     return get_help(help_id)  # get_help도 re_db 사용 중
+
+
+
+# 앱 버전 문의 내역 불러오기
+def get_help_list_app(name: str, phone: str) -> List[Dict[str, Any]]:
+    """
+    앱용 문의 리스트 조회.
+    - name, phone 필수
+    - created_at 내림차순
+    """
+    conn = get_re_db_connection()
+    cur = None
+
+    sql = """
+    SELECT
+        id,
+        name,
+        phone,
+        category,
+        title,
+        content,
+        attachment1,
+        attachment2,
+        attachment3,
+        status,
+        created_at
+    FROM help
+    WHERE name = %s
+      AND REPLACE(REPLACE(phone, '-', ''), ' ', '') = %s
+    ORDER BY created_at DESC
+    """
+
+    try:
+        cur = conn.cursor()
+        # phone 은 항상 "01049171768" 형식으로 들어온다고 가정
+        cur.execute(sql, (name, phone))
+        rows = cur.fetchall()
+        columns = [d[0] for d in cur.description]
+        result = [dict(zip(columns, row)) for row in rows]
+        return result
+    finally:
+        close_cursor(cur)
+        close_connection(conn)

@@ -4,7 +4,10 @@ from datetime import datetime
 from typing import Optional, Tuple, Dict, Any, Union
 from fastapi import UploadFile, HTTPException
 from app.schemas.help import HelpCreate
-from app.crud.help import insert_help
+from app.crud.help import (
+    insert_help,
+    get_help_list_app as crud_get_help_list_app    
+)
 
 
 ALLOWED_MIME_PREFIX = "image/"
@@ -106,3 +109,7 @@ async def create_help(
         attachments=(a1, a2, a3),
         origins=(o1, o2, o3),   # 🔹 origin1,2,3 용
     )
+
+
+def get_help_list_app(name, phone):
+    return crud_get_help_list_app(name, phone)

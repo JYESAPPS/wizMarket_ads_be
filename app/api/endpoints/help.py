@@ -1,10 +1,11 @@
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Query, Body, UploadFile, File, Form
-from app.schemas.help import HelpCreate, HelpOut, HelpStatusUpdate
+from app.schemas.help import HelpCreate, HelpOut, HelpStatusUpdate, InquiryListAppRequest
 from app.crud.help import (
     list_help as crud_list_help,
     get_help as crud_get_help,
-    update_help_status as crud_update_help_status
+    update_help_status as crud_update_help_status,
+    get_help_list_app as service_get_help_list_app
 )
 from app.service.help import create_help as service_create_help
 
@@ -72,3 +73,15 @@ async def create_help(
         category=category, title = title, content=content
     )
     return await service_create_help(payload=payload, file1=file1, file2=file2, file3=file3)
+
+
+
+@router.post("/list/app", response_model=List[HelpOut])
+def get_inqury_list_app(payload : InquiryListAppRequest):
+    inquiries = service_get_help_list_app(
+        name=payload.name,
+        phone=payload.phone,
+    )
+    return inquiries
+
+
