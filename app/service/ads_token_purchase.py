@@ -49,5 +49,8 @@ def insert_purchase(request):
             if recent_type != "unsubscribe":
                 type = "change"
 
+    if type == "fail":
+        remaining = 0
+
     crud_insert_purchase(user, ticket, type, purchased, remaining, start, end)
 
