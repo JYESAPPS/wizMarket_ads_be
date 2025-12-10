@@ -533,7 +533,7 @@ def generate_template_regen(request: AutoAppRegen):
 
         theme = ""
         if title == "1" : theme = "매장 홍보"
-        elif title =="2": theme = "상품소개"
+        elif title =="2": theme = "상품 소개"
         else: theme = "이벤트"
 
         # menu = request.custom_menu 
