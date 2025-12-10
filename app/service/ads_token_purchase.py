@@ -19,7 +19,7 @@ def insert_purchase(request):
     user = request.user_id
     ticket = request.ticket_id
 
-    type = "one_time"
+    type = request.type
     start = None
     end = None
 
