@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class HelpCreate(BaseModel):
+    user_id : int
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -37,5 +38,6 @@ class HelpOut(BaseModel):
     # consent_personal을 응답에 꼭 노출할 필요가 없으면 생략해도 OK
 
 class InquiryListAppRequest(BaseModel):
+    user_id : int
     name: Optional[str] = None
     phone: Optional[str] = None

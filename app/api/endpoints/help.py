@@ -5,10 +5,11 @@ from app.crud.help import (
     list_help as crud_list_help,
     get_help as crud_get_help,
     update_help_status as crud_update_help_status,
+)
+from app.service.help import (
+    create_help as service_create_help,
     get_help_list_app as service_get_help_list_app
 )
-from app.service.help import create_help as service_create_help
-
 router = APIRouter()
 
 # 목록
@@ -58,6 +59,7 @@ def patch_help_status(help_id: int, payload: HelpStatusUpdate = Body(...)):
 # 생성 (프론트 "등록하기"에서 호출)
 @router.post("/", response_model=HelpOut)
 async def create_help(
+    user_id : int = Form(None),
     name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
@@ -69,7 +71,7 @@ async def create_help(
     file3: Optional[UploadFile] = File(None),
 ):
     payload = HelpCreate(
-        name=name, email=email, phone=phone,
+        user_id = user_id, name=name, email=email, phone=phone,
         category=category, title = title, content=content
     )
     return await service_create_help(payload=payload, file1=file1, file2=file2, file3=file3)
@@ -79,6 +81,7 @@ async def create_help(
 @router.post("/list/app", response_model=List[HelpOut])
 def get_inqury_list_app(payload : InquiryListAppRequest):
     inquiries = service_get_help_list_app(
+        user_id = payload.user_id,
         name=payload.name,
         phone=payload.phone,
     )

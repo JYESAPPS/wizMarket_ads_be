@@ -16,7 +16,8 @@ from app.service.ads_user import (
     logout_user as service_logout_user,
     stop_user as service_stop_user,
     unstop_user as service_unstop_user,
-    insert_delete_reason as service_insert_delete_reason
+    insert_delete_reason as service_insert_delete_reason,
+    normalize_addr_full as service_normalize_addr_full
 )
 
 
@@ -64,10 +65,11 @@ def match_store(request: StoreMatch):
     try:
         store_name = request.store_name
         road_name = request.road_name
+        # print(road_name)
 
         # service_get_store 가 위에서 만든 get_store를 alias 하고 있다고 가정
         result = service_get_store(store_name, road_name)
-
+        print(result)
         # service에서 이미 result / store_info 형식을 맞춰서 내려줌
         return result
 
@@ -127,7 +129,8 @@ def add_new_store(request: AddRequest):
     req = requests.get(url, headers=headers, params=params)
     data = json.loads(req.text)          # 또는 data = req.json()  # req 가 requests.Response 인 경우
 
-    si_name = data["documents"][0]["address"]["region_1depth_name"]
+    parts = ad.strip().split()     # 공백 기준으로 잘라서 리스트로
+    si_name = parts[0] if parts else ""   # 첫 번째 값 (없으면 "")
     # 원문
     full = data["documents"][0]["address"]["region_2depth_name"]
 

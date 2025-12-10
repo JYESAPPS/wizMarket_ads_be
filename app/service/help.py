@@ -111,5 +111,5 @@ async def create_help(
     )
 
 
-def get_help_list_app(name, phone):
-    return crud_get_help_list_app(name, phone)
+def get_help_list_app(user_id, name, phone):
+    return crud_get_help_list_app(user_id, name, phone)

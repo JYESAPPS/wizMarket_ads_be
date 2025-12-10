@@ -72,9 +72,9 @@ def insert_help(
 ) -> Dict[str, Any]:
     sql_ins = """
         INSERT INTO help
-            (name, email, phone, category, title, content,
+            (user_id, name, email, phone, category, title, content,
              attachment1, origin1, attachment2, origin2, attachment3, origin3, status)
-        VALUES (%s, %s, %s, %s, %s, %s,
+        VALUES (%s, %s, %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s, %s,
                 %s)
     """
@@ -103,6 +103,7 @@ def insert_help(
         cur.execute(
             sql_ins,
             (
+                payload.user_id,
                 payload.name,
                 email,
                 phone,
@@ -169,7 +170,7 @@ def update_help_status(help_id: int, status: str, answer: Optional[str] = None):
 
 
 # 앱 버전 문의 내역 불러오기
-def get_help_list_app(name: str, phone: str) -> List[Dict[str, Any]]:
+def get_help_list_app(user_id: int, name: str, phone: str) -> List[Dict[str, Any]]:
     """
     앱용 문의 리스트 조회.
     - name, phone 필수
@@ -194,13 +195,14 @@ def get_help_list_app(name: str, phone: str) -> List[Dict[str, Any]]:
     FROM help
     WHERE name = %s
       AND REPLACE(REPLACE(phone, '-', ''), ' ', '') = %s
+      AND user_id = %s
     ORDER BY created_at DESC
     """
 
     try:
         cur = conn.cursor()
         # phone 은 항상 "01049171768" 형식으로 들어온다고 가정
-        cur.execute(sql, (name, phone))
+        cur.execute(sql, (name, phone, user_id))
         rows = cur.fetchall()
         columns = [d[0] for d in cur.description]
         result = [dict(zip(columns, row)) for row in rows]
