@@ -98,7 +98,7 @@ def cms_get_user_list():
     rows = crud_get_user_list()  # list[tuple]
     users = []
     for r in rows:
-        (user_id, email, login_provider, created_at, status, nickname,
+        (user_id, email, login_provider, created_at, status,
         platform, last_seen,
         ticket_name, ticket_id, payment_date) = r
 
@@ -108,7 +108,6 @@ def cms_get_user_list():
             "login_provider": login_provider,
             "created_at": created_at,
             "status": status,
-            "nickname": nickname,
             "platform": platform,
             "last_seen": last_seen,
             "ticket_name": ticket_name,
@@ -122,7 +121,7 @@ def cms_get_deleted_user_list():
     rows = crud_get_deleted_user_list()  # list[tuple]
     users = []
     for r in rows:
-        (user_id, email, login_provider, created_at, status, nickname,
+        (user_id, email, login_provider, created_at, status,
         platform, last_seen,
         ticket_name, ticket_id, payment_date) = r
 
@@ -132,7 +131,6 @@ def cms_get_deleted_user_list():
             "login_provider": login_provider,
             "created_at": created_at,
             "status": status,
-            "nickname": nickname,
             "platform": platform,
             "last_seen": last_seen,
             "ticket_name": ticket_name,
@@ -148,7 +146,7 @@ def cms_get_user_detail(user_id):
     if not row:
         return None
     
-    (user_id, email, login_provider, created_at, status, stop_reason, nickname, phone, birth_year, register_tag, subscription_type, platform, last_seen,
+    (user_id, email, login_provider, created_at, status, stop_reason, phone, birth_year, register_tag, subscription_type, platform, last_seen,
     store_name, large_cat, medium_cat, small_cat, industry_name, road_name_address,) = row
 
     return {
@@ -158,7 +156,6 @@ def cms_get_user_detail(user_id):
         "created_at": created_at,
         "status": status,
         "stop_reason": stop_reason,
-        "nickname": nickname,
         "phone": phone,
         "birth_year": birth_year,
         "register_tag": register_tag,

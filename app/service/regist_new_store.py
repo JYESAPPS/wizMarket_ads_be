@@ -127,7 +127,7 @@ def copy_new_store(store_business_number):
             loc_info_work_pop_per = work_pop / total_pop
 
         # 입지 j-score 값 가져오기
-        loc_info_j_score_average = crud_get_loc_info_j_score(sub_district_id, loc_info_ref_date, 'j_score_average')
+        loc_info_j_score_average = crud_get_loc_info_j_score(sub_district_id, loc_info_ref_date, 'j_score_avg')
 
         # 상권 정보 값 가져오기
         ## 카테고리 엮기

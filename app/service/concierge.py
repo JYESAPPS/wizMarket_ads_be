@@ -22,6 +22,7 @@ from app.crud.concierge import (
     is_concierge as crud_is_concierge,
     submit_concierge_user as crud_submit_concierge_user,
     submit_concierge_store as crud_submit_concierge_store,
+    submit_concierge_store_sns as crud_submit_concierge_store_sns,
     submit_concierge_image as crud_submit_concierge_image,
     select_concierge_list as crud_select_concierge_list,
     get_concierge_system_list as crud_get_concierge_system_list,
@@ -370,6 +371,19 @@ def submit_concierge_excel(rows) -> Dict[str, Any]:
                     None,        # sub_category
                     None,        # detail_category
                 )
+                print(row)
+                # 4) 컨시어지 가게 전략 생성
+                crud_submit_concierge_store_sns(
+                    cursor,
+                    user_id,
+                    row.blog,
+                    row.instagram,
+                    row.reco_product,
+                    row.reco_reason,
+                    row.expect_effect,
+                    row.additional_suggest
+                )
+
 
                 # 4) 이 row까지는 정상 → 커밋
                 commit(connection)

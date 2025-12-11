@@ -37,6 +37,12 @@ class ConciergeExcelRow(BaseModel):
     menu_1: Optional[str] = ""
     menu_2: Optional[str] = ""
     menu_3: Optional[str] = ""
+    blog: Optional[str] = ""
+    instagram : Optional[str] = ""
+    reco_product : Optional[str] = ""
+    reco_reason : Optional[str] = ""
+    expect_effect : Optional[str] = ""
+    additional_suggest : Optional[str] = ""
 
 
 class ConciergeExcelUploadRequest(BaseModel):

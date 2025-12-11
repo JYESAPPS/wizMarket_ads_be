@@ -199,7 +199,7 @@ def cms_get_user_list():
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, ui.nickname, ud.platform, ud.last_seen,
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, ud.platform, ud.last_seen,
                         t.ticket_name, tp.ticket_id, tp.payment_date
                 FROM user u
                 LEFT JOIN user_info AS ui ON ui.user_id = u.user_id
@@ -239,7 +239,7 @@ def cms_get_deleted_user_list():
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, ui.nickname, ud.platform, ud.last_seen,
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, ud.platform, ud.last_seen,
                         t.ticket_name, tp.ticket_id, tp.payment_date
                 FROM user u
                 LEFT JOIN user_info AS ui ON ui.user_id = u.user_id
@@ -280,7 +280,7 @@ def cms_get_user_detail(user_id):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, u.stop_reason, ui.nickname, ui.phone, ui.birth_year, ui.register_tag, ui.subscription_type, ud.platform, ud.last_seen,
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, u.stop_reason, ui.phone, ui.birth_year, ui.register_tag, ui.subscription_type, ud.platform, ud.last_seen,
                         ls.store_name, ls.large_category_name, ls.medium_category_name, ls.small_category_name, ls.industry_name, ls.road_name_address
                 FROM wiz_report.user AS u
                 LEFT JOIN wiz_report.user_info AS ui ON ui.user_id = u.user_id

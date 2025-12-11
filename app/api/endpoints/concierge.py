@@ -121,8 +121,6 @@ def submit_concierge_excel(request: ConciergeExcelUploadRequest):
             detail="rows가 비어 있습니다.",
         )
 
-    created_count = 0
-
     result = service_submit_concierge_excel(request.rows)
     return result
 
@@ -223,7 +221,7 @@ async def update_concierge_status(
 
 
     schedule_prompt = f"""
-        매장 업종  : 치킨
+        매장 업종  : {menu_1}
     """
 
     schedule = service_generate_content(

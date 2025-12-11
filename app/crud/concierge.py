@@ -201,6 +201,45 @@ def submit_concierge_store(
     )
 
 
+def submit_concierge_store_sns(
+    cursor,
+    user_id,
+    blog,
+    instagram,
+    reco_product,
+    reco_reason,
+    expect_effect,
+    additional_suggest
+):
+
+    insert_query = """
+        INSERT INTO CONCIERGE_STORE_SNS (
+            user_id,
+            blog,
+            instagram,
+            reco_product,
+            reco_reason,
+            expect_effect,
+            additional_suggest
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+
+    cursor.execute(
+        insert_query,
+        (
+            user_id,
+            blog,
+            instagram,
+            reco_product,
+            reco_reason,
+            expect_effect,
+            additional_suggest
+        ),
+    )
+
+
+
 def submit_concierge_image(cursor, user_id: int, image_paths: Dict[str, str]) -> int:
     """
     concierge_user_file 테이블에 파일 메타데이터를 INSERT한다.
@@ -454,10 +493,23 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cs.menu_1         AS menu_1,
                 cs.menu_2         AS menu_2,
                 cs.menu_3         AS menu_3,
+                csc.week_day      AS week_day,
+                csc.send_time     AS send_time,
+                csc.is_active     AS is_active,
+                css.blog          AS blog,
+                css.instagram     AS instagram,
+                css.reco_product  AS reco_product,
+                css.reco_reason  AS reco_reason,
+                css.expect_effect AS expect_effect,
+                css.additional_suggest AS additional_suggest,
                 cs.created_at     AS created_at
             FROM CONCIERGE_USER cu
             JOIN CONCIERGE_STORE cs
               ON cs.user_id = cu.user_id
+            LEFT JOIN CONCIERGE_SCHEDULE csc
+              ON csc.user_id = cu.user_id
+            LEFT JOIN CONCIERGE_STORE_SNS css
+              ON css.user_id = cu.user_id
             WHERE cu.user_id = %s
             LIMIT 1
         """
