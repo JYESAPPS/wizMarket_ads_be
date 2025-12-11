@@ -1,14 +1,13 @@
 import os
 import base64
 from uuid import uuid4
-from typing import Dict, List, Any
+from  app.crud.concierge_auto_upload import (
+    get_concierge_user_with_store as crud_get_concierge_user_with_store
+)
 
-import pymysql
-from datetime import datetime
-import asyncio
 
-from app.db.connect import get_re_db_connection, close_cursor, close_connection  # 네가 쓰는 공통 유틸 가정
-from app.api.endpoints.insta_test import create_media_container, publish_media          # 네가 작성한 함수 import
+
+
 
 UPLOAD_ROOT = "/app/uploads"  # 이미 쓰던 값
 UPLOAD_PUBLIC_BASE_URL = os.getenv("UPLOAD_PUBLIC_BASE_URL", "https://your-domain.com/uploads")
@@ -62,5 +61,9 @@ def build_public_image_url(storage_path: str) -> str:
     base = UPLOAD_PUBLIC_BASE_URL.rstrip("/")
     return f"{base}/{storage_path.lstrip('/')}"
 
+
+
+def get_concierge_user_with_store(user_id):
+    return crud_get_concierge_user_with_store(user_id)
 
 

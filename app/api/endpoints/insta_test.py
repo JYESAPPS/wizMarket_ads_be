@@ -61,6 +61,56 @@ def publish_media(ig_user_id, creation_id, access_token):
     return data
 
 
+def get_instagram_permalink(media_id: str, access_token: str) -> str | None:
+    url = f"https://graph.facebook.com/v21.0/{media_id}"
+    params = {
+        "fields": "id,permalink",
+        "access_token": access_token,
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("permalink")
+
+
+def send_report_sms(phone: str, store_name: str, image_url: str, permalink: str):
+    ALIGO_KEY = os.getenv("ALIGO_KEY")
+    ALIGO_ID = os.getenv("ALIGO_ID")
+    ALIGO_SENDER = os.getenv("ALIGO_SENDER")
+
+    if not (ALIGO_KEY and ALIGO_ID and ALIGO_SENDER):
+        print("[send_report_sms] ALIGO env missing")
+        return
+
+    # 이미지 다운로드 (선택: MMS 쓸 때만)
+    img_resp = requests.get(image_url, timeout=10)
+    img_resp.raise_for_status()
+
+    files = {
+        # 알리고는 image 또는 image1 사용 가능:contentReference[oaicite:0]{index=0}
+        "image": (f"{store_name}.png", img_resp.content, "image/png"),
+    }
+
+    send_url = "https://apis.aligo.in/send/"
+
+    sms_data = {
+        "key": ALIGO_KEY,
+        "user_id": ALIGO_ID,
+        "sender": ALIGO_SENDER,
+        "receiver": phone,
+        "msg": (
+            f"[Web발신]\n[보고서]\n"
+            f"{store_name} 점주님, 이번달 위즈마켓으로 인스타그램에 등록한 콘텐츠를 확인해보세요.\n"
+            f"{permalink}"
+        ),
+        "msg_type": "MMS",   # 이미지 붙이면 MMS / 텍스트만이면 SMS/LMS:contentReference[oaicite:1]{index=1}
+        "title": "[보고서]",
+        # "testmode_yn": "Y",  # 개발용일 땐 켜두기
+    }
+
+    resp = requests.post(send_url, data=sms_data, files=files, timeout=10)
+    print("[send_report_sms] status=%s body=%s", resp.status_code, resp.text)
+
 if __name__ == "__main__":
     if not ACCESS_TOKEN:
         raise RuntimeError("ACCESS_TOKEN(IG_LONG_LIVED_TOKEN) 환경 변수를 설정해 주세요.")

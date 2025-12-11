@@ -186,7 +186,7 @@ async def update_concierge_status(
         return {
             "messeage" : "매장 조회 오류"
         }
-
+    
     try:
     # 매장 없을 시 DB 복사
         if not store_business_number :
@@ -197,7 +197,6 @@ async def update_concierge_status(
         return {
             "messeage" : "매장 복사 오류"
         }
-    
 
     # GPT로 스케줄링 작성
     schedule_role = """

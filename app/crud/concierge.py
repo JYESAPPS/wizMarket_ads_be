@@ -19,6 +19,30 @@ import unicodedata
 import re
 import unicodedata
 
+
+from datetime import timedelta
+
+def format_time_from_timedelta(td: timedelta) -> str:
+    """DB TIME → datetime.timedelta → 'HH:MM' 문자열로 변환"""
+    if not isinstance(td, timedelta):
+        return str(td)
+
+    total = int(td.total_seconds())
+    hh = total // 3600
+    mi = (total % 3600) // 60
+    return f"{hh:02d}:{mi:02d}"
+
+WEEKDAY_LABEL_MAP = {
+    "MON": "월",
+    "TUE": "화",
+    "WED": "수",
+    "THU": "목",
+    "FRI": "금",
+    "SAT": "토",
+    "SUN": "일",
+}
+
+
 # 축약/변형 → 정식 명칭 매핑
 _ALIAS_TO_CANON = {
     # 특별/광역시
@@ -493,31 +517,74 @@ def select_concierge_detail(user_id: int) -> Optional[Dict[str, Any]]:
                 cs.menu_1         AS menu_1,
                 cs.menu_2         AS menu_2,
                 cs.menu_3         AS menu_3,
-                csc.week_day      AS week_day,
-                csc.send_time     AS send_time,
-                csc.is_active     AS is_active,
                 css.blog          AS blog,
                 css.instagram     AS instagram,
                 css.reco_product  AS reco_product,
-                css.reco_reason  AS reco_reason,
+                css.reco_reason   AS reco_reason,
                 css.expect_effect AS expect_effect,
                 css.additional_suggest AS additional_suggest,
                 cs.created_at     AS created_at
             FROM CONCIERGE_USER cu
             JOIN CONCIERGE_STORE cs
-              ON cs.user_id = cu.user_id
-            LEFT JOIN CONCIERGE_SCHEDULE csc
-              ON csc.user_id = cu.user_id
+            ON cs.user_id = cu.user_id
             LEFT JOIN CONCIERGE_STORE_SNS css
-              ON css.user_id = cu.user_id
+            ON css.user_id = cu.user_id
             WHERE cu.user_id = %s
-            LIMIT 1
         """
         cursor.execute(sql_main, (user_id,))
         main = cursor.fetchone()
 
+
         if not main:
             return None
+        
+        # 2) 스케줄 리스트
+                # 2) 스케줄 리스트
+        sql_schedule = """
+            SELECT
+                week_day,
+                send_time,
+                is_active
+            FROM CONCIERGE_SCHEDULE
+            WHERE user_id = %s
+            ORDER BY week_day ASC, send_time ASC
+        """
+        cursor.execute(sql_schedule, (user_id,))
+        raw_schedules: List[Dict[str, Any]] = cursor.fetchall() or []
+
+        # 🔹 가공: 요일/시간 포맷 + 요약 문자열 만들기
+        schedules: List[Dict[str, Any]] = []
+        grouped_by_time: Dict[str, List[str]] = {}
+
+        for row in raw_schedules:
+            # TIME → '18:00'
+            send_time_str = format_time_from_timedelta(row["send_time"])
+            row["send_time"] = send_time_str
+
+            # 요일 코드 → 한글
+            wcode = row["week_day"]
+            wlabel = WEEKDAY_LABEL_MAP.get(wcode, wcode)
+            row["week_day_label"] = wlabel
+
+            schedules.append(row)
+
+            # is_active == 1 인 것만 집계(원하면 조건 빼도 됨)
+            if row.get("is_active"):
+                grouped_by_time.setdefault(send_time_str, []).append(wlabel)
+
+        # 예: {"18:00": ["화","목"], "10:00": ["토"]}
+        # → ["화, 목 18:00", "토 10:00"] → "화, 목 18:00 / 토 10:00"
+        schedule_lines = []
+        for time_str, days in grouped_by_time.items():
+            # 요일 여러 개면 '화, 목' 형식
+            days_part = ", ".join(days)
+            schedule_lines.append(f"{days_part} {time_str}")
+
+        schedule_text = " / ".join(schedule_lines) if schedule_lines else ""
+
+        main["schedules"] = schedules          # 원본 리스트
+        main["schedule_text"] = schedule_text  # "화, 목 18:00" 이런 한 줄 요약
+
 
         # 2) 이미지 리스트
         sql_files = """

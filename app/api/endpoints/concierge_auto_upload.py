@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional
 from pydantic import BaseModel
 from datetime import datetime
 import asyncio
-from app.api.endpoints.insta_test import create_media_container, publish_media          # 네가 작성한 함수 import
+        # 네가 작성한 함수 import
 from dotenv import load_dotenv
 import time
 import requests
@@ -25,6 +25,9 @@ UPLOAD_PUBLIC_BASE_URL = os.getenv("UPLOAD_PUBLIC_BASE_URL", "https://wizmarket.
 IG_USER_ID = os.getenv("INSTAGRAM_ACCOUNT_ID")
 IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_TOKEN")
 
+from app.api.endpoints.insta_test import (
+    create_media_container, publish_media, get_instagram_permalink, send_report_sms
+)  
 from app.service.concierge import (
     get_user_id_list as service_get_user_id_list,
     get_concierge_user_info_map as service_get_concierge_user_info_map,
@@ -44,6 +47,7 @@ from app.service.ads_app import (
 from app.service.concierge_auto_upload import (
     save_history_image_from_base64 as service_save_history_image_from_base64,
     build_public_image_url as service_build_public_image_url,
+    get_concierge_user_with_store as service_get_concierge_user_with_store
 )
 from app.crud.concierge_auto_upload import (
     insert_concierge_user_history as crud_insert_concierge_user_history,
@@ -392,6 +396,15 @@ async def process_single_user_history_and_upload_from_front(
 
         insta_media_id = publish_result.get("id") or publish_result.get("media_id")
 
+        permalink = None
+        if insta_media_id:
+            try:
+                permalink = get_instagram_permalink(insta_media_id, IG_ACCESS_TOKEN)
+            except Exception as e:
+                logger.exception("[process_single_user_history_and_upload] get_permalink error: %s", e)
+
+        
+
         # 성공 상태 업데이트
         crud_update_concierge_user_history_status(
             history_id=history_id,
@@ -400,6 +413,24 @@ async def process_single_user_history_and_upload_from_front(
             error_message=None,
         )
 
+
+        # 문자 보내기
+        # 🔹 DB에서 전화번호/가게명 가져오기 (예시)
+        user_row = service_get_concierge_user_with_store(user_id)  # 이미 있다면 그 함수 사용
+        phone = user_row["phone"]
+        store_name = user_row["store_name"]
+
+        # 🔹 문자 발송(블로킹) → 스레드로 넘기기
+        if phone and permalink:
+            await asyncio.to_thread(
+                send_report_sms,
+                phone,
+                store_name,
+                image_url,
+                permalink,
+            )
+        
+        
         return {
             "user_id": user_id,
             "history_id": history_id,

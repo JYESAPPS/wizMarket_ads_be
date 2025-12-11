@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import shutil
 import logging
 from types import SimpleNamespace
-
+import re
 from app.db.connect import (
     get_re_db_connection,
     commit,
@@ -235,14 +235,59 @@ def get_report_store(store_name, road_name):
 
 
 
+# 도로명 정규식
+def split_address(raw: str) -> tuple[str, str]:
+    ROAD_TOKEN_RE = re.compile(r'(로|길|번길|대로)$')
+    """
+    raw: 전체 주소 문자열
+    return: (base_addr, detail_addr)
+      - base_addr: 도로명 + 건물번호까지 (또는 동/리 + 지번)
+      - detail_addr: 그 이후(층, 호, 상가명 등)
+    """
+    if not raw:
+        return "", ""
+
+    # 공백 정리
+    s = " ".join(str(raw).split())
+    tokens = s.split(" ")
+
+    # 너무 짧으면 그냥 전체를 base로
+    if len(tokens) <= 4:
+        return s, ""
+
+    # 1) 도로명 토큰 찾기 (…로, …길, …번길, …대로)
+    road_idx = None
+    for i, tok in enumerate(tokens):
+        if ROAD_TOKEN_RE.search(tok):
+            road_idx = i
+            break
+
+    # 2) 도로명을 찾은 경우 → 그 다음 숫자 토큰을 건물번호로 간주
+    if road_idx is not None and road_idx + 1 < len(tokens):
+        next_tok = tokens[road_idx + 1]
+        # 건물번호는 숫자로 시작하는 게 대부분
+        if re.match(r'^\d', next_tok):
+            building_idx = road_idx + 1
+            base = " ".join(tokens[: building_idx + 1])   # 도로명 + 번호까지
+            detail = " ".join(tokens[building_idx + 1 :])
+            return base, detail
+
+    # 3) 도로명을 못 찾은 경우(지번주소 등) → 4토큰 룰 fallback
+    base = " ".join(tokens[:4])
+    detail = " ".join(tokens[4:])
+    return base, detail
+
+
+
+
+
 # 컨시어지 용 매장 등록
 def concierge_add_new_store (store_name, road_name, large_category_code, medium_category_code, small_category_code) -> Dict[str, Any]:
     # 1. 도로명 -> 지번 변환
     url = "https://business.juso.go.kr/addrlink/addrLinkApi.do"
     jibun_key = os.getenv("JIBUN_KEY")
     # ad = "서울특별시 영등포구 영신로 220"
-    ad = road_name
-
+    ad = split_address(road_name)
     params = {
         'confmKey': jibun_key,
         'currentPage': '1',
@@ -276,7 +321,6 @@ def concierge_add_new_store (store_name, road_name, large_category_code, medium_
     city_id = service_get_city_id(si_name)
     district_id = service_get_gu_id(gu_name)
     sub_district_id = service_get_dong_id(dong_name)
-    
 
     # 3. 위경도 조회
     key = os.getenv("ROAD_NAME_KEY")
@@ -371,7 +415,7 @@ def submit_concierge_excel(rows) -> Dict[str, Any]:
                     None,        # sub_category
                     None,        # detail_category
                 )
-                print(row)
+                
                 # 4) 컨시어지 가게 전략 생성
                 crud_submit_concierge_store_sns(
                     cursor,
