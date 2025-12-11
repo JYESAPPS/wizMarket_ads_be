@@ -414,3 +414,30 @@ def update_popup(user_id: int, popup: bool):
         cursor.close()
         connection.close()
 
+def update_re_popup(user_id: int, re_popup: bool):
+    connection = get_re_db_connection()
+    cursor = connection.cursor()
+    logger = logging.getLogger(__name__)
+
+    try:
+        if connection.open:
+            re_popup_int = 1 if re_popup else 0
+            query = """
+                UPDATE `user`
+                SET re_popup = %s
+                WHERE user_id = %s
+            """
+            cursor.execute(query, (re_popup_int, user_id))
+            connection.commit()
+    except pymysql.MySQLError as e:
+        logger.error(f"MySQL Error: {e}")
+        connection.rollback()
+        raise HTTPException(status_code=500, detail="DB 오류 발생")
+    except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
+        connection.rollback()
+        raise HTTPException(status_code=500, detail="알 수 없는 오류")
+    finally:
+        cursor.close()
+        connection.close()
+

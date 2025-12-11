@@ -144,6 +144,7 @@ class AdsInitInfoOutPutWithImages(BaseModel):
     ai_data: Optional[List[int]] = None
     login_provider: str
     popup: bool
+    re_popup: bool
     business_name: Optional[str]
     register_date: Optional[datetime] = None
     # today_tip: str
@@ -301,3 +302,7 @@ class Story(BaseModel):
 class PopupUpdate(BaseModel):
     user_id: int
     popup: bool
+
+class RePopupUpdate(BaseModel):
+    user_id: int
+    re_popup: bool

@@ -9,6 +9,7 @@ from app.crud.ads import (
     random_image_list as crud_random_image_list,
     get_category_id as crud_get_category_id,
     update_popup as crud_update_popup,
+    update_re_popup as crud_update_re_popup,
 )
 from app.schemas.ads import(
     AdsInitInfoOutPut, AdsInitInfo, WeatherInfo
@@ -446,3 +447,6 @@ def update_ads(store_business_number: str, use_option: str, title: str, detail_t
 
 def update_popup(user_id: int, popup: bool):
     crud_update_popup(user_id, popup)
+
+def update_re_popup(user_id: int, re_popup: bool):
+    crud_update_re_popup(user_id, re_popup)

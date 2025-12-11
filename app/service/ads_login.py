@@ -343,8 +343,8 @@ def select_user_id(store_business_number):
     return user_id
 
 def select_login_provider(user_id):
-    login_provider, popup = crud_select_login_provider(user_id)
-    return login_provider, popup
+    login_provider, popup, re_popup = crud_select_login_provider(user_id)
+    return login_provider, popup, re_popup
 
 def select_business_name(user_id):
     business_name, created_at = crud_select_business_name(user_id)

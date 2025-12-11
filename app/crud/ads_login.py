@@ -630,7 +630,7 @@ def select_login_provider(user_id):
     try:
         if connection.open:
             query = """
-                SELECT login_provider, popup
+                SELECT login_provider, popup, re_popup
                 FROM user
                 WHERE user_id = %s
             """
@@ -640,7 +640,7 @@ def select_login_provider(user_id):
             if not result:
                 return None
 
-            return result["login_provider"], result["popup"]
+            return result["login_provider"], result["popup"], result["re_popup"]
 
     except pymysql.MySQLError as e:
         logger.error(f"MySQL Error: {e}")

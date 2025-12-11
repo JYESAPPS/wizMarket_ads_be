@@ -6,7 +6,7 @@ from app.schemas.ads import (
     AdsImageRequest, AdsDeleteRequest, AdsInitInfoOutPutWithImages,
     AuthCallbackRequest,
     AdsSuggestChannelRequest,
-    KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage, PopupUpdate
+    KaKaoTempInsert, KaKaoTempGet, AdsTemplateSeedImage, PopupUpdate, RePopupUpdate
 )
 from fastapi import Request, Body
 from PIL import Image, ImageOps
@@ -26,6 +26,7 @@ from app.service.ads import (
     select_ai_age as service_select_ai_age,
     select_ai_data as service_select_ai_data,
     update_popup as service_update_popup,
+    update_re_popup as service_update_re_popup,
 )
 from app.service.ads_generate import (
     generate_content as service_generate_content,
@@ -94,7 +95,7 @@ def select_ads_init_info(store_business_number: str):
         random_image_list = service_random_design_style(init_data, ai_data[0])
         all_image_list = service_get_style_image(init_data)
         # insta_info = service_select_insta_account(store_business_number)
-        login_provider, popup = service_select_login_provider(user_id)
+        login_provider, popup, re_popup = service_select_login_provider(user_id)
         business_name, created_at = service_select_business_name(user_id)
         
 
@@ -111,6 +112,7 @@ def select_ads_init_info(store_business_number: str):
             ai_data = ai_data,
             login_provider= login_provider,
             popup = popup,
+            re_popup = re_popup,
             business_name=business_name,
             register_date=created_at,
         )
@@ -865,6 +867,11 @@ def generate_video_with_text(
 @router.post("/popup")
 def update_user_popup(payload: PopupUpdate):
     service_update_popup(payload.user_id, payload.popup)
+    return {"result": "success"}
+
+@router.post("/re_popup")
+def update_user_re_popup(payload: RePopupUpdate):
+    service_update_re_popup(payload.user_id, payload.re_popup)
     return {"result": "success"}
 
 
