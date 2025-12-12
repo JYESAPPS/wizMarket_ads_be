@@ -227,7 +227,12 @@ def get_notice_read(user_id):
         with connection.cursor() as cursor:
             # 안 읽은 공지사항 목록 가져오기 (읽음 기록 없는 공지)
             cursor.execute("""
-                SELECT N.notice_no, N.notice_title, N.notice_content
+                SELECT 
+                    N.notice_no, 
+                    N.notice_type,
+                    N.notice_title,
+                    N.notice_content, 
+                    N.created_at
                 FROM notice N
                 WHERE N.notice_no NOT IN (
                     SELECT notice_no FROM notice_read WHERE user_id = %s
@@ -240,8 +245,10 @@ def get_notice_read(user_id):
         result = [
             {
                 "notice_no": row[0],
-                "notice_title": row[1],
-                "notice_content": row[2]
+                "notice_type": row[1],
+                "notice_title": row[2],
+                "notice_content": row[3],
+                "created_at": row[4]
             }
             for row in unread
         ]
