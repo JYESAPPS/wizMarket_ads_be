@@ -14,7 +14,7 @@ import asyncio
 from dotenv import load_dotenv
 import time
 import requests
-
+import random
 
 # ==== .env 로드 ====
 load_dotenv()
@@ -191,6 +191,7 @@ async def process_user_task(idx: int, user_id_list, user_info_map):
         ai_age = service_select_ai_age(init_data, menu_1)
         ai_data = service_select_ai_data(init_data, ai_age, menu_1)
         random_image_list = service_random_design_style(init_data, ai_data[0])
+        random_item = random.choice(random_image_list)
     except Exception:
         return {"user_id": user_id, "error": "기본 정보 불러오기 오류"}
 
@@ -249,7 +250,7 @@ async def process_user_task(idx: int, user_id_list, user_info_map):
     # ------------------------------
     # 4) 이미지 생성
     # ------------------------------
-    seed_prompt = random_image_list.prompt
+    seed_prompt = random_item.prompt
 
     try:
         origin_image = service_generate_by_seed_prompt(
