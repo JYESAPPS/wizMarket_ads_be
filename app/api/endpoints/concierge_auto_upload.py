@@ -227,17 +227,29 @@ async def process_user_task(idx: int, user_id_list, user_info_map):
         # 이벤트이면 기념일 룰 적용
         if title_number == 3:
             copyright_prompt = f"""
-                {init_data.store_name} 매장의 {channel_text} 이벤트 문구 생성.
-                오늘 날짜는 {today}.
-                ...
-                (기념일 규칙 생략)
+                {init_data.store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
+                - 오늘 날짜는 {today}.
+                - 세부업종 혹은 상품 : {menu_1}
+                - 이벤트내용 : (미입력)
+                - 특정 시즌/기념일(예: 발렌타인데이, 화이트데이, 빼빼로데이, 크리스마스, 추석, 설날 등)은 해당 기념일 특성 반영
+                - 핵심 고객 연령대 : {ai_age}
+                - 지역 고려: {init_data.district_name}
+                제약: 연령·날씨·년도 직접 언급 금지, 특수기호/이모지/해시태그 제외.
+                형식: 
+                제목 : (20자 이내)
+                내용 : (30자 이내)
             """
         else:
             copyright_prompt = f"""
-                {init_data.store_name} 매장의 {channel_text} 광고 문구 생성.
-                세부 업종 : {menu_1}
-                홍보 컨셉 : {theme}
-                지역 : {road_name}
+                {init_data.store_name} 매장의 {channel_text}를 위한 이벤트 문구를 제작하려고 합니다.
+                - 오늘 날짜는 {today}.
+                - 세부업종 혹은 상품 : {menu_1}
+                - 이벤트내용 : (미입력)
+                - 특정 시즌/기념일(예: 발렌타인데이, 화이트데이, 빼빼로데이, 크리스마스, 추석, 설날 등)은 해당 기념일 특성 반영
+                - 핵심 고객 연령대 : {ai_age}
+                - 지역 고려: {init_data.district_name}
+                출력: 20자 이하의 간결하고 호기심을 유발하는 한 문장.
+                제약: 연령·날씨 직접 언급 금지, 특수기호/이모지/해시태그 제외.
             """
 
         copyright = service_generate_content(
