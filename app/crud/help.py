@@ -195,14 +195,14 @@ def get_help_list_app(user_id: int, name: str, phone: str) -> List[Dict[str, Any
     FROM help
     WHERE name = %s
       AND REPLACE(REPLACE(phone, '-', ''), ' ', '') = %s
-      AND user_id = %s
+      AND (%s IS NULL OR user_id = %s)
     ORDER BY created_at DESC
     """
 
     try:
         cur = conn.cursor()
         # phone 은 항상 "01049171768" 형식으로 들어온다고 가정
-        cur.execute(sql, (name, phone, user_id))
+        cur.execute(sql, (name, phone, user_id, user_id))
         rows = cur.fetchall()
         columns = [d[0] for d in cur.description]
         result = [dict(zip(columns, row)) for row in rows]
