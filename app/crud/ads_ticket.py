@@ -517,7 +517,7 @@ def get_token_usage_history(user_id: int):
                 -- 1) 사용 기록 (TOKEN_USAGE)
                 SELECT
                     'use' AS event_type,
-                    usage_date AS event_time,   -- 언제 썼는지
+                    updated_at AS event_time,   -- 언제 썼는지
                     NULL AS purchase_id,
                     0 AS purchased_tokens,
                     used_tokens
@@ -535,6 +535,7 @@ def get_token_usage_history(user_id: int):
                     0 AS used_tokens
                 FROM TOKEN_PURCHASE
                 WHERE user_id = %s
+                AND transaction_type <> 'fail'
 
                 ORDER BY event_time DESC
             """
