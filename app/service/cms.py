@@ -146,7 +146,7 @@ def cms_get_user_detail(user_id):
     if not row:
         return None
     
-    (user_id, email, login_provider, created_at, status, stop_reason, phone, birth_year, register_tag, subscription_type, platform, last_seen,
+    (user_id, email, login_provider, created_at, status, stop_reason, phone, register_tag, platform, last_seen,
     store_name, large_cat, medium_cat, small_cat, industry_name, road_name_address,) = row
 
     return {
@@ -157,9 +157,7 @@ def cms_get_user_detail(user_id):
         "status": status,
         "stop_reason": stop_reason,
         "phone": phone,
-        "birth_year": birth_year,
         "register_tag": register_tag,
-        "subscription_type": subscription_type,
         "register_tag": register_tag,
         "platform": platform,
         "last_seen": last_seen,

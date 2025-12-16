@@ -280,7 +280,7 @@ def cms_get_user_detail(user_id):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, u.stop_reason, ui.phone, ui.birth_year, ui.register_tag, ui.subscription_type, ud.platform, ud.last_seen,
+                SELECT u.user_id, u.email, u.login_provider, u.created_at, u.status, u.stop_reason, ui.phone, ui.register_tag, ud.platform, ud.last_seen,
                         ls.store_name, ls.large_category_name, ls.medium_category_name, ls.small_category_name, ls.industry_name, ls.road_name_address
                 FROM wiz_report.user AS u
                 LEFT JOIN wiz_report.user_info AS ui ON ui.user_id = u.user_id
