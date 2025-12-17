@@ -346,7 +346,7 @@ async def insert_upload_record(request, file: UploadFile | None):
     return {"success": bool(success), "imageUrl": image_path}
 
 # 채널 코드 → 이름 매핑 (내부 포함)
-CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog"}
+CHANNEL_MAP  = {"1": "kakao", "2": "story", "3": "feed", "4": "blog", "5": "mms", "6":"band", "7":"x"}
 
 # base64 이미지 파일 저장 및 경로 설정
 UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT")).resolve()
