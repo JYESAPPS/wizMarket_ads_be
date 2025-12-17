@@ -90,7 +90,7 @@ def generate_template(request: AutoAppMain):
         elif channel == 4:
             channel_text = "블로그"
         elif channel == 5:
-            channel_text = "문자메시지"
+            channel_text = "MMS(문자)"
         elif channel == 6:
             channel_text = "네이버 밴드"
         elif channel == 7:
@@ -523,7 +523,7 @@ def generate_template_regen(request: AutoAppRegen):
         elif channel == "4":
             channel_text = "블로그"
         elif channel == "5":
-            channel_text = "문자메시지"
+            channel_text = "MMS(문자)"
         elif channel == "6":
             channel_text = "네이버 밴드"
         elif channel == "7":
@@ -1173,7 +1173,7 @@ def generate_template_manual(request : ManualApp):
         elif channel == "블로그":
             channel_text = "4"
             sub_channel = ""
-        elif channel == "문자메시지":
+        elif channel == "MMS(문자)":
             channel_text = "5"
             sub_channel = ""
         elif channel == "네이버 밴드":
@@ -1403,7 +1403,7 @@ def generate_template_event(request : ManualApp):
         elif channel == "블로그":
             channel_text = "4"
             sub_channel = ""
-        elif channel == "문자메시지":
+        elif channel == "MMS(문자)":
             channel_text = "5"
             sub_channel = ""
         elif channel == "네이버 밴드":

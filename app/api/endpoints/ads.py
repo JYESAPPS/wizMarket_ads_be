@@ -144,7 +144,7 @@ def select_suggest_channel(request: AdsSuggestChannelRequest):
             업종 : {request.tag}
             주 고객층 : {request.male_base}, {request.female_base}
             홍보 주제 : {request.title}
-            홍보채널 : 문자메시지, 인스타그램 스토리, 인스타그램 피드, 네이버 블로그, 
+            홍보채널 : MMS(문자), 인스타그램 스토리, 인스타그램 피드, 네이버 블로그, 
                         카카오톡, 자사 홈페이지, 페이스북, 디스코드, 트위터, 미디엄, 네이버 밴드, 캐치테이블, 배달의 민족
             디자인 스타일 : 3D 일러스트(3d, 클레이메이션, 픽셀디자인, 레고스타일, 닌텐도 스타일, paper craft, 디오라마, isometric), 
                             실사 사진, 캐릭터.만화, 레트로 감성, AI로 생성한 남녀모델, 예술(르노와르, 피카소, 고흐 등) 
@@ -177,12 +177,12 @@ def select_suggest_channel(request: AdsSuggestChannelRequest):
             업종 : {request.tag}
             주 고객층 : {request.male_base}, {request.female_base}
             홍보 주제 : {request.title}
-            홍보채널 : 문자메시지, 인스타그램 스토리, 인스타그램 피드, 네이버 블로그, 
+            홍보채널 : MMS(문자), 인스타그램 스토리, 인스타그램 피드, 네이버 블로그, 
                         카카오톡, 자사 홈페이지, 페이스북, 디스코드, 트위터, 미디엄, 네이버 밴드, 캐치테이블, 배달의 민족
             디자인 스타일 : 3D 일러스트(3d, 클레이메이션, 픽셀디자인, 레고스타일, 닌텐도 스타일, paper craft, 디오라마, isometric), 
                             실사 사진, 캐릭터.만화, 레트로 감성, AI로 생성한 남녀모델, 예술(르노와르, 피카소, 고흐 등) 
 
-            1. 문자메시지, 2. 인스타그램 스토리, 3. 인스타그램 피드, 4. 네이버 블로그, 5. 카카오톡, 6. 네이버 밴드
+            1. MMS(문자), 2. 인스타그램 스토리, 3. 인스타그램 피드, 4. 네이버 블로그, 5. 카카오톡, 6. 네이버 밴드
         '''
         detail_contet = ""
 

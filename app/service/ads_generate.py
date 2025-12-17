@@ -144,7 +144,7 @@ def generate_image_mid(
     use_option, ai_prompt
 ):
     use_option_propt_map = {
-        '문자메시지': (9, 16),
+        'MMS(문자)': (9, 16),
         '유튜브 썸네일': (16, 9),
         '인스타그램 스토리': (1024, 1792),
         '인스타그램 피드': (1, 1),
@@ -268,7 +268,7 @@ def generate_image_mid(
 def generate_image_imagen3(use_option, ai_prompt):
     try:
         size_mapping = {
-            '문자메시지': "9:16",
+            'MMS(문자)': "9:16",
             '유튜브 썸네일': "16:9",
             '인스타그램 스토리': "9:16",
             '인스타그램 피드': "1:1",
@@ -335,7 +335,7 @@ def generate_image_imagen3_template(use_option, copyright, tag, seed_image_promp
         return {"error": f"seed 프롬프트 변경 중 오류 발생: {e}"}
     try:
         size_mapping = {
-            '문자메시지': "9:16",
+            'MMS(문자)': "9:16",
             '유튜브 썸네일': "16:9",
             '인스타그램 스토리': "9:16",
             '인스타그램 피드': "1:1",
@@ -345,7 +345,7 @@ def generate_image_imagen3_template(use_option, copyright, tag, seed_image_promp
         }
 
         resize_mapping = {
-            '문자메시지': (1024, 1792),
+            'MMS(문자)': (1024, 1792),
             '유튜브 썸네일': (1792, 1024),
             '인스타그램 스토리': (1024, 1792),
             '인스타그램 피드': (1024, 1024),
@@ -453,7 +453,7 @@ def generate_image(
             '인스타그램 스토리': (1024, 1792),
             '인스타그램 피드': (1024, 1024),
             '네이버 블로그': (1792, 1024),
-            '문자메시지': (1024, 1792)
+            'MMS(문자)': (1024, 1792)
         }
         resize = resize_mapping.get(use_option, None)
 

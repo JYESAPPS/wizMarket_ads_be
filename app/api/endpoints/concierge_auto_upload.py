@@ -209,7 +209,7 @@ async def process_user_task(idx: int, user_id_list, user_info_map):
         2: "인스타그램 스토리",
         3: "인스타그램 피드 게시글",
         4: "블로그",
-        5: "문자메시지",
+        5: "MMS(문자)",
         6: "네이버밴드",
         7: "X(트위터)",
     }.get(channel_number, "")
