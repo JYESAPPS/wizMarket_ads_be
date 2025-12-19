@@ -1,4 +1,5 @@
 import os, requests
+from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.schemas.ads_user import (
