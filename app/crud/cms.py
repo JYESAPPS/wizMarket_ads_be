@@ -215,15 +215,15 @@ def cms_get_user_list():
                 ) AS ud
                     ON ud.user_id = u.user_id
                 LEFT JOIN (
-                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
-                    FROM ticket_payment tp
+                    SELECT tp.user_id, tp.ticket_id, tp.created_at AS payment_date
+                    FROM token_purchase tp
                     JOIN (
-                        SELECT user_id, MAX(payment_date) AS max_payment_date
-                        FROM ticket_payment
+                        SELECT user_id, MAX(created_at) AS max_created_at
+                        FROM token_purchase
                         GROUP BY user_id
                     ) mx
                         ON mx.user_id = tp.user_id
-                    AND mx.max_payment_date = tp.payment_date
+                    AND mx.max_created_at = tp.created_at
                 ) AS tp ON tp.user_id = u.user_id
                 LEFT JOIN ticket t ON t.ticket_id = tp.ticket_id
                 ORDER BY u.created_at DESC
@@ -255,15 +255,15 @@ def cms_get_deleted_user_list():
                 ) AS ud
                     ON ud.user_id = u.user_id
                 LEFT JOIN (
-                    SELECT tp.user_id, tp.ticket_id, tp.payment_date
-                    FROM ticket_payment tp
+                    SELECT tp.user_id, tp.ticket_id, tp.created_at AS payment_date
+                    FROM token_purchase tp
                     JOIN (
-                        SELECT user_id, MAX(payment_date) AS max_payment_date
-                        FROM ticket_payment
+                        SELECT user_id, MAX(created_at) AS max_created_at
+                        FROM token_purchase
                         GROUP BY user_id
                     ) mx
                         ON mx.user_id = tp.user_id
-                    AND mx.max_payment_date = tp.payment_date
+                    AND mx.max_created_at = tp.created_at
                 ) AS tp ON tp.user_id = u.user_id
                 LEFT JOIN ticket t ON t.ticket_id = tp.ticket_id
                 WHERE u.status = 'deleted'
