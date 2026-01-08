@@ -625,8 +625,11 @@ def insert_delete_reason(reason_id, reason_label, reason_detail):
                     reason_detail
                 )
                 VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    reason_label = VALUES(reason_label),
+                    reason_detail = VALUES(reason_detail),
+                    updated_at = NOW()
             """
-            # reason_detail은 None이어도 그대로 넣으면 NULL로 들어감
             cur.execute(sql, (reason_id, reason_label, reason_detail))
         conn.commit()
         return True
