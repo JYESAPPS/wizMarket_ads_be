@@ -645,37 +645,24 @@ def insert_delete_reason(reason_id, reason_label, reason_detail):
 
 
 def delete_user(user_id: str) -> bool:
-
     conn = get_re_db_connection()
     cur = conn.cursor()
     try:
         conn.autocommit(False)
 
-        # 1) user 삭제
-        user_sql = '''
-            UPDATE user
-            SET status='deleted', is_active=0,
-                access_token=NULL, refresh_token=NULL, 
-                store_business_number=NULL,
-                permission_confirmed=0, updated_at=NOW()
-            WHERE user_id = %s;
-        '''
-        cur.execute(user_sql, (user_id,))
-        # 2) user_device 삭제
-        user_info_sql = '''
-            UPDATE user_device
-            SET is_active=0, device_token=NULL, last_seen=NOW(), updated_at=NOW()
-            WHERE user_id = %s;
-        '''
-        cur.execute(user_info_sql, (user_id,))
+        delete_queries = [
+            ("ticket_token", "DELETE FROM ticket_token WHERE user_id = %s"),
+            ("token_purchase", "DELETE FROM token_purchase WHERE user_id = %s"),
+            ("token_usage", "DELETE FROM token_usage WHERE user_id = %s"),
+            ("user_device", "DELETE FROM user_device WHERE user_id = %s"),
+            ("user_reserve", "DELETE FROM user_reserve WHERE user_id = %s"),
+            ("user_push", "DELETE FROM user_push WHERE user_id = %s"),
+            ("user_info", "DELETE FROM user_info WHERE user_id = %s"),
+            ("user", "DELETE FROM user WHERE user_id = %s"),
+        ]
 
-        # 3) user_reserve 삭제
-        user_reserve_sql = '''
-            UPDATE user_reserve
-            SET is_active=0
-            WHERE user_id = %s;
-        '''
-        cur.execute(user_reserve_sql, (user_id,))
+        for table, sql in delete_queries:
+            cur.execute(sql, (user_id,))
 
         conn.commit()
         return True
@@ -683,9 +670,9 @@ def delete_user(user_id: str) -> bool:
         conn.rollback()
         logger.exception(f"[crud_delete_user] {e}")
         return False
-
-
-
+    finally:
+        cur.close()
+        conn.close()
 
 def upsert_user_info(user_id, register_tag):
     # user_id가 str이어도 캐스팅만 해주면 됨

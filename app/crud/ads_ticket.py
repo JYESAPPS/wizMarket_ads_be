@@ -99,6 +99,30 @@ def get_token_amount(ticket_id: int):
         if connection:
             connection.close()
 
+# 무료 토큰 중복 지급 여부 확인
+def has_ticket_grant(user_id: int, ticket_id: int) -> bool:
+    connection = get_re_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT 1
+              FROM ticket_token
+             WHERE USER_ID = %s
+               AND TICKET_ID = %s
+               AND GRANT_TYPE = 1
+             LIMIT 1
+        """
+        cursor.execute(query, (user_id, ticket_id))
+        return cursor.fetchone() is not None
+    except Exception as e:
+        logger.error(f"has_ticket_grant error: {e}")
+        raise HTTPException(status_code=500, detail="토큰 지급 이력 조회 중 오류가 발생했습니다.")
+    finally:
+        if cursor:
+            close_cursor(cursor)
+        close_connection(connection)
+
 #사용자의 단건 현재 토큰 개수 불러오기
 def get_latest_token_onetime(user_id: int):
     connection = get_re_db_connection()

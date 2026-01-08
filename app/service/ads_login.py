@@ -31,6 +31,7 @@ from app.crud.ads_ticket import (
     get_latest_token_onetime as crud_get_latest_token_onetime,
     get_token_amount as crud_get_token_amount,
     insert_onetime as crud_insert_onetime,
+    has_ticket_grant as crud_has_ticket_grant,
 )
 from app.crud.ads_app import (
     update_user_status_only as crud_update_user_status_only
@@ -50,15 +51,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-
-
 def check_install_id(install_id: str):
     install_id = install_id.strip()
     if not install_id:
         return False
     return crud_check_install_id(install_id)
-
 
 def get_login_provider(install_id: str):
     if install_id is None:
@@ -70,7 +67,6 @@ def get_login_provider(install_id: str):
 
     return crud_get_login_provider(install_id)
 
-
 def ads_login(email, temp_pw):
     user = crud_ads_login(email, temp_pw)
     return user 
@@ -79,13 +75,9 @@ def get_category():
     list = crud_get_category()
     return list
 
-
 def get_image_list(category_id):
     list = crud_get_image_list(category_id)
     return list
-
-
-
 
 def get_kakao_user_info(access_token: str) -> dict | None:
     url = "https://kapi.kakao.com/v2/user/me"
@@ -98,8 +90,6 @@ def get_kakao_user_info(access_token: str) -> dict | None:
     if response.status_code == 200:
         return response.json()
     return None
-
-
 
 def get_google_user_info(id_token: str) -> dict | None:
     """
@@ -115,7 +105,6 @@ def get_google_user_info(id_token: str) -> dict | None:
         return response.json()
     return None
 
-
 def get_naver_user_info(access_token: str) -> dict | None:
     """
     네이버 access_token을 이용해 사용자 정보를 반환합니다.
@@ -130,15 +119,13 @@ def get_naver_user_info(access_token: str) -> dict | None:
         data = response.json()
         # API 형식: { "resultcode": "00", "message": "success", "response": { ... } }
         if data.get("resultcode") == "00":
-            return data.get("response")  # ✅ 사용자 정보만 반환
+            return data.get("response")  # 사용자 정보만 반환
     return None
-
 
 secret_key = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # 예: 30일
-
 
 def create_access_token(data: dict):
 
@@ -147,15 +134,11 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
 
-    
-
 def create_refresh_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
-
-
 
 # 로그아웃 유저인지 먼저 판별
 def get_logout_user(installation_id: int):
@@ -163,9 +146,7 @@ def get_logout_user(installation_id: int):
 
     user_info = crud_get_logout_user_by_id(user_id)
 
-
     return user_info
-
 
 # 로그아웃 유저가 재로그인 시 status active로 전환
 def update_logout_status(installation_id, device_token) -> bool:
@@ -179,8 +160,6 @@ def update_logout_status(installation_id, device_token) -> bool:
 
     result = crud_update_last_seen(device_token)
     return bool(result)
-
-
 
 # 유저 조회 하거나 없으면 카카오로 회원가입
 # def get_user_by_provider(provider: str, provider_id: str, email: str, device_token : str, installation_id : str):
@@ -210,14 +189,10 @@ def get_user_by_provider(provider: str, provider_id: str, email: str, provider_k
     except Exception as e:
         # 로그에 전체 스택 기록
         print.error(f"Unexpected Error: {e}")
-    
-    
-
 
 # 해당 유저 토큰 정보 DB 업데이트
 def update_user_token(user_id: str, access_token: str, refresh_token: str):
     crud_update_user_token(user_id, access_token, refresh_token)
-
 
 # JWT 토큰 디코딩
 def decode_token(token: str):
@@ -230,7 +205,6 @@ def decode_token(token: str):
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"알 수 없는 오류: {str(e)}")
-    
 
 # 토큰 갱신
 def token_refresh(refresh_token: str):
@@ -263,7 +237,6 @@ def token_refresh(refresh_token: str):
         "refresh_token": new_refresh,
     }
 
-
 # 디바이스 토큰 항상 업데이트
 def update_device_token(user_id: int, device_token: str, installation_id: Optional[str] = None, platform: Optional[str] = None):
     return crud_update_device_token(user_id, device_token, installation_id, platform)
@@ -273,13 +246,9 @@ def insert_push(user_id):
     # user TB 에 로그인 감지 (재로그인은)
     return crud_insert_push(user_id)
 
-
 # last_seen 업데이트
 def update_last_seen(device_token):
     return crud_update_last_seen(device_token)
-
-
-
 
 # 유저 ID로 유저 정보 조회
 def get_user_by_id(user_id: int):
@@ -288,6 +257,8 @@ def get_user_by_id(user_id: int):
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     return user
 
+FREE_SIGNUP_TICKET_ID = 13
+FREE_SIGNUP_TOKEN_AMOUNT = 5
 
 # 회원 가입 로직
 def update_user(user_id: int, store_business_number: str, register_tag: str, insta_account: Optional[str] = None, ):
@@ -297,17 +268,21 @@ def update_user(user_id: int, store_business_number: str, register_tag: str, ins
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     
     try:
-        ticket_id = 13
-        token_amount = crud_get_token_amount(ticket_id)
+        ticket_id = FREE_SIGNUP_TICKET_ID
+        if crud_has_ticket_grant(user_id, ticket_id):
+            return success
+
+        token_amount = FREE_SIGNUP_TOKEN_AMOUNT
         grant_date = date.today()
-        token_onetime = crud_get_latest_token_onetime(user_id) + token_amount
-        crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+        latest_onetime = crud_get_latest_token_onetime(user_id) or 0
+        token_onetime = latest_onetime + token_amount
+        token_subscription = 0
+        crud_insert_onetime(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
     except Exception:
         # logger.exception("update_user: token grant failed", exc_info=True)
         raise HTTPException(status_code=500, detail="토큰 지급을 실패했습니다.")
 
     return success
-
 
 venv_python = os.path.abspath(".venv/Scripts/python.exe")
 
