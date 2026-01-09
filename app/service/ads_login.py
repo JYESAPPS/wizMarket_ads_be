@@ -351,8 +351,8 @@ def insert_init_info(user_id, name, birth):
 def get_permission_confirmed(user_id: int):
     return crud_get_permission_confirmed(user_id)
 
-def update_permission_confirmed(install_id: str):
-    return crud_update_permission_confirmed(install_id)
+def update_permission_confirmed(install_id: str, platform: Optional[str] = None):
+    return crud_update_permission_confirmed(install_id, platform)
 
 def update_auto_login(user_id, auto_login):
     success = crud_update_auto_login(user_id, auto_login)

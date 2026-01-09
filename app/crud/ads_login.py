@@ -9,6 +9,8 @@ from app.schemas.ads import AdsInitInfo, RandomImage
 import random
 from typing import List, Optional
 
+DEFAULT_PERMISSION_PLATFORM = "android"
+
 
 # INSTALLATION_ID 에 해당하는 user_id 값 여부 확인
 def chect_logout_user_id(install_id: str):
@@ -758,21 +760,30 @@ def get_permission_confirmed(user_id: int):
         return False
 
 # installation_id 업데이트 (중복 허용)
-def update_permission_confirmed(install_id: str):
+def update_permission_confirmed(install_id: str, platform: Optional[str] = None):
+    normalized_id = (install_id or "").strip()
+    if not normalized_id:
+        return False
+
+    normalized_platform = (platform or DEFAULT_PERMISSION_PLATFORM).strip()
+    if not normalized_platform:
+        normalized_platform = DEFAULT_PERMISSION_PLATFORM
+
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
                 INSERT INTO user_device
-                    (installation_id, is_active, created_at, updated_at, last_seen)
+                    (installation_id, platform, is_active, created_at, updated_at, last_seen)
                 VALUES
-                    (%s, 1, NOW(), NOW(), NOW())
+                    (%s, %s, 1, NOW(), NOW(), NOW())
                 ON DUPLICATE KEY UPDATE
+                    platform = VALUES(platform),
                     is_active = VALUES(is_active),
                     updated_at = VALUES(updated_at),
                     last_seen = VALUES(last_seen)
                 """
-            cursor.execute(sql, (install_id))
+            cursor.execute(sql, (normalized_id, normalized_platform))
         connection.commit()
         return True
     except Exception as e:
