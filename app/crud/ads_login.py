@@ -757,16 +757,20 @@ def get_permission_confirmed(user_id: int):
         print(f"permission_confirmed 조회 오류: {e}")
         return False
 
-# installation_id 업데이트
+# installation_id 업데이트 (중복 허용)
 def update_permission_confirmed(install_id: str):
     try:
         connection = get_re_db_connection()
         with connection.cursor() as cursor:
             sql = """
                 INSERT INTO user_device
-                    (installation_id, is_active, created_at, updated_at)
+                    (installation_id, is_active, created_at, updated_at, last_seen)
                 VALUES
-                    (%s, 1, NOW(), NOW())
+                    (%s, 1, NOW(), NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    is_active = VALUES(is_active),
+                    updated_at = VALUES(updated_at),
+                    last_seen = VALUES(last_seen)
                 """
             cursor.execute(sql, (install_id))
         connection.commit()
