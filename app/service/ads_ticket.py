@@ -2,26 +2,17 @@ from app.crud.ads_ticket import (
     get_cycle as crud_get_cycle,
     insert_payment as crud_insert_payment,
     get_token_amount as crud_get_token_amount,
-    get_latest_token_onetime as crud_get_latest_token_onetime,
-    insert_onetime as crud_insert_onetime,
-    insest_monthly as crud_insest_monthly,
-    insest_yearly as crud_insest_yearly,
     get_history_100 as crud_get_history_100,
     get_history as crud_get_history,
     get_valid_history as crud_get_valid_history,
-    get_latest_token_subscription as crud_get_latest_token_subscription,
-    # get_valid_ticket as crud_get_valid_ticket,
-    # insert_payment_history as crud_insert_token_deduction_history,
-    # insert_token_deduction_history as crud_insert_token_deduction_history,
     get_token_deduction_history as crud_get_token_deduction_history,
     get_subscription_info as crud_get_subscription_info,
     update_subscription_info as crud_update_subscription_info,
-    # get_token_onetime as crud_get_token_onetime,
-    upsert_token_usage as crud_upsert_token_usage,
     get_valid_ticket as crud_get_valid_ticket,
     get_token_onetime as crud_get_token_onetime,
     get_token_usage_history as crud_get_token_usage_history,
     get_purchase_history as crud_get_purchase_history,
+    insert_token_purchase as crud_insert_token_purchase,
 )
 from app.crud.ads_token_deduct import (
     crud_get_latest_subscription_purchase,
@@ -59,48 +50,47 @@ def insert_payment(request):
     # DB 추가 로직
     crud_insert_payment(user_id, ticket_id, payment_method, payment_date, expire_date)
 
-#ticket_token에 추가
+# token_purchase에 추가
 def insert_token(request):
     user_id = request.user_id
     ticket_id = request.ticket_id
-    # 지급 토큰 수량 조회
     token_amount = crud_get_token_amount(ticket_id)
-    # print(request)
 
-    # 지급 일자
+    if token_amount is None:
+        raise HTTPException(status_code=404, detail="유효하지 않은 티켓입니다.")
+
     grant_date = datetime.fromisoformat(request.payment_date.replace("Z", "+00:00")).date()
 
-    # 단건 토큰 + 지급 토큰 = 지급 후 단건 토큰 개수
-    token_onetime = crud_get_latest_token_onetime(user_id)
-    subscription_info = crud_get_latest_token_subscription(user_id)
-    token_subscription = subscription_info["sub"]
+    # 단건 상품 (basic)은 one_time 으로 기록
+    if request.plan_type == "basic":
+        crud_insert_token_purchase(
+            user_id=user_id,
+            ticket_id=ticket_id,
+            purchased_tokens=token_amount,
+            transaction_type="one_time",
+        )
+        return
 
-    #단건의 경우
-    if request.plan_type=="basic":
-        token_onetime = token_onetime + token_amount
-        #삽입
-        crud_insert_onetime(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
-           
-    # 정기권의 경우 월별로 지급
-    else: 
-        # if request.billing_cycle == "없음":
-        #     crud_insert_onetime(user_id, ticket_id, token_amount, token_onetime, grant_date)
+    # 구독 상품
+    billing_cycle = (request.billing_cycle or "").strip()
+    is_yearly = billing_cycle == "연간"
+    months = 12 if is_yearly else 1
 
-        # 월 구독
-        if request.billing_cycle == "월간":
-            token_subscription = token_subscription + token_amount
-            crud_insest_monthly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
+    # ticket 테이블에 저장된 BILLING_CYCLE 값이 있다면 우선 사용
+    cycle_from_ticket = crud_get_cycle(ticket_id)
+    if isinstance(cycle_from_ticket, int) and cycle_from_ticket > 0:
+        months = cycle_from_ticket
 
-        # 년구독
-        elif request.billing_cycle == "연간":
-            token_amount = token_amount * 12
-            token_subscription = token_subscription + token_amount
-            crud_insest_yearly(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date) 
+    purchased_tokens = token_amount * months if is_yearly else token_amount
 
-    # grant_date : 구매 일자부터 종료일자까지 달별로 지급
-    # token_grant
-    # token_sub 
-    # valid_until : 지급 일자+1달
+    crud_insert_token_purchase(
+        user_id=user_id,
+        ticket_id=ticket_id,
+        purchased_tokens=purchased_tokens,
+        transaction_type="subscription",
+        start_date=grant_date,
+        end_date=grant_date + relativedelta(months=months),
+    )
 
 def update_subscription_info(user_id, plan_type):
     # 기존 구독 상품 조회
