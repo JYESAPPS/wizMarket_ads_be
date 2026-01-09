@@ -28,9 +28,10 @@ from app.crud.ads_login import (
     get_login_provider as crud_get_login_provider,
 )
 from app.crud.ads_ticket import (
+    get_latest_token_onetime as crud_get_latest_token_onetime,
     get_token_amount as crud_get_token_amount,
+    insert_onetime as crud_insert_onetime,
     has_ticket_grant as crud_has_ticket_grant,
-    insert_token_purchase as crud_insert_token_purchase,
 )
 from app.crud.ads_app import (
     update_user_status_only as crud_update_user_status_only
@@ -272,12 +273,11 @@ def update_user(user_id: int, store_business_number: str, register_tag: str, ins
             return success
 
         token_amount = FREE_SIGNUP_TOKEN_AMOUNT
-        crud_insert_token_purchase(
-            user_id=user_id,
-            ticket_id=ticket_id,
-            purchased_tokens=token_amount,
-            transaction_type="one_time",
-        )
+        grant_date = date.today()
+        latest_onetime = crud_get_latest_token_onetime(user_id) or 0
+        token_onetime = latest_onetime + token_amount
+        token_subscription = 0
+        crud_insert_onetime(user_id, ticket_id, token_amount, token_subscription, token_onetime, grant_date)
     except Exception:
         # logger.exception("update_user: token grant failed", exc_info=True)
         raise HTTPException(status_code=500, detail="토큰 지급을 실패했습니다.")
@@ -351,8 +351,8 @@ def insert_init_info(user_id, name, birth):
 def get_permission_confirmed(user_id: int):
     return crud_get_permission_confirmed(user_id)
 
-def update_permission_confirmed(install_id: str, platform: Optional[str] = None):
-    return crud_update_permission_confirmed(install_id, platform)
+def update_permission_confirmed(install_id: str):
+    return crud_update_permission_confirmed(install_id)
 
 def update_auto_login(user_id, auto_login):
     success = crud_update_auto_login(user_id, auto_login)

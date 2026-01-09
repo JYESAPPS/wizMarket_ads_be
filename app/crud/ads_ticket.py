@@ -1,19 +1,12 @@
-import logging
-from datetime import datetime, date
-from typing import Optional
-
-import pymysql
 import pymysql.cursors
-from fastapi import HTTPException
-
 from app.db.connect import (
-    close_connection,
-    close_cursor,
-    commit,
-    get_db_connection,
-    get_re_db_connection,
-    rollback,
+    get_db_connection, commit, close_connection, rollback, close_cursor, get_re_db_connection
 )
+from fastapi import HTTPException
+import pymysql
+import logging
+from datetime import datetime
+from typing import Optional
 
 
 
@@ -106,22 +99,18 @@ def get_token_amount(ticket_id: int):
         if connection:
             connection.close()
 
+# 무료 토큰 중복 지급 여부 확인
 def has_ticket_grant(user_id: int, ticket_id: int) -> bool:
-    """
-    무료 토큰 중복 지급 여부 확인
-
-    token_purchase에서 단건(one_time) 유형으로 동일 ticket_id 지급 이력이 있는지 확인한다.
-    """
     connection = get_re_db_connection()
     cursor = None
     try:
         cursor = connection.cursor()
         query = """
             SELECT 1
-              FROM token_purchase
-             WHERE user_id = %s
-               AND ticket_id = %s
-               AND transaction_type = 'one_time'
+              FROM ticket_token
+             WHERE USER_ID = %s
+               AND TICKET_ID = %s
+               AND GRANT_TYPE = 1
              LIMIT 1
         """
         cursor.execute(query, (user_id, ticket_id))
@@ -134,50 +123,139 @@ def has_ticket_grant(user_id: int, ticket_id: int) -> bool:
             close_cursor(cursor)
         close_connection(connection)
 
-def insert_token_purchase(
-    user_id: int,
-    ticket_id: int,
-    purchased_tokens: int,
-    remaining_tokens: Optional[int] = None,
-    transaction_type: str = "one_time",
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-):
-    """
-    TOKEN_PURCHASE에 지급/구매 내역을 기록한다.
-    remaining_tokens 를 명시하지 않으면 purchased_tokens 값으로 채운다.
-    """
+#사용자의 단건 현재 토큰 개수 불러오기
+def get_latest_token_onetime(user_id: int):
     connection = get_re_db_connection()
-    cursor = None
+    cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        query = """
+            SELECT TOKEN_ONETIME
+            FROM ticket_token
+            WHERE USER_ID=%s
+            AND TOKEN_ONETIME IS NOT NULL
+            ORDER BY GRANT_ID DESC
+            LIMIT 1
+        """
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+
+        if result is None:
+            return 0
+        return result["TOKEN_ONETIME"] 
+
+    except Exception as e:
+        logger.error(f"get_latest_token_onetime error: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        connection.close()
+
+# 사용자의 현재 정기 토큰+기한 호출
+def get_latest_token_subscription(user_id):
+    try:
+        connection = get_re_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT TOKEN_SUBSCRIPTION, VALID_UNTIL
+                FROM ticket_token
+                WHERE USER_ID = %s
+                AND TOKEN_ONETIME IS NOT NULL
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id))
+            result = cursor.fetchone()
+
+        if result is None:
+            return {
+                "sub": 0,
+                "valid": None
+            }
+        return {
+            "sub": result[0],
+            "valid": result[1]
+        }
+            
+    except Exception as e:
+        logger.error(f"get_history error: {e}")
+        return []
+    finally:
+        connection.close()     
+
+#사용자의 토큰 내역에 단건 삽입
+def insert_onetime(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
+    connection = get_re_db_connection()
 
     try:
         cursor = connection.cursor()
         insert_query = """
-            INSERT INTO TOKEN_PURCHASE (
-                user_id,
-                ticket_id,
-                transaction_type,
-                purchased_tokens,
-                remaining_tokens,
-                start_date,
-                end_date
-            )
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
-        remaining = purchased_tokens if remaining_tokens is None else remaining_tokens
-        cursor.execute(
-            insert_query,
-            (user_id, ticket_id, transaction_type, purchased_tokens, remaining, start_date, end_date),
-        )
-        commit(connection)
+        #grant_type은 토큰 지급일 때 1, 소모일 때 0 
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
+        commit(connection)  # 커스텀 commit 사용
+
     except pymysql.MySQLError as e:
-        rollback(connection)
-        logger.error(f"insert_token_purchase DB error: {e}")
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
         raise
+
     finally:
-        if cursor:
-            close_cursor(cursor)
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+
+# 사용자의 토큰 내역에 월구독 삽입
+def insest_monthly(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+        insert_query = """
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+
+        #grant_type은 토큰 지급일 때 1, 소모일 때 0 
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
+        close_connection(connection)
+
+
+# 사용자의 토큰 내역에 년구독 삽입
+def insest_yearly(user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date):
+    connection = get_re_db_connection()
+
+    try:
+        cursor = connection.cursor()
+        insert_query = """
+            INSERT INTO ticket_token (GRANT_TYPE, USER_ID, TICKET_ID, TOKEN_GRANT, TOKEN_SUBSCRIPTION, TOKEN_ONETIME, GRANT_DATE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+
+        #grant_type은 토큰 지급일 때 1, 소모일 때 0 
+        cursor.execute(insert_query, (1, user_id, ticket_id, token_grant, token_subscription, token_onetime, grant_date))
+        commit(connection)  # 커스텀 commit 사용
+
+    except pymysql.MySQLError as e:
+        rollback(connection)  # 커스텀 rollback 사용
+        print(f"Database error: {e}")
+        raise
+
+    finally:
+        close_cursor(cursor)
         close_connection(connection)
 
 # 현재 구독 상품 조회
@@ -342,58 +420,156 @@ def get_purchase_history(user_id):
         connection.close()
 
 
+# 구독 토큰 차감
+def update_subscription_token(user_id: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE ticket_token
+                SET TOKEN_SUBSCRIPTION = TOKEN_SUBSCRIPTION - 1
+                WHERE USER_ID = %s
+                AND TOKEN_SUBSCRIPTION > 0
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id,))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"구독 토큰 차감 실패: {e}")
+    finally:
+        connection.close()
+
+# 단건 토큰 차감
+def update_onetime_token(user_id: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE ticket_token
+                SET TOKEN_ONETIME = TOKEN_ONETIME - 1
+                WHERE USER_ID = %s
+                AND TOKEN_ONETIME > 0
+                ORDER BY GRANT_ID DESC
+                LIMIT 1
+            """, (user_id,))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"단건 토큰 차감 실패: {e}")
+    finally:
+        connection.close()
+
+# ticket_payment 테이블에 차감 이력 저장
+def insert_payment_history(user_id: int, ticket_id: int = 0, payment_method: str = "deduct"):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO ticket_payment (
+                    USER_ID, TICKET_ID, PAYMENT_METHOD, PAYMENT_DATE
+                ) VALUES (%s, %s, %s, %s)
+            """, (
+                user_id,
+                ticket_id,
+                payment_method,
+                datetime.now()
+            ))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"토큰 차감 INSERT 실패: {e}")
+    finally:
+        connection.close()
+
+
+def upsert_token_usage(user_id: int, grant_date, token_grant: int):
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+            INSERT INTO TOKEN_USAGE (user_id, usage_date, used_tokens)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                used_tokens = used_tokens + VALUES(used_tokens),
+                updated_at = CURRENT_TIMESTAMP
+            """, (user_id, grant_date, token_grant))
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise RuntimeError(f"토큰 사용 기록 실패: {e}")
+    finally:
+        connection.close()
+
+# 토큰 차감 기록 가져오기
 def get_token_deduction_history(user_id: int):
-    """
-    TOKEN_PURCHASE / TOKEN_USAGE를 활용해 일별 토큰 사용 이력을 계산한다.
-    """
+    connection = get_re_db_connection()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT
+                    DATE(GRANT_DATE) AS grant_date,
+
+                    -- 차감량과 지급량을 따로 합산
+                    SUM(CASE WHEN GRANT_TYPE = 0 THEN TOKEN_GRANT ELSE 0 END) AS total_deducted,
+                    SUM(CASE WHEN GRANT_TYPE = 1 THEN TOKEN_GRANT ELSE 0 END) AS total_granted,
+
+                    SUBSTRING_INDEX(GROUP_CONCAT(TOKEN_ONETIME ORDER BY GRANT_DATE DESC), ',', 1) AS end_onetime,
+                    SUBSTRING_INDEX(GROUP_CONCAT(TOKEN_SUBSCRIPTION ORDER BY GRANT_DATE DESC), ',', 1) AS end_subscription
+
+                FROM ticket_token
+                WHERE USER_ID = %s
+                GROUP BY DATE(GRANT_DATE)
+                ORDER BY GRANT_DATE DESC
+            """, (user_id,))
+            return cursor.fetchall()
+    finally:
+        connection.close()
+
+
+
+
+
+# 토큰 차감 기록 일별 가져오기
+def get_token_usage_history(user_id: int):
     conn = None
     try:
         conn = get_re_db_connection()
+
         with conn.cursor(pymysql.cursors.DictCursor) as cur:
             sql = """
-                WITH daily_grant AS (
-                    SELECT
-                        DATE(created_at) AS grant_date,
-                        SUM(COALESCE(purchased_tokens, 0)) AS total_granted,
-                        SUM(
-                            CASE
-                                WHEN transaction_type IN ('subscription', 'change', 'unsubscribe')
-                                    THEN COALESCE(remaining_tokens, 0)
-                                ELSE 0
-                            END
-                        ) AS subscription_snapshot,
-                        SUM(
-                            CASE
-                                WHEN transaction_type = 'one_time'
-                                    THEN COALESCE(remaining_tokens, 0)
-                                ELSE 0
-                            END
-                        ) AS onetime_snapshot
-                    FROM TOKEN_PURCHASE
-                    WHERE user_id = %s
-                    GROUP BY DATE(created_at)
-                ),
-                daily_usage AS (
-                    SELECT
-                        usage_date,
-                        SUM(COALESCE(used_tokens, 0)) AS total_used
-                    FROM TOKEN_USAGE
-                    WHERE user_id = %s
-                    GROUP BY usage_date
-                )
+                -- 1) 사용 기록 (TOKEN_USAGE)
                 SELECT
-                    COALESCE(g.grant_date, u.usage_date) AS grant_date,
-                    COALESCE(u.total_used, 0) AS total_deducted,
-                    COALESCE(g.total_granted, 0) AS total_granted,
-                    COALESCE(g.onetime_snapshot, 0) AS end_onetime,
-                    COALESCE(g.subscription_snapshot, 0) AS end_subscription
-                FROM daily_grant g
-                FULL OUTER JOIN daily_usage u
-                  ON g.grant_date = u.usage_date
-                ORDER BY grant_date DESC
+                    'use' AS event_type,
+                    updated_at AS event_time,   -- 언제 썼는지
+                    NULL AS purchase_id,
+                    0 AS purchased_tokens,
+                    used_tokens
+                FROM TOKEN_USAGE
+                WHERE user_id = %s
+
+                UNION ALL
+
+                -- 2) 구매 기록 (TOKEN_PURCHASE)
+                SELECT
+                    'purchase' AS event_type,
+                    created_at AS event_time,   -- 언제 결제(구매)했는지
+                    purchase_id,
+                    COALESCE(purchased_tokens, 0) AS purchased_tokens,
+                    0 AS used_tokens
+                FROM TOKEN_PURCHASE
+                WHERE user_id = %s
+                AND transaction_type <> 'fail'
+
+                ORDER BY event_time DESC
             """
             cur.execute(sql, (user_id, user_id))
-            return cur.fetchall()
+            rows = cur.fetchall()
+            return rows
+
+    except Exception as e:
+        logger.error(f"[get_token_history] DB error: {e}")
+        return []
     finally:
         if conn is not None:
             conn.close()
