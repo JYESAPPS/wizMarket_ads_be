@@ -647,6 +647,16 @@ def insert_delete_reason(reason_id, reason_label, reason_detail):
 
 
 
+def _safe_delete_table(cur, table_name: str, sql: str, user_id: str):
+    try:
+        cur.execute(sql, (user_id,))
+    except pymysql.err.ProgrammingError as e:
+        if e.args and e.args[0] == 1146:  # 테이블이 없는 경우
+            logger.warning(f"[crud_delete_user] table '{table_name}' not found. Skipping.")
+            return
+        raise
+
+
 def delete_user(user_id: str) -> bool:
     conn = get_re_db_connection()
     cur = conn.cursor()
@@ -665,7 +675,7 @@ def delete_user(user_id: str) -> bool:
         ]
 
         for table, sql in delete_queries:
-            cur.execute(sql, (user_id,))
+            _safe_delete_table(cur, table, sql, user_id)
 
         conn.commit()
         return True
