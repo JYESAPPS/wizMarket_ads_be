@@ -424,7 +424,7 @@ def get_purchase_history(user_id):
 def update_subscription_token(user_id: int):
     connection = get_re_db_connection()
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor() as cursor: 
             cursor.execute("""
                 UPDATE ticket_token
                 SET TOKEN_SUBSCRIPTION = TOKEN_SUBSCRIPTION - 1
