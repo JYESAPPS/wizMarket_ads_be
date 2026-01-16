@@ -50,7 +50,7 @@ from rembg import remove
 import requests
 import json
 import random
-from typing import List
+from typing import List, Optional
 
 
 logger = logging.getLogger(__name__)

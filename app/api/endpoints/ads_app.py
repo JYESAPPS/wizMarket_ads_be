@@ -38,6 +38,7 @@ from app.service.ads_app import (
     get_user_reco as service_get_user_reco,
     get_user_profile as service_get_user_profile,
     service_insert_user_info,
+    service_generate_ai_reference,
     update_user_info as service_update_user_info,
     get_user_recent_reco as service_get_user_recent_reco,
     update_user_reco as service_update_user_reco,
@@ -199,7 +200,7 @@ def generate_template(request: AutoAppMain):
             else:
                 copyright_prompt = f'''
                     {request.store_name} 매장의 {channel_text}에 포스팅할 광고 문구를 제작하려고 합니다.
-                    - 세부 업종 혹은 상품 : {menu}
+                    - 세부업종 혹은 상품 : {menu}
                     - 홍보 컨셉 : {theme}
                     - 특정 시즌/기념일 이벤트 (예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
                         빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등)엔 해당 내용으로 문구 생성
@@ -269,16 +270,20 @@ def generate_template(request: AutoAppMain):
                     {request.store_name} 업체의 {channel_text}를 위한 광고 콘텐츠를 제작하려고 합니다. 
                     업종: {request.detail_category_name}
                     세부정보: {menu}
-                    주소: {request.district_name}
+                    일시 : {today}
+                    주요 고객층: {age}
+
+                    주소: {request.road_name}
                     
-                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." 
-                    "위치는 📍로 표현한다."
-                    "'\n'으로 문단을 나눠 표현한다."
+                    단! "대표 메뉴 앞에 아이콘만 넣고, 메뉴 이름 뒤에는 아이콘을 넣지 않는다." "위치는 📍로 표현한다. 
+                    '\n'으로 문단을 나눠 표현한다
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 {channel_text} 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘.
-                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
+                    1. '{copyright}' 를 100~150자까지 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘 
+                    
+                    2.광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다
+
                     3.핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
@@ -351,7 +356,7 @@ def generate_template(request: AutoApp):
 
         raw = options.replace(",", "-").replace(" ", "")  # "3-1-4"
         parts = raw.split("-")  # ["3", "1", "4"]
-        
+
         if female_text : 
             title, channel, style = parts
         else : 
@@ -433,6 +438,7 @@ def generate_template(request: AutoApp):
             insta_copyright = ''
             
             if channel == "3":
+
                 today = datetime.now()
                 formattedToday = today.strftime('%Y-%m-%d')
 
@@ -566,7 +572,8 @@ def generate_template_regen(request: AutoAppRegen):
                 if ad_text_theme and ad_text_theme == theme and ad_text.strip() != "":
                     detail_content = ad_text.strip()
                 else:
-                    detail_content = ""
+                    detail_content = ""  # → 아래 생성 분기로 감
+
         else:
             # 이번에 새로 입력하지 않았음 → 과거 값 검토
             if ad_text_theme and ad_text_theme == theme and ad_text.strip() != "":
@@ -634,7 +641,8 @@ def generate_template_regen(request: AutoAppRegen):
                         {store_name} 매장의 {channel_text}에 포스팅할 광고 문구를 제작하려고 합니다.
                         - 세부업종 혹은 상품 : {menu}
                         - 홍보컨셉 : {theme}
-                        - 특정 시즌/기념일(예: 발렌타인데이, 화이트데이, 빼빼로데이, 크리스마스, 추석, 설날 등)은 반영 가능
+                        - 특정 시즌/기념일(예: 발렌타인데이 2월 14일, 화이트데이 3월14일, 블랙데이 4월14일, 
+                            빼빼로데이 11월 11일, 크리스마스 12월 25일, 추석, 설날 등)엔 해당 내용으로 문구 생성
                         - 핵심 고객 연령대 : {female_text}
                         - 지역 고려: {getattr(request, "district_name", "")}
                         출력: 20자 이하의 간결하고 호기심을 유발하는 한 문장.
@@ -843,9 +851,6 @@ def generate_template_regen_auto(request: AutoGenCopy):
         error_msg = f"Unexpected error while processing request: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
-
-
-
 
 # AI 생성 수동 - 초기 값 가져오기
 @router.post("/manual/ai/reco")
@@ -1322,8 +1327,8 @@ def generate_template_manual(request : ManualApp):
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
-                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {request.detail_category_name}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
                     3. 핵심 고객인 {female_text}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
 
@@ -1808,6 +1813,9 @@ async def generate_template_manual_camera(
     main: str = Form(...),
     temp: float = Form(...),
     custom_text: str = Form(None),
+    ai_model_type: str = Form(None),
+    ai_model_prompt: str = Form(None),
+    ai_model_strength: float = Form(None),
 ):
     try:
         custom_menu = custom_menu or register_tag
@@ -1894,30 +1902,43 @@ async def generate_template_manual_camera(
             output_images.extend(origin_images)
 
         elif image:                
-            input_image = Image.open(BytesIO(await image.read()))
-            input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
+            if style == "AI 모델 합성":
+                if not ai_model_type:
+                    raise HTTPException(status_code=400, detail="AI 모델 옵션이 없습니다.")
 
-            # 스타일에 따라 분기
-            if style == "배경만 제거" or style == "배경 제거":
-                origin_images = service_generate_image_remove_bg(input_image)  # List[PIL.Image]
-
-            elif style == "필터" or style == "이미지 필터":
-                buf = BytesIO()
-                input_image.save(buf, format="PNG")
-                buf.seek(0)
-                filtered = await service_cartoon_image(buf.getvalue(), filter)  # PIL.Image
-                origin_images = [filtered]
-
+                origin_images = await service_generate_ai_reference(
+                    image,
+                    ai_model_type,
+                    ai_model_prompt,
+                    ai_model_strength,
+                )
             else:
-                origin_images = [input_image]
+                input_image = Image.open(BytesIO(await image.read()))
+                input_image = ImageOps.exif_transpose(input_image)  # ✅ 회전 보정
+
+                # 스타일에 따라 분기
+                if style == "배경만 제거" or style == "배경 제거":
+                    origin_images = service_generate_image_remove_bg(input_image)  # List[PIL.Image]
+
+                elif style == "필터" or style == "이미지 필터":
+                    buf = BytesIO()
+                    input_image.save(buf, format="PNG")
+                    buf.seek(0)
+                    filtered = await service_cartoon_image(buf.getvalue(), filter)  # PIL.Image
+                    origin_images = [filtered]
+
+                else:
+                    origin_images = [input_image]
 
             # base64 리스트 변환
             for img in origin_images:
                 buffer = BytesIO()
                 img.save(buffer, format="PNG")
                 buffer.seek(0)
-                img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-                output_images.append(img_base64)
+                
+                # Base64 인코딩 후 리스트에 추가
+                output_images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
+
         else:
             raise HTTPException(status_code=400, detail="이미지 또는 이미지 URL이 제공되지 않았습니다.")
 
@@ -1939,7 +1960,7 @@ async def generate_template_manual_camera(
                 '''
 
                 insta_role = f'''
-                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {custom_menu}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
+                    1. '{copyright}' 를 100~150자까지 {channel} 인플루언서가 {category}을 소개하는 듯한 느낌으로 광고 문구 만들어줘. 
                     2. 광고 타겟들이 흥미를 갖을만한 내용의 키워드를 뽑아서 검색이 잘 될만한 SEO기반 해시태그도 최소 3개에서 6개까지 생성한다.
                     3. 핵심 고객인 {age}가 선호하는 문체로 작성하되 나이는 표현하지 않는다.
                 '''
@@ -1959,7 +1980,12 @@ async def generate_template_manual_camera(
                 "register_tag": register_tag, "custom_menu": custom_menu,
                 "store_name": store_name, "road_name": road_name, "district_name": district_name,
                 "insta_copyright" : insta_copyright, "prompt" : bg_prompt, "filter_idx": filter,
-                "event_title": event_title
+                "event_title": event_title,
+                "ai_model": {
+                    "type": ai_model_type,
+                    "prompt": ai_model_prompt,
+                    "strength": ai_model_strength,
+                } if style == "AI 모델 합성" else None,
             })
 
     except HTTPException as http_ex:
